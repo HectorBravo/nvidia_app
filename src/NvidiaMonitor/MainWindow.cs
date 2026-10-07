@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -28,6 +29,20 @@ public class MainWindow : Window
     private readonly TextBlock _statusText;
     private readonly DataGrid _grid;
     private readonly Grid _root;
+
+    // ── tab control + per-tab widgets ──────────────────────────
+    private readonly TabControl _tabs;
+    // Assigned inside BuildTabs(), which the constructor calls before any use.
+    private DataGrid _processGrid = null!;
+    private ListBox _logList = null!;
+    private Button _clearLogBtn = null!;
+    private System.Windows.Controls.ScrollViewer _chartsScroll = null!;
+    private readonly System.Collections.Generic.List<MetricChart> _charts = new();
+    private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
+
+    // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
+    // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed.
+    private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384 };
 
     public MainWindow()
     {
@@ -60,6 +75,7 @@ public class MainWindow : Window
         };
 
         _grid = BuildGrid();
+        _tabs = BuildTabs();
 
         _statusText = new TextBlock
         {
@@ -75,10 +91,10 @@ public class MainWindow : Window
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         _root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         Grid.SetRow(header, 0);
-        Grid.SetRow(_grid, 1);
+        Grid.SetRow(_tabs, 1);
         Grid.SetRow(_statusText, 2);
         _root.Children.Add(header);
-        _root.Children.Add(_grid);
+        _root.Children.Add(_tabs);
         _root.Children.Add(_statusText);
 
         Content = new Border { Background = Theme.Bg, Child = _root };
@@ -111,6 +127,16 @@ public class MainWindow : Window
             ToUi(() => ApplySnapshot(snap));
         _polling.StatusChanged += (_, msg) =>
             ToUi(() => OnStatusChanged(msg));
+
+        // Activity Log tab: seed + live-append (subscribed once, on the UI thread).
+        foreach (var entry in _log.Snapshot())
+        {
+            _logList.Items.Add(entry.Formatted);
+        }
+        _logList.ScrollIntoView(_logList.Items.Count > 0 ? _logList.Items[^1] : null);
+        _log.EntryAdded += (_, entry) =>
+            ToUi(() => AppendLog(entry));
+
         _polling.Start();
 
         // Pull the first frame immediately so the UI isn't blank for a second.
@@ -177,6 +203,7 @@ public class MainWindow : Window
 
         if (!_monitor.IsAvailable)
         {
+            _history.Clear(); // don't let stale chart data linger
             _polling?.Pause();
             ShowFallback(string.IsNullOrWhiteSpace(message)
                 ? "NVML is not available on this system."
@@ -248,9 +275,73 @@ public class MainWindow : Window
         }
         _grid.ItemsSource = rows;
 
+        // ── Processes tab: rebuild from the flat per-snapshot list ──
+        var procs = new List<ProcessRow>(snap.Processes.Count);
+        foreach (var p in snap.Processes)
+        {
+            procs.Add(new ProcessRow
+            {
+                Gpu = p.GpuIndex.ToString(),
+                Pid = p.Pid.ToString(),
+                Name = string.IsNullOrWhiteSpace(p.ProcessName) ? $"pid {p.Pid}" : p.ProcessName,
+                Kind = p.Kind.ToString(),
+                Memory = Theme.Mb(p.MemoryUsedBytes) + " MB",
+            });
+        }
+        _processGrid.ItemsSource = procs;
+
+        // ── Charts tab: per-metric series dict from the history ──
+        UpdateCharts();
+
         _statusText.Text = string.IsNullOrWhiteSpace(_monitor?.StatusMessage)
             ? string.Empty
             : _monitor!.StatusMessage;
+    }
+
+    /// <summary>
+    /// (Re)builds every <see cref="MetricChart"/> from <see cref="_history"/>.
+    /// Called on the UI thread from <see cref="ApplySnapshot"/>; idempotent.
+    /// </summary>
+    private void UpdateCharts()
+    {
+        if (_charts.Count == 0) return;
+
+        for (int c = 0; c < _charts.Count; c++)
+        {
+            var spec = _specs[c];
+            var seriesList = new List<KeyValuePair<int, IReadOnlyList<double>>>();
+            double max = _runningMax[c];
+
+            foreach (var gpu in _history.GpuIndices)
+            {
+                var series = spec.Selector(_history.GetSeries(gpu));
+                var list = new List<double>(series.Count);
+                foreach (var v in series)
+                {
+                    list.Add(v);
+                    if (v > max) max = v;
+                }
+                seriesList.Add(new KeyValuePair<int, IReadOnlyList<double>>(gpu, list));
+            }
+
+            _runningMax[c] = max;
+            double ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
+            _charts[c].SetSeries(seriesList, ceiling, spec.Title);
+        }
+    }
+
+    /// <summary>Appends one activity-log entry to the Log tab and scrolls to it.</summary>
+    private void AppendLog(HectorBravo.Nvidia.Contracts.AppLogEntry entry)
+    {
+        _logList.Items.Add(entry.Formatted);
+        _logList.ScrollIntoView(_logList.Items[^1]);
+    }
+
+    /// <summary>Clears the in-memory log and the Log tab's UI list (UI thread).</summary>
+    private void ClearLog()
+    {
+        _log.Clear();
+        _logList.Items.Clear();
     }
 
     private static string PctOrNa(int value)
@@ -329,5 +420,137 @@ public class MainWindow : Window
         public string MemClock { get; init; } = string.Empty;
         public string Fan { get; init; } = string.Empty;
         public string PState { get; init; } = string.Empty;
+    }
+
+    /// <summary>Per-row view model for the Processes tab (pre-formatted strings).</summary>
+    public sealed class ProcessRow
+    {
+        public string Gpu { get; init; } = string.Empty;
+        public string Pid { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string Kind { get; init; } = string.Empty;
+        public string Memory { get; init; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Declares one charted metric: its title, the Y-axis ceiling, and a selector
+    /// that maps a GPU's <see cref="HectorBravo.Nvidia.Contracts.GpuMetricSample"/>
+    /// series to the doubles to plot.
+    /// </summary>
+    private sealed record ChartSpec(
+        string Title,
+        double Ceiling,
+        Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, IReadOnlyList<double>> Selector);
+
+    /// <summary>Builds the 4-tab control (Overview / Charts / Processes / Log).</summary>
+    private TabControl BuildTabs()
+    {
+        var tabs = new TabControl
+        {
+            Background = Theme.Bg,
+            BorderBrush = Theme.Border,
+            BorderThickness = new Thickness(0),
+            Margin = new Thickness(8, 0, 8, 0),
+        };
+        StyleTabControl(tabs);
+
+        // ── Overview ────────────────────────────────────────────
+        var overview = new TabItem { Header = "Overview", Content = _grid };
+
+        // ── Charts ──────────────────────────────────────────────
+        var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
+        _specs.Add(new ChartSpec("GPU Utilization (%)", 100,
+            s => s.Select(x => (double)x.GpuUtilizationPct).ToList()));
+        _specs.Add(new ChartSpec("Memory Utilization (%)", 100,
+            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList()));
+        _specs.Add(new ChartSpec("Temperature (°C)", 100,
+            s => s.Select(x => (double)x.TemperatureGpu).ToList()));
+        _specs.Add(new ChartSpec("Power (W)", 400,
+            s => s.Select(x => x.PowerWatts).ToList()));
+        _specs.Add(new ChartSpec("GPU Clock (MHz)", 2100,
+            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
+        _specs.Add(new ChartSpec("Memory Used (MiB)", 16384,
+            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList()));
+        foreach (var spec in _specs)
+        {
+            var chart = new MetricChart(spec.Title);
+            _charts.Add(chart);
+            stack.Children.Add(chart);
+        }
+        _chartsScroll = new System.Windows.Controls.ScrollViewer
+        {
+            Content = stack,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var chartsTab = new TabItem { Header = "Charts", Content = _chartsScroll };
+
+        // ── Processes ───────────────────────────────────────────
+        _processGrid = BuildProcessGrid();
+        var processesTab = new TabItem { Header = "Processes", Content = _processGrid };
+
+        // ── Log ─────────────────────────────────────────────────
+        _logList = new ListBox
+        {
+            Background = Theme.Bg,
+            Foreground = Theme.Fg,
+            BorderBrush = Theme.Border,
+            BorderThickness = new Thickness(1),
+            FontFamily = Theme.Mono,
+            FontSize = 12,
+            Padding = new Thickness(6),
+        };
+        _clearLogBtn = new Button
+        {
+            Content = "Clear",
+            Foreground = Theme.Fg,
+            Background = Theme.Panel,
+            BorderBrush = Theme.Border,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(10, 3, 10, 3),
+            Margin = new Thickness(0, 0, 8, 0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        _clearLogBtn.Click += (_, _) => ClearLog();
+        var logHeader = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        logHeader.Children.Add(Theme.MakeLabel("Activity log"));
+        logHeader.Children.Add(_clearLogBtn);
+        var logStack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
+        logStack.Children.Add(logHeader);
+        logStack.Children.Add(_logList);
+        var logTab = new TabItem { Header = "Log", Content = logStack };
+
+        tabs.Items.Add(overview);
+        tabs.Items.Add(chartsTab);
+        tabs.Items.Add(processesTab);
+        tabs.Items.Add(logTab);
+
+        return tabs;
+    }
+
+    /// <summary>Builds the DataGrid that lists every running process, per GPU.</summary>
+    private static DataGrid BuildProcessGrid()
+    {
+        var grid = Theme.MakeDataGrid("Processes");
+        grid.HorizontalAlignment = HorizontalAlignment.Stretch;
+        grid.Margin = new Thickness(16, 0, 16, 0);
+        grid.Columns.Add(NumCol("GPU", "Gpu", alignRight: false));
+        grid.Columns.Add(NumCol("PID", "Pid", alignRight: false));
+        grid.Columns.Add(NumCol("Process", "Name", alignRight: false));
+        grid.Columns.Add(NumCol("Kind", "Kind", alignRight: false));
+        grid.Columns.Add(NumCol("Mem (MB)", "Memory"));
+        return grid;
+    }
+
+    /// <summary>Applies the dark theme to the tab control and its headers.</summary>
+    private static void StyleTabControl(TabControl tabs)
+    {
+        var headerStyle = new Style(typeof(TabItem));
+        headerStyle.Setters.Add(new Setter(TabItem.ForegroundProperty, Theme.Muted));
+        headerStyle.Setters.Add(new Setter(TabItem.FontFamilyProperty, Theme.Mono));
+        headerStyle.Setters.Add(new Setter(TabItem.FontSizeProperty, 12.0));
+        headerStyle.Setters.Add(new Setter(TabItem.PaddingProperty, new Thickness(12, 6, 12, 6)));
+        tabs.ItemContainerStyle = headerStyle;
     }
 }
