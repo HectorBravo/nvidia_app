@@ -4,9 +4,64 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 1 completed task(s) - [View completed tasks](#completed-tasks)
+> 2 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T2: Power column shows usage / cap
+
+- **Status**: done
+- **Type**: fix
+- **Created**: 07-10-2026 20:34:00
+- **Last Updated**: 07-10-2026 20:45:00
+- **Time Spent**: 11m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: [`7285910`](https://github.com/HectorBravo/nvidia_app/commit/7285910) — pushed to `feat/ai-nvidia-monitor-app`
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (07-10-2026 20:34): the **Power** column should show the power **cap** (limit) in addition to usage, slash-separated, with the unit at the end and removed from the column header — mirroring the existing **Memory** column (`used / total MB`). Applies to both the console table (`NvmlTest` `SmiFormatter`) and the WPF grid.
+  - **DATA**: `GpuSnapshot.EnforcedPowerLimitMw` is the "cap" — the effective power limit enforced by the driver (what `nvidia-smi` shows as `power.limit` / the "Cap" in `Pwr:Usage/Cap`). Populated in `NvmlCoreService` (line 407) via `GetU32`, which returns a **-1 sentinel** when unavailable → `< 0` cleanly means "cap unknown".
+  - **CONSOLE** (`src/NvmlTest/SmiFormatter.cs`): header `Power W` → `Power`; new wider column `WPower = 18` (matches Memory's `WMem = 18`); value now `Power(usageMw, capMw)` → `{Watts(usage)} / {Watts(cap)} W`. Split the old single-arg `Power` into a unit-less `Watts` helper (mW→`0.0` W, `<0`→N/A) reused for both. Verified vs `nvidia-smi --query-gpu=power.draw,power.limit`: GPU0 `41.7 / 430.0 W`, GPU1 `144.6 / 340.0 W`, GPU2 `20.5 / 430.0 W` (matches; 1-sec sample drift only).
+  - **WPF** (`src/NvidiaMonitor/MainWindow.cs`): grid header `Power` → `Power (usage/cap)` (matches the `Memory (used/total)` naming style); row value `WattsOrNa` → `PowerUsageCapOrNa(usageMw, capMw)` = `{WattsOnly(usage)} / {WattsOnly(cap)} W` (`WattsOnly` = `Theme.Watts`, `<0`→N/A). The WPF **headless** `--print` one-line summary (`App.cs`: `power=41.8 W`) was left untouched — it's a key=value line, not the column the user referenced.
+  - **SCOPE**: only the Power column changed. Util %, Mem %, Temp, Memory, MemClk, PSt, Fan are all untouched (the earlier pending `GPU Usage`/`Mem usage` header rename is NOT part of this request and remains unapplied).
+  - **BUILD**: full solution `Release` = 0 warnings / 0 errors. The standalone `.exe`s in git-ignored `bin/` are from the prior commit and do NOT include this change; rebuild with `powershell -File build_release.ps1` if you need them updated.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+- (07-10-2026 20:34) "show also the Power cap not only the usage, on the power column, and also separate the values by a / and use the unit at the end removing it from the column header" -> Power column now renders `usage / cap W` in both console + WPF.
+
+### Subtasks / Plan
+
+- [x] T2.1 - Console (`SmiFormatter`): Power header `Power W` → `Power`, value `usage / cap W`, wider `WPower` col, split unit-less `Watts` helper
+- [x] T2.2 - WPF (`MainWindow`): Power grid header → `Power (usage/cap)`, value → `usage / cap W` (`PowerUsageCapOrNa`/`WattsOnly`)
+- [x] T2.3 - Full solution Release build (0 warnings / 0 errors) + verify console output vs `nvidia-smi --query-gpu=power.draw,power.limit`
+- [x] T2.4 - Commit code on `feat/ai-nvidia-monitor-app` + mirror this tasklog entry to `main` (`docs(ai)`)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained; a new session can resume from here without other context.
+
+- **What was done**: the Power column in BOTH `src/NvmlTest/SmiFormatter.cs` and `src/NvidiaMonitor/MainWindow.cs` now shows `usage / cap W` (unit at the end, removed from the header; cap = `EnforcedPowerLimitMw`). The console Power column width was widened to 18 to fit. Everything else in both files is unchanged.
+- **Key files & lines** (as of this change, `feat/ai-nvidia-monitor-app`):
+  - `src/NvmlTest/SmiFormatter.cs`: `WPower = 18` const; header row `PadL("Power", WPower)`; separator `Dash(WPower)`; value row `PadL(Power(g.PowerMw, g.EnforcedPowerLimitMw), WPower)`; helpers `Power(int usageMw, int capMw)` and `Watts(int mw)`.
+  - `src/NvidiaMonitor/MainWindow.cs`: `Power = PowerUsageCapOrNa(g.PowerMw, g.EnforcedPowerLimitMw)` in `ApplySnapshot`; helpers `PowerUsageCapOrNa(int,int)` + `WattsOnly(int)`; grid `NumCol("Power (usage/cap)", "Power")`.
+  - `src/NvidiaMonitor/App.cs` headless `--print` line: UNCHANGED (still `power={FmtWatts(g.PowerMw)}`).
+- **Why `EnforcedPowerLimitMw`**: it's the effective/enforced power cap (matches `nvidia-smi` `power.limit` / the "Cap" in `Pwr:Usage/Cap`). The other limit fields (Default/Min/Max) were intentionally NOT used.
+- **Sentinels**: engine `GetU32` returns -1 when a call is unavailable, so both usage and cap are `<0`-gated to `N/A`; a valid `0` (idle) prints as `0.0`.
+- **Next steps (optional, only if the user asks)**:
+  1. The earlier pending request to rename console headers (`Util %`→`GPU Usage`, `Mem %`→`Mem usage`, value `34 %`) and WPF columns to `GPU Usage`/`Mem usage` — still NOT done; would be a follow-up task (header rename + space-separated `%`).
+  2. The WPF `--print` one-line summary could also be extended to `power=41.8/430 W` if consistency there is wanted.
+  3. Regenerate the standalone `bin/` exes (`powershell -File build_release.ps1`) so the published `.exe`s reflect the new Power column.
+- **Git convention (this repo)**: code changes commit on `feat/ai-nvidia-monitor-app` (itself an `ai-*` feature branch); the `ai/AI_TASKLOG.md` tasklog gets a dedicated `docs(ai): [ai] ...` commit mirrored to `main` (the repo owner's main branch), NOT pushed to the feature branch. Identity: `GIT_AUTHOR_NAME=AI_bot` + `GIT_COMMITTER_NAME=AI_bot` env vars; email left to the user's `git config user.email` (hbravo@cuic.net). Push over HTTPS (gh token, `repo` scope; `gh auth status` confirms logged in). Commit messages carry the `[ai]` tag after the type.
 
 ---
 
@@ -171,3 +226,4 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
