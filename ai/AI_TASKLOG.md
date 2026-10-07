@@ -4,10 +4,64 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 2 completed task(s) - [View completed tasks](#completed-tasks)
+> 3 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T3: Update README for published bin/ executables
+
+- **Status**: done
+- **Type**: docs
+- **Created**: 07-10-2026 21:40:27
+- **Last Updated**: 07-10-2026 21:53:22
+- **Time Spent**: 13m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app) — continued on the existing feature (AI) branch
+- **Commit(s)**: [`19bb435`](https://github.com/HectorBravo/nvidia_app/commit/19bb435) — README, pushed to `feat/ai-nvidia-monitor-app` (before-log `c73e21e` also pushed)
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (07-10-2026 21:40): "update the readme with the latest changes, since now for example there are binaries and dotnet run is no longer used" → make the README reflect that the `bin/` `.exe` binaries are the way to run (primary path), and how they are produced.
+  - **CONTEXT**: `bin/` is git-ignored (`.gitignore` line 2). It holds framework-dependent `dotnet publish` outputs: `bin\NvidiaMonitor\NvidiaMonitor.exe` (TFM `net8.0-windows` + WPF → needs the .NET 8 **Desktop** runtime) and `bin\NvmlTest\NvmlTest.exe` (TFM `net8.0` → needs only the .NET 8 runtime). Confirmed via `*.runtimeconfig.json` (`Microsoft.NETCore.App 8.0.0` + `Microsoft.WindowsDesktop.App` for the WPF app). `build_release.ps1` runs `dotnet build nvidia_app.sln -c Release` (logs to `%TEMP%\full_build.log`) — it **builds** but does NOT emit `bin/`; the `bin/` outputs come from a separate `dotnet publish ... -o bin/<proj>`.
+  - **VERIFIED by running both exes** (3× RTX 3090, driver 617.42 / CUDA 13.4 / NVML 13.617.42):
+    - `NvmlTest.exe --print` → one-shot `nvidia-smi`-style **table** (header row + one row per GPU: GPU Usage / Mem Usage / Temp / Power / Memory / MemClk / PSt / Fan).
+    - `NvidiaMonitor.exe --print` → a **header line** (`[NvidiaMonitor] driver=.. cuda=.. nvml=.. gpus=N`) + **one compact `key=value` summary line per GPU** (`util=..%  mem=..%  temp=..C  power=.. W  mem=..../.. MB  fan=..%  perf=..`). **NOT** the same table as `NvmlTest` — old README line 24 wrongly said it "does the same".
+  - **CHANGES** to `README.md`: (1) **Run** → run the `bin/` `.exe`s directly (primary; `dotnet run` demoted to a build-from-source fallback). (2) **Build** → `dotnet build` for the solution + the `dotnet publish ... -o bin/<proj>` commands that produce the runnable binaries + `build_release.ps1`. (3) **Features › Headless CLI** bullet → corrected to describe `NvidiaMonitor --print` as a one-line summary per GPU (header + `key=value`), not "the same". (4) **Requirements** → split: run = .NET 8 runtime (+ Desktop runtime for WPF), build = .NET 8 SDK.
+  - **SCOPE**: README-only, no source changes. Both front-ends' behavior is unchanged.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+- (07-10-2026 21:40) "update the readme with the latest changes, since now for example there are binaries and dotnet run is no longer used" → README Run/Build sections now use the published `bin/` executables as the primary path.
+
+### Subtasks / Plan
+
+- [x] T3.1 - Write this tasklog entry before code changes (before-push commit `c73e21e`)
+- [x] T3.2 - Run section: run `bin\*.exe` directly; demote `dotnet run` to a build-from-source fallback (`<details>` block)
+- [x] T3.3 - Build section: `dotnet build` + `dotnet publish ... -o bin/<proj>` (framework-dependent) + `build_release.ps1`
+- [x] T3.4 - Features › Headless CLI bullet: fix `NvidiaMonitor --print` description (one-line summary per GPU, not "the same")
+- [x] T3.5 - Requirements: .NET 8 runtime to run (Desktop runtime for WPF), .NET 8 SDK to build
+- [x] T3.6 - Commit README (`19bb435`) on `feat/ai-nvidia-monitor-app` + push; update log after push
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained; a new session can resume from here without other context.
+
+- **Repo / branch**: `D:\Repos\nvidia_app`, on `feat/ai-nvidia-monitor-app` (an `ai-*` feature branch; the working AI branch for this project). Remote: `https://github.com/HectorBravo/nvidia_app`. The detailed `README.md` and this tasklog both live on this branch (NOT `main` — `main` only has the old scaffold README from commit `c6fd96a`).
+- **Files touched this task**: `README.md` ONLY. No `.cs` changes.
+- **The two `bin/` outputs** (git-ignored, framework-dependent `dotnet publish`):
+  - `bin\NvmlTest\NvmlTest.exe` — console CLI; `--print` → nvidia-smi-style **table**. TFM `net8.0` → needs only the .NET 8 runtime.
+  - `bin\NvidiaMonitor\NvidiaMonitor.exe` — WPF dashboard; live by default, `--print` → header line + one `key=value` summary line per GPU (no window). TFM `net8.0-windows` (WPF) → needs the .NET 8 **Desktop** runtime.
+- **How `bin/` is produced** (document in the README Build section): `dotnet publish src/<Proj> -c Release -o bin/<Proj>` for each of the two executable projects. `build_release.ps1` only runs `dotnet build nvidia_app.sln -c Release` (does not emit `bin/`).
+- **WPF grid columns** (reference if the feature list is ever expanded): GPU, Name, GPU Util, Mem Util, Temp, Power (usage/cap), Memory (used/total), Mem Clock, Fan, P-State (`MainWindow.BuildGrid`).
+- **Git convention (this repo)**: code + docs commit on `feat/ai-nvidia-monitor-app`; the `ai/AI_TASKLOG.md` tasklog gets dedicated `docs(ai): [ai]` commits before and after the push. Identity: `GIT_AUTHOR_NAME=AI_bot` + `GIT_COMMITTER_NAME=AI_bot` env vars (email left to the user's `git config user.email`). Commit messages carry the `[ai]` tag after the colon. NOTE: the shell wrapper in this environment has been flaky with `;`-chained and `$(...)` commands — prefer simple one-statement commands and verify each git op's exit status.
 
 ---
 
@@ -226,4 +280,6 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
+| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | docs | 6/6 | 13m |
