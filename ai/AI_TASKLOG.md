@@ -4,11 +4,67 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/10 | 0m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 3 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T4: WPF charts, CLI --watch, Processes & Log tabs
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 07-10-2026 22:09:42
+- **Last Updated**: 07-10-2026 22:09:42
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (07-10-2026 22:09): "implementa los charts, el --print --watch, el activity log, y el tab processes"
+  - **2 agents parallel** (disjoint file ownership):
+    - **Agent A `cli-watch`**: `src/NvmlTest/**` → `--print --watch <sec>`
+    - **Agent B `wpf-ui`**: `src/NvidiaMonitor/**` → Charts + Processes + Log tabs
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+- (07-10-2026 22:09) 2-agent parallel orchestration → approved.
+
+### Subtasks / Plan
+
+- [ ] T4.1 — Tasklog entry + before-push commit
+- [ ] T4.2 — Agent A: `NvmlTest --print --watch <seconds>` (loop, Ctrl-C, clean exit)
+- [ ] T4.3 — Agent B: WPF **Charts** tab (per-GPU Polyline: Util, Mem, Temp, Power, Clock)
+- [ ] T4.4 — Agent B: WPF **Processes** tab (DataGrid: GPU/PID/Name/Kind/Mem)
+- [ ] T4.5 — Agent B: WPF **Log** tab (ListBox + Clear)
+- [ ] T4.6 — Agent B: Restructure `MainWindow` to use `TabControl`
+- [ ] T4.7 — Integrator: full solution build + fix
+- [ ] T4.8 — Integrator: live verify (3× RTX 3090)
+- [ ] T4.9 — Commit code on `feat/ai-nvidia-monitor-app` + push
+- [ ] T4.10 — Update tasklog after push + mirror to `main`
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery source. See repo files for full code.
+
+- **File ownership**: Agent A = `src/NvmlTest/**`. Agent B = `src/NvidiaMonitor/**`. Both READ-ONLY: `Contracts/**`, `NvmlCore/**`.
+- **Key types**: `GpuMetricSample` (Timestamp, GpuIndex, GpuUtilizationPct, MemoryUtilizationPct, PowerWatts, MemoryUsedBytes, TemperatureGpu, GpuClockMhz), `GpuHistory` (Add/GetSeries/Clear/GpuIndices, cap 300), `GpuProcessInfo` (GpuIndex, Pid, ProcessName?, Kind, MemoryUsedBytes, Timestamp), `AppLog` (EntryAdded event, Snapshot(), Clear()), `SystemSnapshot.Processes` → `IReadOnlyList<GpuProcessInfo>`.
+- **MainWindow current**: 333 lines, code-behind only, `_history` already receives samples in `ApplySnapshot`. Needs restructure to `TabControl`.
+- **NvmlTest/Program.cs**: 31 lines, top-level statements, currently `--print` only. Add `--watch <sec>`.
+- **Charts**: WPF native `Polyline` from `System.Windows.Shapes` (no third-party). One `Canvas` + `Polyline` per GPU per metric.
+- **Build**: `& 'C:\Program Files\dotnet\dotnet.exe' build D:\Repos\nvidia_app\nvidia_app.sln -c Release --nologo`
+- **PowerShell 5.1**: use `;` not `&&`.
+- **No XAML** in this project — pure C# code-behind.
+- **Environment**: 3× RTX 3090, driver 617.42, .NET 8 SDK 8.0.425.
 
 ---
 
