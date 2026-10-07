@@ -16,7 +16,7 @@
 - **Type**: feat
 - **Created**: 07-10-2026 16:59:24
 - **Last Updated**: 07-10-2026 19:52:00
-- **Time Spent**: 4h 07m
+- **Time Spent**: 4h 15m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app) - created+pushed; ALL implementation happens here (NOT main)
 - **Commit(s)**: [dd17559](https://github.com/HectorBravo/nvidia_app/commit/dd1755906b6bfd1be53812d39929101ca3900dcf) full implementation + README (feat branch, PUSHED); [c6fd96a](https://github.com/HectorBravo/nvidia_app/commit/c6fd96a6ba193e9889c12275263140d8157de9bd) scaffold (main)
 - **Blockers**: none
@@ -42,6 +42,7 @@
   - **Warnings policy**: `TreatWarningsAsErrors=true` on Contracts + NvmlCore; enable on all four at the final gate to guarantee zero warnings.
   - **Build command**: `powershell -File build_release.ps1` (repo root) -> `dotnet build nvidia_app.sln -c Release`.
   - **DONE** (07-10-2026 19:27): all subtasks complete. Feature branch pushed. NvmlTest --print verified vs nvidia-smi (driver 617.42, 3x RTX 3090, 24 GB). NvidiaMonitor --print verified headless. Full solution: 0 warnings / 0 errors (TreatWarningsAsErrors on all 4 projects). Planned next: per-GPU charts, processes/log tabs, process-name resolution, --watch, UI export buttons.
+- **Post-release fixes** (08-10-2026, user-reported): (a) idle GPUs showed all `N/A` — engine `GetU32`/`GetU32Two` returned `0` for unavailable, colliding with a valid idle `0`; now a `-1` sentinel is returned and only `<0` renders `N/A`, so idle GPUs correctly show `0`. (b) WPF numeric format used the thread (Spanish) culture → comma decimals (`43,7 W`); fixed with `InvariantCulture`. (c) memory display switched to **MB** (from GB/MiB), plain integer, no thousands/comma separator → `3364/24576 MB`. Committed `9d682e8` (a,b) + `5ec4352` (c) on `feat/ai-nvidia-monitor-app`; tasklog mirrored to `main`. Standalone framework-dependent `.exe`s regenerated into git-ignored `bin/`.
 
 ### User Confirmations
 
@@ -55,6 +56,7 @@ None yet.
 - (07-10-2026 17:50) Approved act-mode plan; chose "Kick off gh auth login --web now and give me the fresh device code" for GitHub auth.
 - (prior session) UI = Overview tab with ALL GPUs together + per-GPU detail tabs + Processes + Log; stack = C# WPF .NET 8; private repo `HectorBravo/nvidia_app`.
 - (07-10-2026 17:53:00) GitHub device code `C867-B042` authorized in browser -> `gh auth status` = logged in to **HectorBravo** (repo scope, HTTPS).
+- (08-10-2026 22:06:50) Display memory in **MB** (not GB/MiB), no thousands/comma separator -> `3364/24576 MB` (commit 5ec4352).
 
 ### Subtasks / Plan
 
