@@ -17,11 +17,12 @@
 - **Created**: 07-10-2026 16:59:24
 - **Last Updated**: 07-10-2026 17:54:35
 - **Time Spent**: 1h 56m
-- **Branch**: `feat/ai-nvidia-monitor-app` (pending creation)
-- **Commit(s)**: [c6fd96a](https://github.com/HectorBravo/nvidia_app/commit/c6fd96a6ba193e9889c12275263140d8157de9bd) main scaffold; feature branch pending
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app) - created+pushed; ALL implementation happens here (NOT main)
+- **Commit(s)**: [c6fd96a](https://github.com/HectorBravo/nvidia_app/commit/c6fd96a6ba193e9889c12275263140d8157de9bd) scaffold (main); feat branch @2ab00eb
 - **Blockers**: none
 - **Findings & Notes**:
   - **EXECUTION MODEL** (user directive ~18:45 prior session): two parallel subagents + integrator.
+  - **GIT WORKFLOW CORRECTION** (07-10-2026 17:55, user directive): all implementation goes on `feat/ai-nvidia-monitor-app` (created+pushed), committed+pushed INCREMENTALLY as each subagent delivers; this log goes to `main` with findings/issues recorded as they surface. (Was initially holding code for a single final close-out push - corrected.)
     - **Subagent A "NvmlCore"** = NVML engine (P/Invoke) + headless CLI. Owns ONLY `src/NvmlCore/**` + `src/NvmlTest/**`.
     - **Subagent B "NvidiaMonitor"** = full WPF UI. Owns ONLY `src/NvidiaMonitor/**`; builds with `-p:BuildProjectReferences=false` against the pre-built core so the two never collide on the same `obj/`.
   - **ARCHITECTURE**: `HectorBravo.Nvidia.Contracts` (net8.0) is the ONLY shared seam (records + interfaces + history + log + exporter). NvmlCore->Contracts; NvidiaMonitor->NvmlCore+Contracts at solution level, but Subagent B's code may reference Contracts-only public API.
