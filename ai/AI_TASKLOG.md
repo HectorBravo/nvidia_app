@@ -4,11 +4,64 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 00m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 4 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T5: Synchronized live GPU charts + project indexer
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 08-10-2026 01:35:00
+- **Last Updated**: 08-10-2026 02:27:02
+- **Time Spent**: 1h 00m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (08-10-2026 01:35, "continue, last message was aborted"): "Replace the NvidiaMonitor chart UI with synchronized native-WPF live GPU metric charts supporting timeline history, crosshair, scroll sync, zoom, and drag-to-reorder."
+  - **Supersedes T4 charts**: T4 shipped a single-GPU `MetricChart : Grid` (static line). T5 rewrites it into two types in a new `src/NvidiaMonitor/ChartController.cs`: `MetricChart : Border` (one metric, one polyline per GPU, native WPF shapes only — Canvas/Polyline/Line, no charting lib) + `ChartController` which owns the shared state (one seconds-since-start timeline, one visible window in minutes 2-60 default 10, one px-per-second scale, synchronized horizontal scroll, one shared red crosshair). The old `ChartPanel.cs` was deleted.
+  - **Shared timeline**: `UpdateCharts` builds a seconds-since-start timeline from the longest per-GPU series (`GpuHistory.GetSeries` gives per-sample timestamps) and front-pads shorter per-GPU arrays with zeros so newest samples stay right-aligned across all GPUs. `GpuHistory` capacity raised 300 -> 720 (12 min @ 1 Hz) so the default 10-min window fits.
+  - **Per-tick perf**: all charts share the timeline, so `UpdateCharts` now calls one combined `ChartController.OnDataTick()` per tick (resize -> follow -> redraw all) instead of a full all-charts redraw per chart.
+  - **Bug fixes this session**: (1) `GetSeries` returns `IReadOnlyList<T>` not an array (`.Count` + type fix). (2) `Redraw` mutated `Canvas.Children` while enumerating (now reverse-indexed). (3) `ValueAt` crosshair interpolation compared an array index against time-in-seconds (fixed to binary-search the shared `_tl`). (4) `AutoFollow` used a brittle fixed 4px "was-pinned" tolerance that broke at high zoom (now a `_followRight` latch set by real user scrolls, run AFTER canvas resize so it pins to the new width). Auto-follow/zoom wrap `ScrollToHorizontalOffset` in `_syncing` to stop re-entrant scroll propagation.
+  - **Build**: `dotnet build nvidia_app.sln -c Debug` -> **0 errors, 0 warnings** (all 4 projects). **Live NVML**: `NvmlTest --print` verified on 3x RTX 3090 (Driver 617.42 / CUDA 13.4 / NVML 13.617.42; GPU1 100%/74 degC, GPUs 0+2 idle).
+  - **project-indexer skill (Trigger 2 auto-refresh)**: source shape changed (new `ChartController.cs`, deleted `ChartPanel.cs`, edited `MainWindow.cs`), so `ai/PROJECT_DESCRIPTION.md` (11 sections + PROJECT_INDEXER freshness block) and root `AGENTS.md` (managed Mandatory-Reading + Freshness block) were created.
+  - **VERIFY**: interactive WPF chart behavior (live 1 Hz updates, crosshair, scroll-sync, Ctrl+wheel zoom, drag-to-reorder, NVML-loss clears crosshair) is a **manual** step — this headless session cannot display the window; the headless `--print` path is the automated proxy and passes.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (08-10-2026 02:27:02) Manually run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm the synchronized charts (live updates, crosshair spanning all charts, scroll-sync, Ctrl+wheel zoom, drag-to-reorder) behave as intended.
+
+**Confirmed (user provided):**
+
+- (08-10-2026 01:35:00) "continue, last message was aborted" → resume the in-progress chart rewrite + the pending project-indexer step (proceed as planned).
+
+### Subtasks / Plan
+
+- [x] T5.1 — Verify/complete `UpdateCharts` timeline + per-GPU alignment (samplesByGpu cache, front-pad)
+- [x] T5.2 — Fix compile (`IReadOnlyList` type) + rebuild solution (0 errors, 0 warnings)
+- [x] T5.3 — Runtime bug fixes: Redraw mutation, ValueAt index-vs-time, AutoFollow latch + resize-before-pin, per-tick perf
+- [x] T5.4 — Apply project-indexer skill (create `ai/PROJECT_DESCRIPTION.md` + `AGENTS.md`, verify I1-I5)
+- [ ] T5.5 — Manual WPF chart verification (blocked to user — headless session cannot display the window)
+- [x] T5.6 — Smoke test: launch `NvidiaMonitor.exe` on live NVML for 12 s → alive, no crash
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery notes (written for the agent, not the user).
+
+- **Files** (all under `src/NvidiaMonitor/`): `ChartController.cs` = `MetricChart : Border` + `ChartController` (new; old `ChartPanel.cs` deleted). `MainWindow.cs` = `_history = new GpuHistory(720)`, `_chartCtl = new ChartController()`, `ChartSpec` record now has `Unit`+`Decimals`, `UpdateCharts` builds the shared timeline, `BuildChartsTab` wires charts to `_chartCtl` + Ctrl+wheel zoom + viewport-width tracking + per-chart drag/drop; `System.Windows.Input` using added; crosshair cleared on NVML loss. `App.cs` (WPF entry, `[STAThread] Main`, `--print` headless) and `GpuPollingService` (~1 Hz) unchanged.
+- **Contracts** (unchanged this task, `src/HectorBravo.Nvidia.Contracts/`): `GpuHistory(capacity)` ring buffer — `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>` (oldest→newest, each sample has a `Timestamp`), `GpuIndices`; `GpuMetricSample` holds every per-GPU metric; `IGpuMonitorService` is the engine surface. `NvmlCore/NvmlCoreService` implements it; `NvmlCore/ref/nvml.h` is the authoritative P/Invoke reference. `TreatWarningsAsErrors=true` on Contracts + NvmlCore.
+- **How the chart stack works**: `MainWindow.UpdateCharts()` (UI thread, ~1 Hz) fetches each GPU's series once, builds one seconds-since-start `timeline[]` from the longest series, aligns each per-GPU value array to it (front-pad with 0; never trim the tail), computes per-chart `ceiling` (fixed 100 for the two % charts, else running-max * 1.1), stores via `MetricChart.SetSeries` (storage only), then calls `ChartController.OnDataTick()` once. `OnDataTick` = `RecomputePx()` (pxPerSec = viewportWidth / windowSeconds) → `RaiseRedraw()` (resize every canvas) → `AutoFollow()` (pin to newest if `_followRight`) → `RaiseRedraw()`. `MetricChart.Redraw` draws per-minute blue gridlines + one polyline per GPU + baseline + the persistent red dotted crosshair; `UpdateCrosshair` shows a red per-GPU value readout. `SetScrolled` propagates one chart's offset to the others (guarded by `_syncing`) and latches `_followRight` from real user scrolls. Ctrl+wheel → `Zoom` rescales `WindowMinutes` (2-60). Drag/drop is per `MetricChart` panel (WPF `DragDrop`).
+- **Build/run** (from `D:\Repos\nvidia_app`): `dotnet build nvidia_app.sln -c Debug` (0/0). Headless: `dotnet run --project src/NvmlTest -c Debug -- --print` (verified live) or `dotnet run --project src/NvidiaMonitor -c Debug -- --print`. Published: `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor`. dotnet at `C:\Program Files\dotnet\dotnet.exe` (may not be on PATH); SDK output is in Spanish (normal). This is a Windows-only WPF app (`net8.0-windows`).
+- **Git**: AI feature branch `feat/ai-nvidia-monitor-app` (created in T1); the user's protected branch is `main`. Per T1-T4 precedent, BOTH the code and `ai/AI_TASKLOG.md` are committed to the AI branch (T4 used exactly this). Log commits are dedicated `docs(ai): [ai] ...` and bracket the code commit (before/after). Identity = `GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot` (email stays the user's; never touch `git config`). This session's commit = 3 code files + 2 indexer files on the AI branch.
+- **ENVIRONMENT GOTCHAS (re-learned)**: this PowerShell wrapper mangles `"`/`>`/complex quoting — use single-quoted strings and `.ps1` files for anything complex. The `?:` ternary is NOT supported in this PowerShell; use `if/else` or `try/catch`. The `editor` tool IS available in this session (it was not in T1). Long `read_files` output can come back as a stale `[outdated]` cache — re-read via shell `Get-Content | Select-Object -Skip N -First M` for ground truth.
 
 ---
 
