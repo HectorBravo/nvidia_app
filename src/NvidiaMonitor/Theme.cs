@@ -56,14 +56,14 @@ public static class Theme
     public static string MiB(long bytes)
     {
         if (bytes < 0) return "N/A";
-        return $"{Contracts.Exporter.BytesToMiB(bytes):N0}";
+        return Contracts.Exporter.BytesToMiB(bytes).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    /// <summary>Watts from milliwatts, or "N/A" when zero/unknown.</summary>
+    /// <summary>Watts from milliwatts, or "N/A" when the value is a negative sentinel.</summary>
     public static string Watts(int mw)
     {
-        if (mw <= 0) return "N/A";
-        return $"{mw / 1000.0:0.0}";
+        if (mw < 0) return "N/A";
+        return (mw / 1000.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>Percent, or "N/A" when the raw value is the unknown sentinel.</summary>

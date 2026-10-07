@@ -91,12 +91,12 @@ public static class SmiFormatter
 
     private static string Spaces(int n) => new string(' ', n);
 
-    /// <summary>Integer metric; 0 (the NVML "unsupported" sentinel) renders as N/A.</summary>
-    private static string Int(int v) => v == 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture);
+    /// <summary>Integer metric; a negative sentinel (unknown) renders as N/A, a valid 0 renders as 0.</summary>
+    private static string Int(int v) => v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>Power: mW → watts, one decimal; 0 renders as N/A.</summary>
+    /// <summary>Power: mW → watts, one decimal; a negative sentinel renders as N/A, a valid 0 renders as 0.0.</summary>
     private static string Power(int mw) =>
-        mw == 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
+        mw < 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
 
     /// <summary>Memory: "used/total GB" with one decimal; 0 total renders as N/A.</summary>
     private static string Memory(long usedBytes, long totalBytes) =>

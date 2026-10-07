@@ -239,18 +239,21 @@ public sealed class NvmlCoreService : IGpuMonitorService
         }
     }
 
+    // Returns -1 when the metric is unavailable (missing symbol or NVML error).
+    // -1 is an "unknown" sentinel so a legitimate 0 (e.g. an idle GPU reporting
+    // 0% utilization) is preserved and can be rendered as 0, not N/A.
     private int GetU32<T>(IntPtr dev, T? fn, Func<T, IntPtr, int> call) where T : Delegate
     {
         if (fn == null)
         {
-            return 0;
+            return -1;
         }
 
         var p = Marshal.AllocHGlobal(4);
         try
         {
             var rc = Safe(fn, string.Empty, () => call(fn, p));
-            return rc == NvmlErr.Success ? Marshal.ReadInt32(p) : 0;
+            return rc == NvmlErr.Success ? Marshal.ReadInt32(p) : -1;
         }
         finally
         {
@@ -266,7 +269,7 @@ public sealed class NvmlCoreService : IGpuMonitorService
     {
         if (fn == null)
         {
-            return 0;
+            return -1;
         }
 
         var p1 = Marshal.AllocHGlobal(4);
@@ -274,7 +277,7 @@ public sealed class NvmlCoreService : IGpuMonitorService
         try
         {
             var rc = Safe(fn, string.Empty, () => call(fn, p1, p2));
-            return rc == NvmlErr.Success ? Marshal.ReadInt32(p1) : 0;
+            return rc == NvmlErr.Success ? Marshal.ReadInt32(p1) : -1;
         }
         finally
         {
@@ -607,7 +610,7 @@ public sealed class NvmlCoreService : IGpuMonitorService
         var total = GetU32(dev,
             Resolve<Nvml.DeviceGetNvLinkSupportedCount>("nvmlDeviceGetNvLinkSupportedCount"),
             (f, p) => f(dev, p));
-        if (total == 0)
+        if (total <= 0) // 0 = no NVLink, -1 = metric unavailable
         {
             return (0, 0);
         }
