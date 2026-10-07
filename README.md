@@ -1,19 +1,40 @@
 # nvidia_app
 
-A **Windows-native** WPF application (C# / .NET 8) that replicates `nvidia-smi` by talking
-**directly** to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not**
-shell out to `nvidia-smi`.
+A **Windows-native** application (C# / .NET 8) that reads NVIDIA GPUs by talking **directly**
+to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not** shell out to
+`nvidia-smi`. There are two front-ends over the same NVML engine:
 
-## Features
-- Live per-GPU telemetry: utilization, temperature, power, memory, clocks, fan, perf state,
-  ECC, NVLink and throttle reasons — all read from NVML.
-- Per-GPU running process list (compute + graphics) with process-name resolution.
-- A full **WPF** dashboard: all-GPU overview grid, per-GPU detail panels with live charts,
-  a processes tab, and an activity log.
-- Headless **CLI**: run the monitor's entry point with `--print` for a one-shot `nvidia-smi`
-  style table, or `--print --watch <seconds>` for a live-updating feed.
-- CSV / XML export of snapshots.
-- Graceful **no-GPU / no-driver** fallback with a human-readable explanation.
+- **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style table.
+- **`NvidiaMonitor`** — a **WPF** live dashboard (all-GPU overview grid, `~1 Hz` polling).
+
+## Features (v1)
+- Live per-GPU telemetry read straight from NVML: utilization (GPU + memory), temperature,
+  power draw and limits, memory (used/total/free), clocks, fan speed, perf state (P-state),
+  ECC mode/errors, NVLink count, and current throttle reasons.
+- Per-GPU **running-process** enumeration (compute + graphics) with PID, kind and per-process
+  memory.
+- **WPF dashboard**: a single all-GPU overview grid (index, name, GPU/mem utilization, temp,
+  power, memory used/total, memory clock, fan, P-state) with a header showing the
+  driver / CUDA / NVML versions and a status line; dark theme with the NVIDIA-green accent.
+- **Live polling**: a background thread reads NVML ~once a second and republishes snapshots to
+  the UI thread (never blocking the UI); a status-change event refreshes the view if a GPU is
+  plugged/unplugged or the driver comes and goes.
+- **Headless CLI**: `NvmlTest --print` prints one `nvidia-smi`-style table and exits `0` on
+  success (`1` when NVML / a GPU is unavailable, with the reason on stdout).
+  `NvidiaMonitor --print` does the same but through the WPF entry point (no window is opened).
+- **Graceful fallback**: when no GPU / driver / `nvml.dll` is present, the UI shows a friendly
+  explanation and the CLI prints the reason and a non-zero exit code.
+
+### Available in the shared `Contracts` project (ready to surface)
+- `Exporter.ToCsv` / `Exporter.ToXml`: serialize a snapshot to nvidia-smi-style **CSV** or
+  **XML**. (Wired to the engine; a one-click export button in the UI is a planned enhancement.)
+
+### Planned (next iteration)
+- Per-GPU detail tabs with live **charts** (utilization / memory / power / temperature / clock)
+  driven by `GpuHistory` (the ring-buffer contract is already in `Contracts`).
+- A **Processes** tab and an **activity log** tab in the UI (the engine already emits both).
+- **Process-name resolution** for the per-GPU process list (currently PID / kind / memory).
+- `--print --watch <seconds>` live feed and one-click **CSV / XML export** in the WPF UI.
 
 ## Solution layout
 | Project | Role |
@@ -34,15 +55,18 @@ dotnet build nvidia_app.sln -c Release
 
 ## Run
 ```powershell
-# WPF dashboard
+# WPF dashboard (live, ~1 Hz)
 dotnet run --project src/NvidiaMonitor -c Release
 
-# Headless one-shot table
+# Headless one-shot nvidia-smi-style table (no window)
 dotnet run --project src/NvidiaMonitor -c Release -- --print
 
-# Live headless feed (reprint every 2s, Ctrl-C to stop)
-dotnet run --project src/NvidiaMonitor -c Release -- --print --watch 2
+# Or use the dedicated CLI project
+dotnet run --project src/NvmlTest -c Release -- --print
 ```
+
+> The WPF dashboard polls in the background; closing the window stops polling and releases
+> NVML. The `--print` paths never open a window.
 
 ## Requirements
 - Windows with an NVIDIA GPU and a driver that ships `nvml.dll`
@@ -50,5 +74,11 @@ dotnet run --project src/NvidiaMonitor -c Release -- --print --watch 2
 - .NET 8 SDK.
 
 ## Notes
-- No third-party NuGet dependencies; charts are drawn with native WPF shapes.
-- Values NVML cannot report for a device are rendered as **N/A**.
+- **No third-party NuGet dependencies** — the only reference is the OS `nvml.dll` (loaded at
+  runtime via P/Invoke). The WPF UI is built from the native `System.Windows.Controls` /
+  `System.Windows.Shapes` stack only.
+- Values NVML cannot report for a device are rendered as **N/A** so a single missing metric
+  never aborts the whole read.
+- NVML is loaded from the driver's `nvml.dll` (typically
+  `%CommonProgramFiles(x86)%\NVIDIA Corporation\NVSMI`, falling back to `System32`). If the
+  library or a GPU is unavailable, the app degrades to a friendly message rather than crashing.
