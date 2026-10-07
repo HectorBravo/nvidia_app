@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 00m | none |
+| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
@@ -18,10 +18,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-10-2026 01:35:00
-- **Last Updated**: 08-10-2026 02:27:02
-- **Time Spent**: 1h 00m
+- **Last Updated**: 08-10-2026 02:41:00
+- **Time Spent**: 1h 06m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
-- **Commit(s)**: pending
+- **Commit(s)**: [`30373b7`](https://github.com/HectorBravo/nvidia_app/commit/30373b7) (code) + [`ab46071`](https://github.com/HectorBravo/nvidia_app/commit/ab46071) (project index) — pushed to `feat/ai-nvidia-monitor-app`
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (08-10-2026 01:35, "continue, last message was aborted"): "Replace the NvidiaMonitor chart UI with synchronized native-WPF live GPU metric charts supporting timeline history, crosshair, scroll sync, zoom, and drag-to-reorder."
