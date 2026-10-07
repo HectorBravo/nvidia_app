@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using HectorBravo.Nvidia.Contracts;
@@ -21,7 +22,10 @@ public class MainWindow : Window
     private readonly AppLog _log = new();
     private IGpuMonitorService? _monitor;
     private GpuPollingService? _polling;
-    private readonly GpuHistory _history = new(capacity: 300);
+    // 12 min of 1 Hz samples, so a 10-minute window (plus a little history) fits.
+    private readonly GpuHistory _history = new(capacity: 720);
+    // Shared timeline / zoom / crosshair / scroll state that keeps all charts in lock-step.
+    private readonly ChartController _chartCtl = new();
     private bool _disposed;
     private bool _closing; // set on Closed; stops in-flight UI marshalling
 
@@ -204,6 +208,7 @@ public class MainWindow : Window
         if (!_monitor.IsAvailable)
         {
             _history.Clear(); // don't let stale chart data linger
+            _chartCtl.ClearCross(); // hide the red crosshair on NVML loss
             _polling?.Pause();
             ShowFallback(string.IsNullOrWhiteSpace(message)
                 ? "NVML is not available on this system."
@@ -306,28 +311,76 @@ public class MainWindow : Window
     {
         if (_charts.Count == 0) return;
 
+        // Fetch each GPU's samples once per tick (avoids repeated lock + ToArray copies).
+        var samplesByGpu = new Dictionary<int, IReadOnlyList<GpuMetricSample>>();
+        int n = 0;
+        int firstGpu = 0;
+        foreach (var gpu in _history.GpuIndices)
+        {
+            var arr = _history.GetSeries(gpu);
+            samplesByGpu[gpu] = arr;
+            if (arr.Count > n)
+            {
+                n = arr.Count;
+                firstGpu = gpu;
+            }
+        }
+        if (n == 0) return;
+
+        // Shared timeline (seconds since start) from the longest series, so it spans the
+        // full history. Per-GPU value arrays are aligned to it below (front-padded with
+        // zeros when that GPU started later or stopped earlier, so the most-recent samples
+        // always sit at the right edge). Anchored at t=0: before the window fills, data
+        // plots from the left; once it overflows, the view pins to the newest and scrolls
+        // left back toward start.
+        var t0 = samplesByGpu[firstGpu][0].Timestamp;
+        var timeline = new double[n];
+        for (int i = 0; i < n; i++)
+            timeline[i] = (samplesByGpu[firstGpu][i].Timestamp - t0).TotalSeconds;
+
         for (int c = 0; c < _charts.Count; c++)
         {
             var spec = _specs[c];
-            var seriesList = new List<KeyValuePair<int, IReadOnlyList<double>>>();
+            var seriesList = new List<KeyValuePair<int, double[]>>();
             double max = _runningMax[c];
 
-            foreach (var gpu in _history.GpuIndices)
+            foreach (var kv in samplesByGpu)
             {
-                var series = spec.Selector(_history.GetSeries(gpu));
-                var list = new List<double>(series.Count);
-                foreach (var v in series)
+                var src = spec.Selector(kv.Value);
+                int m = src.Count;
+                if (m == 0) continue;
+
+                // Align this GPU's values to the shared timeline length (same 1 Hz cadence,
+                // so the newest samples matter). Front-pad with zeros if it has fewer
+                // samples; never trim the tail.
+                double[] arr = new double[n];
+                int srcStart = Math.Max(0, m - n); // oldest sample we keep
+                int lead = n - (m - srcStart); // leading zeros = n - samplesKept
+                if (lead > 0)
                 {
-                    list.Add(v);
-                    if (v > max) max = v;
+                    for (int i = 0; i < lead; i++) arr[i] = 0;
+                    for (int i = 0; i < n - lead; i++) arr[lead + i] = src[srcStart + i];
                 }
-                seriesList.Add(new KeyValuePair<int, IReadOnlyList<double>>(gpu, list));
+                else
+                {
+                    for (int i = 0; i < n; i++) arr[i] = src[m - n + i];
+                }
+
+                for (int i = 0; i < n; i++)
+                {
+                    if (arr[i] > max) max = arr[i];
+                }
+                seriesList.Add(new KeyValuePair<int, double[]>(kv.Key, arr));
             }
 
             _runningMax[c] = max;
             double ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
-            _charts[c].SetSeries(seriesList, ceiling, spec.Title);
+            _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals);
         }
+
+        // All charts share the timeline (same samples), so one combined tick resizes + follows +
+        // redraws every chart — far cheaper than a full all-charts redraw per chart per second.
+        _chartCtl.OnDataTick();
     }
 
     /// <summary>Appends one activity-log entry to the Log tab and scrolls to it.</summary>
@@ -439,8 +492,9 @@ public class MainWindow : Window
     /// </summary>
     private sealed record ChartSpec(
         string Title,
-        double Ceiling,
-        Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, IReadOnlyList<double>> Selector);
+        string Unit,
+        int Decimals,
+        Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, List<double>> Selector);
 
     /// <summary>Builds the 4-tab control (Overview / Charts / Processes / Log).</summary>
     private TabControl BuildTabs()
@@ -459,24 +513,27 @@ public class MainWindow : Window
 
         // ── Charts ──────────────────────────────────────────────
         var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
-        _specs.Add(new ChartSpec("GPU Utilization (%)", 100,
+        _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.GpuUtilizationPct).ToList()));
-        _specs.Add(new ChartSpec("Memory Utilization (%)", 100,
+        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList()));
-        _specs.Add(new ChartSpec("Temperature (°C)", 100,
+        _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList()));
-        _specs.Add(new ChartSpec("Power (W)", 400,
+        _specs.Add(new ChartSpec("Power (W)", " W", 1,
             s => s.Select(x => x.PowerWatts).ToList()));
-        _specs.Add(new ChartSpec("GPU Clock (MHz)", 2100,
+        _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
             s => s.Select(x => (double)x.GpuClockMhz).ToList()));
-        _specs.Add(new ChartSpec("Memory Used (MiB)", 16384,
+        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
             s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList()));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);
             _charts.Add(chart);
+            chart.Bind(_chartCtl);
             stack.Children.Add(chart);
         }
+
+        // CTRL + mouse-wheel zoom: changes how many minutes fit the view, across all charts.
         _chartsScroll = new System.Windows.Controls.ScrollViewer
         {
             Content = stack,
@@ -484,6 +541,16 @@ public class MainWindow : Window
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        _chartsScroll.PreviewMouseWheel += (_, e) =>
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
+            _chartCtl.Zoom(e.Delta < 0);
+            e.Handled = true;
+        };
+        // Keep the shared viewport width current (drives the pixels-per-second scale).
+        // Drag-and-drop reorder is handled on each chart panel itself (a panel is a drop target).
+        _chartsScroll.SizeChanged += (_, __) => _chartCtl.SetViewportWidth(Math.Max(0, _chartsScroll.ViewportWidth));
+        _chartCtl.SetViewportWidth(Math.Max(0, _chartsScroll.ViewportWidth));
         var chartsTab = new TabItem { Header = "Charts", Content = _chartsScroll };
 
         // ── Processes ───────────────────────────────────────────
