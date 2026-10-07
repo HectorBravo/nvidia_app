@@ -52,11 +52,11 @@ public static class Theme
     /// <summary>Formats a value, substituting "N/A" when <paramref name="available"/> is false.</summary>
     public static string Na(bool available, string value) => available ? value : "N/A";
 
-    /// <summary>Human MiB from bytes, or "N/A" when the size is the unknown sentinel (-1 / &lt; 0).</summary>
-    public static string MiB(long bytes)
+    /// <summary>MB from bytes, or "N/A" when the size is the unknown sentinel (-1 / &lt; 0). Invariant culture => no thousands separator.</summary>
+    public static string Mb(long bytes)
     {
         if (bytes < 0) return "N/A";
-        return Contracts.Exporter.BytesToMiB(bytes).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return (bytes / (1024 * 1024)).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>Watts from milliwatts, or "N/A" when the value is a negative sentinel.</summary>

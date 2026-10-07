@@ -70,7 +70,7 @@ public partial class App : Application
                     Console.WriteLine(
                         $"GPU[{g.Index}] {name}  util={FmtPct(g.GpuUtilizationPct)}  mem={FmtPct(g.MemoryUtilizationPct)}  " +
                         $"temp={FmtInt(g.TemperatureGpu)}C  power={FmtWatts(g.PowerMw)}  " +
-                        $"mem={Theme.MiB(g.MemoryUsedBytes)}/{Theme.MiB(g.MemoryTotalBytes)} MiB  fan={FmtPct(g.FanSpeedPct)}  perf={g.PerfStateLabel}");
+                        $"mem={Theme.Mb(g.MemoryUsedBytes)}/{Theme.Mb(g.MemoryTotalBytes)} MB  fan={FmtPct(g.FanSpeedPct)}  perf={g.PerfStateLabel}");
                 }
             }
 

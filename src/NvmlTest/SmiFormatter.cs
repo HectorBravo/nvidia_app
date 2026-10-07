@@ -15,7 +15,7 @@ public static class SmiFormatter
     private const int WIdx = 2;
     private const int WName = 24;
     private const int WNum = 8;
-    private const int WMem = 13;
+    private const int WMem = 16;
     private const int Sep = 2;
 
     public static string Format(SystemSnapshot s)
@@ -98,16 +98,11 @@ public static class SmiFormatter
     private static string Power(int mw) =>
         mw < 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
 
-    /// <summary>Memory: "used/total GB" with one decimal; 0 total renders as N/A.</summary>
+    /// <summary>Memory: "used/total MB"; 0 total renders as N/A. Plain integer MB, no thousands separator.</summary>
     private static string Memory(long usedBytes, long totalBytes) =>
         totalBytes <= 0 ? "N/A"
-        : $"{Gb(usedBytes)}/{Gb(totalBytes)} GB";
+        : $"{Mb(usedBytes)}/{Mb(totalBytes)} MB";
 
-    /// <summary>Bytes → GiB, one decimal (e.g. 24576 MiB → "24.0").
-    /// NOTE: the format spec must be "0.0" (a digit placeholder after the decimal),
-    /// NOT "0.1" — in a .NET custom numeric format string the "1" is a literal
-    /// character (and the decimal point is dropped when no digit placeholder
-    /// follows it), which would render 24.0 as "241".</summary>
-    private static string Gb(long bytes) =>
-        (bytes / (1024.0 * 1024 * 1024)).ToString("0.0", CultureInfo.InvariantCulture);
+    /// <summary>Bytes → MB (integer). Invariant culture so no thousands/comma separator is ever emitted.</summary>
+    private static string Mb(long bytes) => (bytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
 }

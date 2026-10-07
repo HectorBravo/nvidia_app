@@ -240,7 +240,7 @@ public class MainWindow : Window
                 MemUtil = PctOrNa(g.MemoryUtilizationPct),
                 Temp = g.TemperatureGpu > 0 ? $"{g.TemperatureGpu} °C" : "N/A",
                 Power = WattsOrNa(g.PowerMw),
-                MemUsage = Theme.MiB(g.MemoryUsedBytes) + " / " + Theme.MiB(g.MemoryTotalBytes) + " MiB",
+                MemUsage = Theme.Mb(g.MemoryUsedBytes) + " / " + Theme.Mb(g.MemoryTotalBytes) + " MB",
                 MemClock = g.MemoryClockMhz > 0 ? $"{g.MemoryClockMhz} MHz" : "N/A",
                 Fan = g.FanSpeedPct > 0 ? $"{g.FanSpeedPct} %" : "N/A",
                 PState = g.PerfStateLabel,
