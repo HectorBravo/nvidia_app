@@ -239,7 +239,7 @@ public class MainWindow : Window
                 GpuUtil = PctOrNa(g.GpuUtilizationPct),
                 MemUtil = PctOrNa(g.MemoryUtilizationPct),
                 Temp = g.TemperatureGpu > 0 ? $"{g.TemperatureGpu} °C" : "N/A",
-                Power = WattsOrNa(g.PowerMw),
+                Power = PowerUsageCapOrNa(g.PowerMw, g.EnforcedPowerLimitMw),
                 MemUsage = Theme.Mb(g.MemoryUsedBytes) + " / " + Theme.Mb(g.MemoryTotalBytes) + " MB",
                 MemClock = g.MemoryClockMhz > 0 ? $"{g.MemoryClockMhz} MHz" : "N/A",
                 Fan = g.FanSpeedPct > 0 ? $"{g.FanSpeedPct} %" : "N/A",
@@ -256,8 +256,11 @@ public class MainWindow : Window
     private static string PctOrNa(int value)
         => value < 0 ? "N/A" : value + "%";
 
-    private static string WattsOrNa(int mw)
-        => mw <= 0 ? "N/A" : Theme.Watts(mw) + " W";
+    private static string PowerUsageCapOrNa(int usageMw, int capMw)
+        => usageMw < 0 ? "N/A" : $"{WattsOnly(usageMw)} / {WattsOnly(capMw)} W";
+
+    private static string WattsOnly(int mw)
+        => mw < 0 ? "N/A" : Theme.Watts(mw);
 
     private static string BuildVersionLine(SystemSnapshot snap)
     {
@@ -278,7 +281,7 @@ public class MainWindow : Window
         grid.Columns.Add(NumCol("GPU Util", "GpuUtil"));
         grid.Columns.Add(NumCol("Mem Util", "MemUtil"));
         grid.Columns.Add(NumCol("Temp", "Temp"));
-        grid.Columns.Add(NumCol("Power", "Power"));
+        grid.Columns.Add(NumCol("Power (usage/cap)", "Power"));
         grid.Columns.Add(NumCol("Memory (used/total)", "MemUsage"));
         grid.Columns.Add(NumCol("Mem Clock", "MemClock"));
         grid.Columns.Add(NumCol("Fan", "Fan"));

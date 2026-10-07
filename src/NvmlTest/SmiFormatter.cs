@@ -16,6 +16,7 @@ public static class SmiFormatter
     private const int WName = 24;
     private const int WNum = 8;
     private const int WMem = 18;
+    private const int WPower = 18;
     private const int Sep = 2;
 
     public static string Format(SystemSnapshot s)
@@ -42,7 +43,7 @@ public static class SmiFormatter
         sb.Append(PadL("Util %", WNum)).Append(Spaces(Sep));
         sb.Append(PadL("Mem %", WNum)).Append(Spaces(Sep));
         sb.Append(PadL("Temp °C", WNum)).Append(Spaces(Sep));
-        sb.Append(PadL("Power W", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
         sb.Append(PadL("Memory", WMem)).Append(Spaces(Sep));
         sb.Append(PadL("MemClk", WNum)).Append(Spaces(Sep));
         sb.Append(PadL("PSt", WNum)).Append(Spaces(Sep));
@@ -55,7 +56,7 @@ public static class SmiFormatter
         sb.Append(Dash(WNum)).Append(Spaces(Sep));
         sb.Append(Dash(WNum)).Append(Spaces(Sep));
         sb.Append(Dash(WNum)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
+        sb.Append(Dash(WPower)).Append(Spaces(Sep));
         sb.Append(Dash(WMem)).Append(Spaces(Sep));
         sb.Append(Dash(WNum)).Append(Spaces(Sep));
         sb.Append(Dash(WNum)).Append(Spaces(Sep));
@@ -69,7 +70,7 @@ public static class SmiFormatter
             sb.Append(PadL(Int(g.GpuUtilizationPct), WNum)).Append(Spaces(Sep));
             sb.Append(PadL(Int(g.MemoryUtilizationPct), WNum)).Append(Spaces(Sep));
             sb.Append(PadL(Int(g.TemperatureGpu), WNum)).Append(Spaces(Sep));
-            sb.Append(PadL(Power(g.PowerMw), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Power(g.PowerMw, g.EnforcedPowerLimitMw), WPower)).Append(Spaces(Sep));
             sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMem)).Append(Spaces(Sep));
             sb.Append(PadL(Int(g.MemoryClockMhz), WNum)).Append(Spaces(Sep));
             sb.Append(PadL(g.PerfStateLabel, WNum)).Append(Spaces(Sep));
@@ -97,8 +98,12 @@ public static class SmiFormatter
     /// <summary>Integer metric; a negative sentinel (unknown) renders as N/A, a valid 0 renders as 0.</summary>
     private static string Int(int v) => v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>Power: mW → watts, one decimal; a negative sentinel renders as N/A, a valid 0 renders as 0.0.</summary>
-    private static string Power(int mw) =>
+    /// <summary>Power: "usage / cap W" (space-separated, unit at the end); a negative usage sentinel renders N/A.</summary>
+    private static string Power(int usageMw, int capMw) =>
+        usageMw < 0 ? "N/A" : $"{Watts(usageMw)} / {Watts(capMw)} W";
+
+    /// <summary>mW → watts, one decimal; a negative sentinel renders as N/A, a valid 0 renders as 0.0.</summary>
+    private static string Watts(int mw) =>
         mw < 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
 
     /// <summary>Memory: "used / total MB" (space-separated); 0 total renders as N/A. Plain integer MB, no thousands separator.</summary>
