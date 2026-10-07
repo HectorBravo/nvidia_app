@@ -18,7 +18,7 @@ public static class SmiFormatter
     private const int WMemUtil = 9;   // "Mem Usage"  | "100 %"
     private const int WTemp    = 6;   // "Temp"       | "100 °C"
     private const int WPower   = 15;  // "Power"      | "112.2 / 430.0 W"
-    private const int WMemory  = 15;  // "Memory"     | "3192 / 24576 MB"
+    private const int WMemory  = 17;  // "Memory"     | "23784 / 24576 MB"
     private const int WMemClk  = 8;   // "MemClk"     | "9999 MHz"
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 5;   // "Fan"        | "100 %"

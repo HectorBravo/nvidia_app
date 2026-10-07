@@ -117,7 +117,7 @@ public static class Theme
         s.Setters.Add(new Setter(DataGridColumnHeader.FontSizeProperty, 11.0));
         s.Setters.Add(new Setter(DataGridColumnHeader.FontWeightProperty, FontWeights.SemiBold));
         s.Setters.Add(new Setter(DataGridColumnHeader.PaddingProperty, new Thickness(8, 6, 8, 6)));
-        s.Setters.Add(new Setter(DataGridColumnHeader.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+        s.Setters.Add(new Setter(DataGridColumnHeader.HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
         _colHeaderStyle = s;
         return s;
     }
