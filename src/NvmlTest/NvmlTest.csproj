@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>HectorBravo.Nvidia.Test</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NvmlCore\NvmlCore.csproj" />
+    <ProjectReference Include="..\HectorBravo.Nvidia.Contracts\HectorBravo.Nvidia.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

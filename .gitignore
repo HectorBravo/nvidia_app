@@ -1,0 +1,21 @@
+## .NET / Visual Studio
+bin/
+obj/
+out/
+publish/
+artifacts/
+
+## IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+
+## OS
+Thumbs.db
+desktop.ini
+
+## Local test output
+*.log.csv
+*.log.xml
