@@ -4,23 +4,23 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | in_progress | docs | 1/6 | 0m | none |
+| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 2 completed task(s) - [View completed tasks](#completed-tasks)
+> 3 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T3: Update README for published bin/ executables
 
-- **Status**: in_progress
+- **Status**: done
 - **Type**: docs
 - **Created**: 07-10-2026 21:40:27
-- **Last Updated**: 07-10-2026 21:40:27
-- **Time Spent**: 0m
+- **Last Updated**: 07-10-2026 21:53:22
+- **Time Spent**: 13m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app) — continued on the existing feature (AI) branch
-- **Commit(s)**: pending
+- **Commit(s)**: [`19bb435`](https://github.com/HectorBravo/nvidia_app/commit/19bb435) — README, pushed to `feat/ai-nvidia-monitor-app` (before-log `c73e21e` also pushed)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (07-10-2026 21:40): "update the readme with the latest changes, since now for example there are binaries and dotnet run is no longer used" → make the README reflect that the `bin/` `.exe` binaries are the way to run (primary path), and how they are produced.
@@ -43,12 +43,12 @@ None yet.
 
 ### Subtasks / Plan
 
-- [x] T3.1 - Write this tasklog entry before code changes (before-push commit)
-- [ ] T3.2 - Run section: run `bin\*.exe` directly; demote `dotnet run` to a build-from-source fallback
-- [ ] T3.3 - Build section: `dotnet build` + `dotnet publish ... -o bin/<proj>` (framework-dependent) + `build_release.ps1`
-- [ ] T3.4 - Features › Headless CLI bullet: fix `NvidiaMonitor --print` description (one-line summary per GPU, not "the same")
-- [ ] T3.5 - Requirements: .NET 8 runtime to run, .NET 8 SDK to build
-- [ ] T3.6 - Commit README on `feat/ai-nvidia-monitor-app` + push; update log after push
+- [x] T3.1 - Write this tasklog entry before code changes (before-push commit `c73e21e`)
+- [x] T3.2 - Run section: run `bin\*.exe` directly; demote `dotnet run` to a build-from-source fallback (`<details>` block)
+- [x] T3.3 - Build section: `dotnet build` + `dotnet publish ... -o bin/<proj>` (framework-dependent) + `build_release.ps1`
+- [x] T3.4 - Features › Headless CLI bullet: fix `NvidiaMonitor --print` description (one-line summary per GPU, not "the same")
+- [x] T3.5 - Requirements: .NET 8 runtime to run (Desktop runtime for WPF), .NET 8 SDK to build
+- [x] T3.6 - Commit README (`19bb435`) on `feat/ai-nvidia-monitor-app` + push; update log after push
 
 ### Full Context Notes for AI Agents
 
@@ -280,4 +280,6 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
+| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | docs | 6/6 | 13m |
