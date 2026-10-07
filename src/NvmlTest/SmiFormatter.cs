@@ -15,7 +15,7 @@ public static class SmiFormatter
     private const int WIdx = 2;
     private const int WName = 24;
     private const int WNum = 8;
-    private const int WMem = 16;
+    private const int WMem = 18;
     private const int Sep = 2;
 
     public static string Format(SystemSnapshot s)
@@ -39,14 +39,14 @@ public static class SmiFormatter
         // Header row.
         sb.Append(Pad("GPU", WIdx)).Append(Spaces(Sep));
         sb.Append(Pad("Name", WName)).Append(Spaces(Sep));
-        sb.Append(Pad("Util %", WNum)).Append(Spaces(Sep));
-        sb.Append(Pad("Mem %", WNum)).Append(Spaces(Sep));
-        sb.Append(Pad("Temp °C", WNum)).Append(Spaces(Sep));
-        sb.Append(Pad("Power W", WNum)).Append(Spaces(Sep));
-        sb.Append(Pad("Memory", WMem)).Append(Spaces(Sep));
-        sb.Append(Pad("MemClk", WNum)).Append(Spaces(Sep));
-        sb.Append(Pad("PSt", WNum)).Append(Spaces(Sep));
-        sb.Append("Fan %");
+        sb.Append(PadL("Util %", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Mem %", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Temp °C", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Power W", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Memory", WMem)).Append(Spaces(Sep));
+        sb.Append(PadL("MemClk", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("PSt", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("Fan %", WNum));
         sb.AppendLine();
 
         // Separator row (dashes), matching nvidia-smi.
@@ -66,14 +66,14 @@ public static class SmiFormatter
         {
             sb.Append(Pad(g.Index.ToString(CultureInfo.InvariantCulture), WIdx)).Append(Spaces(Sep));
             sb.Append(Pad(g.Name, WName)).Append(Spaces(Sep));
-            sb.Append(Pad(Int(g.GpuUtilizationPct), WNum)).Append(Spaces(Sep));
-            sb.Append(Pad(Int(g.MemoryUtilizationPct), WNum)).Append(Spaces(Sep));
-            sb.Append(Pad(Int(g.TemperatureGpu), WNum)).Append(Spaces(Sep));
-            sb.Append(Pad(Power(g.PowerMw), WNum)).Append(Spaces(Sep));
-            sb.Append(Pad(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMem)).Append(Spaces(Sep));
-            sb.Append(Pad(Int(g.MemoryClockMhz), WNum)).Append(Spaces(Sep));
-            sb.Append(Pad(g.PerfStateLabel, WNum)).Append(Spaces(Sep));
-            sb.Append(Int(g.FanSpeedPct));
+            sb.Append(PadL(Int(g.GpuUtilizationPct), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Int(g.MemoryUtilizationPct), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Int(g.TemperatureGpu), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Power(g.PowerMw), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMem)).Append(Spaces(Sep));
+            sb.Append(PadL(Int(g.MemoryClockMhz), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(g.PerfStateLabel, WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Int(g.FanSpeedPct), WNum));
             sb.AppendLine();
         }
 
@@ -87,6 +87,9 @@ public static class SmiFormatter
     private static string Pad(string? s, int width) =>
         (s ?? "N/A").PadRight(width);
 
+    private static string PadL(string? s, int width) =>
+        (s ?? "N/A").PadLeft(width);
+
     private static string Dash(int width) => new string('-', width);
 
     private static string Spaces(int n) => new string(' ', n);
@@ -98,10 +101,10 @@ public static class SmiFormatter
     private static string Power(int mw) =>
         mw < 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
 
-    /// <summary>Memory: "used/total MB"; 0 total renders as N/A. Plain integer MB, no thousands separator.</summary>
+    /// <summary>Memory: "used / total MB" (space-separated); 0 total renders as N/A. Plain integer MB, no thousands separator.</summary>
     private static string Memory(long usedBytes, long totalBytes) =>
         totalBytes <= 0 ? "N/A"
-        : $"{Mb(usedBytes)}/{Mb(totalBytes)} MB";
+        : $"{Mb(usedBytes)} / {Mb(totalBytes)} MB";
 
     /// <summary>Bytes → MB (integer). Invariant culture so no thousands/comma separator is ever emitted.</summary>
     private static string Mb(long bytes) => (bytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
