@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/10 | 0m | none |
+| 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/10 | 31m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
@@ -18,8 +18,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 07-10-2026 22:09:42
-- **Last Updated**: 07-10-2026 22:09:42
-- **Time Spent**: 0m
+- **Last Updated**: 07-10-2026 22:40:00
+- **Time Spent**: 31m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -28,6 +28,8 @@
   - **2 agents parallel** (disjoint file ownership):
     - **Agent A `cli-watch`**: `src/NvmlTest/**` → `--print --watch <sec>`
     - **Agent B `wpf-ui`**: `src/NvidiaMonitor/**` → Charts + Processes + Log tabs
+  - **T4.7 build fixed 3 real errors** the WPF agent left behind: (1) `MetricChart : Grid` had no `BorderBrush`/`BorderThickness`/`Content` → changed base to `System.Windows.Controls.Border` (has `Child` + border props), inner layout moved to a `Grid _inner`. (2) `SetSeries`/`UpdateLegend` declared `IReadOnlyDictionary<int,IReadOnlyList<double>>` but callers passed a `Dictionary` (which .NET does **not** implement `IReadOnlyDictionary` for) → retyped both to `IReadOnlyCollection<KeyValuePair<int,IReadOnlyList<double>>>`. (3) 4 `readonly` fields assigned inside `BuildTabs()` (a non-ctor method) → dropped `readonly`, added `= null!` to silence CS8618.
+  - **Result**: full solution `dotnet build nvidia_app.sln -c Release` → **0 errors, 0 warnings**.
 
 ### User Confirmations
 
@@ -41,13 +43,13 @@ None yet.
 
 ### Subtasks / Plan
 
-- [ ] T4.1 — Tasklog entry + before-push commit
-- [ ] T4.2 — Agent A: `NvmlTest --print --watch <seconds>` (loop, Ctrl-C, clean exit)
-- [ ] T4.3 — Agent B: WPF **Charts** tab (per-GPU Polyline: Util, Mem, Temp, Power, Clock)
-- [ ] T4.4 — Agent B: WPF **Processes** tab (DataGrid: GPU/PID/Name/Kind/Mem)
-- [ ] T4.5 — Agent B: WPF **Log** tab (ListBox + Clear)
-- [ ] T4.6 — Agent B: Restructure `MainWindow` to use `TabControl`
-- [ ] T4.7 — Integrator: full solution build + fix
+- [x] T4.1 — Tasklog entry + before-push commit
+- [x] T4.2 — Agent A: `NvmlTest --print --watch <seconds>` (loop, Ctrl-C, clean exit)
+- [x] T4.3 — Agent B: WPF **Charts** tab (per-GPU Polyline: Util, Mem, Temp, Power, Clock)
+- [x] T4.4 — Agent B: WPF **Processes** tab (DataGrid: GPU/PID/Name/Kind/Mem)
+- [x] T4.5 — Agent B: WPF **Log** tab (ListBox + Clear)
+- [x] T4.6 — Agent B: Restructure `MainWindow` to use `TabControl`
+- [x] T4.7 — Integrator: full solution build + fix
 - [ ] T4.8 — Integrator: live verify (3× RTX 3090)
 - [ ] T4.9 — Commit code on `feat/ai-nvidia-monitor-app` + push
 - [ ] T4.10 — Update tasklog after push + mirror to `main`
