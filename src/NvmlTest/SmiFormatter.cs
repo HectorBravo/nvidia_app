@@ -10,14 +10,19 @@ namespace HectorBravo.Nvidia.Test;
 /// </summary>
 public static class SmiFormatter
 {
-    // Column widths (monospaced). The name column is the widest so long GPU
-    // names keep the grid readable.
-    private const int WIdx = 2;
-    private const int WName = 24;
-    private const int WNum = 8;
-    private const int WMem = 18;
-    private const int WPower = 18;
-    private const int Sep = 2;
+    // Column widths: each is max(header length, longest possible value).
+    // This guarantees headers and dashes are perfectly aligned.
+    private const int WIdx     = 3;   // "GPU"        | values: 0,1,2
+    private const int WName    = 24;  // "Name"       | longest GPU name
+    private const int WUtil    = 9;   // "GPU Usage"  | "100 %"
+    private const int WMemUtil = 9;   // "Mem Usage"  | "100 %"
+    private const int WTemp    = 6;   // "Temp"       | "100 °C"
+    private const int WPower   = 15;  // "Power"      | "112.2 / 430.0 W"
+    private const int WMemory  = 15;  // "Memory"     | "3192 / 24576 MB"
+    private const int WMemClk  = 8;   // "MemClk"     | "9999 MHz"
+    private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
+    private const int WFan     = 5;   // "Fan"        | "100 %"
+    private const int Sep      = 2;
 
     public static string Format(SystemSnapshot s)
     {
@@ -37,44 +42,44 @@ public static class SmiFormatter
             return sb.ToString();
         }
 
-        // Header row.
+        // Header row (left-aligned for index/name, right-aligned for numeric).
         sb.Append(Pad("GPU", WIdx)).Append(Spaces(Sep));
         sb.Append(Pad("Name", WName)).Append(Spaces(Sep));
-        sb.Append(PadL("Util %", WNum)).Append(Spaces(Sep));
-        sb.Append(PadL("Mem %", WNum)).Append(Spaces(Sep));
-        sb.Append(PadL("Temp °C", WNum)).Append(Spaces(Sep));
+        sb.Append(PadL("GPU Usage", WUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("Mem Usage", WMemUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("Temp", WTemp)).Append(Spaces(Sep));
         sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
-        sb.Append(PadL("Memory", WMem)).Append(Spaces(Sep));
-        sb.Append(PadL("MemClk", WNum)).Append(Spaces(Sep));
-        sb.Append(PadL("PSt", WNum)).Append(Spaces(Sep));
-        sb.Append(PadL("Fan %", WNum));
+        sb.Append(PadL("Memory", WMemory)).Append(Spaces(Sep));
+        sb.Append(PadL("MemClk", WMemClk)).Append(Spaces(Sep));
+        sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));
+        sb.Append(PadL("Fan", WFan));
         sb.AppendLine();
 
-        // Separator row (dashes), matching nvidia-smi.
+        // Separator row (dashes).
         sb.Append(Dash(WIdx)).Append(Spaces(Sep));
         sb.Append(Dash(WName)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
+        sb.Append(Dash(WUtil)).Append(Spaces(Sep));
+        sb.Append(Dash(WMemUtil)).Append(Spaces(Sep));
+        sb.Append(Dash(WTemp)).Append(Spaces(Sep));
         sb.Append(Dash(WPower)).Append(Spaces(Sep));
-        sb.Append(Dash(WMem)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum)).Append(Spaces(Sep));
-        sb.Append(Dash(WNum));
+        sb.Append(Dash(WMemory)).Append(Spaces(Sep));
+        sb.Append(Dash(WMemClk)).Append(Spaces(Sep));
+        sb.Append(Dash(WPSt)).Append(Spaces(Sep));
+        sb.Append(Dash(WFan));
         sb.AppendLine();
 
         foreach (var g in s.Gpus)
         {
             sb.Append(Pad(g.Index.ToString(CultureInfo.InvariantCulture), WIdx)).Append(Spaces(Sep));
             sb.Append(Pad(g.Name, WName)).Append(Spaces(Sep));
-            sb.Append(PadL(Int(g.GpuUtilizationPct), WNum)).Append(Spaces(Sep));
-            sb.Append(PadL(Int(g.MemoryUtilizationPct), WNum)).Append(Spaces(Sep));
-            sb.Append(PadL(Int(g.TemperatureGpu), WNum)).Append(Spaces(Sep));
+            sb.Append(PadL(Pct(g.GpuUtilizationPct), WUtil)).Append(Spaces(Sep));
+            sb.Append(PadL(Pct(g.MemoryUtilizationPct), WMemUtil)).Append(Spaces(Sep));
+            sb.Append(PadL(TempVal(g.TemperatureGpu), WTemp)).Append(Spaces(Sep));
             sb.Append(PadL(Power(g.PowerMw, g.EnforcedPowerLimitMw), WPower)).Append(Spaces(Sep));
-            sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMem)).Append(Spaces(Sep));
-            sb.Append(PadL(Int(g.MemoryClockMhz), WNum)).Append(Spaces(Sep));
-            sb.Append(PadL(g.PerfStateLabel, WNum)).Append(Spaces(Sep));
-            sb.Append(PadL(Int(g.FanSpeedPct), WNum));
+            sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMemory)).Append(Spaces(Sep));
+            sb.Append(PadL(MemClkVal(g.MemoryClockMhz), WMemClk)).Append(Spaces(Sep));
+            sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));
+            sb.Append(PadL(Pct(g.FanSpeedPct), WFan));
             sb.AppendLine();
         }
 
@@ -95,10 +100,16 @@ public static class SmiFormatter
 
     private static string Spaces(int n) => new string(' ', n);
 
-    /// <summary>Integer metric; a negative sentinel (unknown) renders as N/A, a valid 0 renders as 0.</summary>
-    private static string Int(int v) => v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture);
+    /// <summary>Percentage: "34 %" or N/A for negative sentinel.</summary>
+    private static string Pct(int v) => v < 0 ? "N/A" : $"{v} %";
 
-    /// <summary>Power: "usage / cap W" (space-separated, unit at the end); a negative usage sentinel renders N/A.</summary>
+    /// <summary>Temperature: "30 °C" or N/A for negative sentinel.</summary>
+    private static string TempVal(int v) => v < 0 ? "N/A" : $"{v} \u00B0C";
+
+    /// <summary>Memory clock: "9501 MHz" or N/A for negative sentinel.</summary>
+    private static string MemClkVal(int v) => v < 0 ? "N/A" : $"{v} MHz";
+
+    /// <summary>Power: "usage / cap W"; a negative usage sentinel renders N/A.</summary>
     private static string Power(int usageMw, int capMw) =>
         usageMw < 0 ? "N/A" : $"{Watts(usageMw)} / {Watts(capMw)} W";
 
@@ -106,7 +117,7 @@ public static class SmiFormatter
     private static string Watts(int mw) =>
         mw < 0 ? "N/A" : (mw / 1000.0).ToString("0.0", CultureInfo.InvariantCulture);
 
-    /// <summary>Memory: "used / total MB" (space-separated); 0 total renders as N/A. Plain integer MB, no thousands separator.</summary>
+    /// <summary>Memory: "used / total MB"; 0 total renders as N/A.</summary>
     private static string Memory(long usedBytes, long totalBytes) =>
         totalBytes <= 0 ? "N/A"
         : $"{Mb(usedBytes)} / {Mb(totalBytes)} MB";

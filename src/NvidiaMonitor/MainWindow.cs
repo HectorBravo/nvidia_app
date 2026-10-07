@@ -254,7 +254,7 @@ public class MainWindow : Window
     }
 
     private static string PctOrNa(int value)
-        => value < 0 ? "N/A" : value + "%";
+        => value < 0 ? "N/A" : $"{value} %";
 
     private static string PowerUsageCapOrNa(int usageMw, int capMw)
         => usageMw < 0 ? "N/A" : $"{WattsOnly(usageMw)} / {WattsOnly(capMw)} W";
