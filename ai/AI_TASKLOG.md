@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | in_progress | feat | 6/16 | 1h 52m | GitHub auth (user) |
+| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | in_progress | feat | 9/16 | 1h 56m | none |
 
 > 0 completed task(s) - [View completed tasks](#completed-tasks)
 
@@ -15,11 +15,11 @@
 - **Status**: in_progress
 - **Type**: feat
 - **Created**: 07-10-2026 16:59:24
-- **Last Updated**: 07-10-2026 17:50:49
-- **Time Spent**: 1h 52m
+- **Last Updated**: 07-10-2026 17:54:35
+- **Time Spent**: 1h 56m
 - **Branch**: `feat/ai-nvidia-monitor-app` (pending creation)
-- **Commit(s)**: pending
-- **Blockers**: GitHub `gh` web/device login needs user authorization (fresh code `C867-B042` issued 17:50; prior `CFA5-3C45` expired)
+- **Commit(s)**: [c6fd96a](https://github.com/HectorBravo/nvidia_app/commit/c6fd96a6ba193e9889c12275263140d8157de9bd) main scaffold; feature branch pending
+- **Blockers**: none
 - **Findings & Notes**:
   - **EXECUTION MODEL** (user directive ~18:45 prior session): two parallel subagents + integrator.
     - **Subagent A "NvmlCore"** = NVML engine (P/Invoke) + headless CLI. Owns ONLY `src/NvmlCore/**` + `src/NvmlTest/**`.
@@ -40,21 +40,22 @@
 
 **Pending (awaiting user response):**
 
-- [ ] (07-10-2026 17:50:49) Authorize GitHub device login: open https://github.com/login/device and enter code `C867-B042` (freshly issued after the reboot; prior code `CFA5-3C45` expired) - required to create private repo `HectorBravo/nvidia_app` and push.
+None yet.
 
 **Confirmed (user provided):**
 
 - (07-10-2026 ~18:45) "split tasks as much as you can into two separate subagents, and remember this across the task list here. I have set up another qwen3.8 27B model running in parallel together with the one you are using now" -> **Two parallel subagents: A=NvmlCore (headless NVML engine+CLI), B=NvidiaMonitor (WPF UI)**; recorded here for recovery.
 - (07-10-2026 17:50) Approved act-mode plan; chose "Kick off gh auth login --web now and give me the fresh device code" for GitHub auth.
 - (prior session) UI = Overview tab with ALL GPUs together + per-GPU detail tabs + Processes + Log; stack = C# WPF .NET 8; private repo `HectorBravo/nvidia_app`.
+- (07-10-2026 17:53:00) GitHub device code `C867-B042` authorized in browser -> `gh auth status` = logged in to **HectorBravo** (repo scope, HTTPS).
 
 ### Subtasks / Plan
 
 - [x] T1.1 - Environment: .NET SDK 8.0.425 installed and verified (`C:\Program Files\dotnet\dotnet.exe --list-sdks`)
 - [x] T1.2 - SSH key chain resolved + ACL fixed (OpenSSH loads `hector.bravo.20260612`; key not on GitHub -> use HTTPS/gh instead)
-- [ ] T1.3 - GitHub `gh auth login --web` (USER ACTION: authorize code `C867-B042` in browser) -> `gh auth status` OK
-- [ ] T1.4 - Create private repo `HectorBravo/nvidia_app` via `gh repo create`
-- [ ] T1.5 - Local `git init -b main`, initial commit (README/.gitignore/this log/scaffold) as `chore(ai): [ai] scaffold NVML monitor solution` with AI_bot identity
+- [x] T1.3 - GitHub `gh auth login --web` (USER ACTION: authorize code `C867-B042` in browser) -> `gh auth status` OK
+- [x] T1.4 - Create private repo `HectorBravo/nvidia_app` via `gh repo create`
+- [x] T1.5 - Local `git init -b main`, initial commit (README/.gitignore/this log/scaffold) as `chore(ai): [ai] scaffold NVML monitor solution` with AI_bot identity
 - [x] T1.6 - Scaffold solution: 4 projects (Contracts / NvmlCore / NvmlTest / NvidiaMonitor) + sln + Contracts API surface (records, interfaces, history, log, exporter)
 - [x] T1.7 - Pull official `nvml.h` (13.4.92) into `src/NvmlCore/ref/nvml.h` as the P/Invoke reference
 - [x] T1.8 - Verify full solution builds clean (Release, 0 warnings / 0 errors) - DONE after fixing 3 scaffold bugs
