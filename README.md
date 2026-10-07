@@ -21,7 +21,10 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   plugged/unplugged or the driver comes and goes.
 - **Headless CLI**: `NvmlTest --print` prints one `nvidia-smi`-style table and exits `0` on
   success (`1` when NVML / a GPU is unavailable, with the reason on stdout).
-  `NvidiaMonitor --print` does the same but through the WPF entry point (no window is opened).
+  `NvidiaMonitor --print` does the same through the WPF entry point (no window is opened), but
+  instead of the full table it prints a **compact one-line summary per GPU** (a
+  `[NvidiaMonitor] driver=… cuda=… nvml=… gpus=N` header line, then one line per GPU:
+  `util=% mem=% temp=°C power=W mem=used/total MB fan=% perf=Pn`).
 - **Graceful fallback**: when no GPU / driver / `nvml.dll` is present, the UI shows a friendly
   explanation and the CLI prints the reason and a non-zero exit code.
 
@@ -49,29 +52,58 @@ signatures, structs and enums.
 
 ## Build
 ```powershell
-# .NET 8 SDK required
+# .NET 8 SDK required — build the whole solution
 dotnet build nvidia_app.sln -c Release
+
+# …or use the helper script (same build, output logged to %TEMP%\full_build.log)
+powershell -File build_release.ps1
+```
+
+### Produce the runnable executables
+The ready-to-run binaries live in the repo-local, **git-ignored** `bin/` folder and are created
+with `dotnet publish` (framework-dependent — they need the .NET 8 *runtime*, not a full SDK):
+
+```powershell
+dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # -> bin\NvmlTest\NvmlTest.exe
+dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # -> bin\NvidiaMonitor\NvidiaMonitor.exe
 ```
 
 ## Run
+Run the published executables directly — no `dotnet run` needed (build them first with
+`dotnet publish`, above):
+
 ```powershell
 # WPF dashboard (live, ~1 Hz)
-dotnet run --project src/NvidiaMonitor -c Release
+.\bin\NvidiaMonitor\NvidiaMonitor.exe
 
 # Headless one-shot nvidia-smi-style table (no window)
-dotnet run --project src/NvidiaMonitor -c Release -- --print
+.\bin\NvmlTest\NvmlTest.exe --print
 
-# Or use the dedicated CLI project
-dotnet run --project src/NvmlTest -c Release -- --print
+# Same, through the WPF entry point (no window) — one-line summary per GPU
+.\bin\NvidiaMonitor\NvidiaMonitor.exe --print
 ```
 
 > The WPF dashboard polls in the background; closing the window stops polling and releases
 > NVML. The `--print` paths never open a window.
 
+<details>
+<summary><b>Prefer to run straight from source (without publishing)?</b></summary>
+
+```powershell
+dotnet run --project src/NvidiaMonitor -c Release                 # WPF dashboard
+dotnet run --project src/NvidiaMonitor -c Release -- --print      # headless (WPF entry point)
+dotnet run --project src/NvmlTest      -c Release -- --print      # headless (CLI)
+```
+
+</details>
+
 ## Requirements
 - Windows with an NVIDIA GPU and a driver that ships `nvml.dll`
   (typically under `%CommonProgramFiles(x86)%\NVIDIA Corporation\NVSMI\`).
-- .NET 8 SDK.
+- To **run** the published `bin/` executables: the .NET 8 runtime — the .NET 8 **Desktop**
+  runtime for the WPF `NvidiaMonitor`, or just the base .NET 8 runtime for the console
+  `NvmlTest`.
+- To **build / publish** from source: the .NET 8 SDK.
 
 ## Notes
 - **No third-party NuGet dependencies** — the only reference is the OS `nvml.dll` (loaded at
