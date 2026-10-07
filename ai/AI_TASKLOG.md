@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 15/16 | 3h 42m | none |
+| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 1 completed task(s) - [View completed tasks](#completed-tasks)
 
@@ -15,8 +15,8 @@
 - **Status**: done
 - **Type**: feat
 - **Created**: 07-10-2026 16:59:24
-- **Last Updated**: 07-10-2026 19:27:00
-- **Time Spent**: 3h 42m
+- **Last Updated**: 07-10-2026 19:52:00
+- **Time Spent**: 4h 07m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app) - created+pushed; ALL implementation happens here (NOT main)
 - **Commit(s)**: [dd17559](https://github.com/HectorBravo/nvidia_app/commit/dd1755906b6bfd1be53812d39929101ca3900dcf) full implementation + README (feat branch, PUSHED); [c6fd96a](https://github.com/HectorBravo/nvidia_app/commit/c6fd96a6ba193e9889c12275263140d8157de9bd) scaffold (main)
 - **Blockers**: none
@@ -27,6 +27,10 @@
     - **Subagent B "NvidiaMonitor"** = full WPF UI. Owns ONLY `src/NvidiaMonitor/**`; builds with `-p:BuildProjectReferences=false` against the pre-built core so the two never collide on the same `obj/`.
   - **ARCHITECTURE**: `HectorBravo.Nvidia.Contracts` (net8.0) is the ONLY shared seam (records + interfaces + history + log + exporter). NvmlCore->Contracts; NvidiaMonitor->NvmlCore+Contracts at solution level, but Subagent B's code may reference Contracts-only public API.
   - **BUILD STATUS**: full solution builds clean in Release, **0 warnings / 0 errors**.
+  - **POST-RELEASE FIX** (07-10-2026 19:52, user report): two real bugs surfaced when comparing vs `nvidia-smi`.
+    1. **Idle GPUs (util/mem = 0%) wrongly showed `N/A`** in `NvmlTest --print`. Root cause: `SmiFormatter.Int` used `v == 0 ? "N/A"` and the engine's `GetU32`/`GetU32Two` returned `0` on failure — so a *legitimately idle* GPU (0%) was indistinguishable from "unavailable" and N/A'd out. **Fix:** engine now returns a **-1 sentinel** on unavailable (missing symbol / NVML error); `SmiFormatter.Int`/`Power` render `N/A` only for `< 0`, so a valid `0` prints as `0`. NVLink guarded (`total <= 0`). Verified: idle GPUs 1&2 now show `0` (matches nvidia-smi).
+    2. **WPF headless `--print` showed comma decimals** (`power=43,7 W`) and a mislabeled memory (`mem=3.183 MiB` = GB-scale value). Root cause: `Theme.MiB`/`Theme.Watts` used the thread culture (`:N0` / `0.0`) not `InvariantCulture`. **Fix:** both now format with `InvariantCulture`; `Watts` N/A-gate changed to `< 0`. Verified: `power=42.9 W`, `mem=3336/24576 MiB`.
+    - **DELIVERABLE**: standalone **`dotnet publish`** executables into repo-local `bin/` (git-ignored): `bin\NvidiaMonitor\NvidiaMonitor.exe` and `bin\NvmlTest\NvmlTest.exe` — runnable directly, no `dotnet run` needed.
   - **FINDING** (07-10-2026 17:56): both subagent runs were **interrupted** (interactive abort when user sent a message). Partial files on disk (7 total, uncommitted) are GOOD QUALITY: NvmlCore foundation (loader/types/delegates/errors) + NvidiaMonitor (poller/factory/theme). Remaining: NvmlCoreService impl, SmiFormatter, NvmlTest CLI, App.cs, MainWindow.cs. Bugs found in partial code: NvmlLoader missing `using System.IO`; NvmlTypes DriverWddm/Wdm values swapped (WDM=0, WDDM=1 per header). Integrator is taking over to finish. Three scaffold bugs fixed 17:4x: `Exporter.cs` (void-chained `.Add` split), `AppLog.cs` (removed unused `_disposed`), `MainWindow.cs` (added `using System.Windows`).
   - **nvml.dll** lives at `%ProgramW6432%\NVIDIA Corporation\NVSMI` and `C:\Windows\System32`. Driver **32.0.16.1692** (R560-era). Loader must try NVSMI paths first, then System32.
   - **ref/nvml.h** = NVIDIA NVML **13.4.92** (pulled from NVIDIA/go-nvml). v2 APIs are safe (exist since NVML 9.0); any 13.x-only function must P/Invoke with an unversioned-symbol fallback and degrade to N/A on `NVML_ERROR_FUNCTION_NOT_FOUND`.
@@ -70,6 +74,7 @@ None yet.
 - [x] T1.14 - Update this log after push (commits, hashes) + push log to `main`
 - [ ] T1.15 - (Optional, if asked) `dotnet publish` single-file win-x64 self-contained
 - [x] T1.16 - README with feature list, usage (incl. hidden CLI), build instructions
+- [x] T1.17 - POST-RELEASE: fix idle-GPU `N/A` (engine -1 sentinel) + WPF comma-decimal/MiB bugs; publish standalone `bin\NvidiaMonitor\NvidiaMonitor.exe` + `bin\NvmlTest\NvmlTest.exe` (git-ignored). Verified vs `nvidia-smi`.
 
 ### Full Context Notes for AI Agents
 
