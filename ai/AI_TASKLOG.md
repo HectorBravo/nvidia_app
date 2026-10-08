@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | in_progress | feat | 0/9 | 0m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
@@ -12,6 +13,68 @@
 > 4 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+
+## Task T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 08-10-2026 03:49:32
+- **Last Updated**: 08-10-2026 03:49:32
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (08-10-2026, "looks good, do it"): implement the proposed PCIe feature — a compact PCIe column in the overview pane, a new log-scale "PCIe Bandwidth" chart, theoretical bandwidth from current gen/width, and a shared ceiling from the fastest card's max possible bandwidth.
+  - **PCIe NVML reads** (all 4 already declared in `NvmlDelegates.cs`): `nvmlDeviceGetCurrPcieLinkGeneration`, `...CurrPcieLinkWidth`, `...MaxPcieLinkGeneration`, `...MaxPcieLinkWidth`, wired into `NvmlCoreService.ReadGpu` and mapped onto new `GpuSnapshot.PcieLinkGen/Width` + `PcieMaxLinkGen/Width`.
+  - **Live verification** via `NvmlTest --print` (new PCIe column): GPU0 = `1.0 x16` (4 GB/s), GPU1 = `4.0 x4` (8 GB/s), GPU2 = `1.0 x4` (1 GB/s) — matches `nvidia-smi`.
+  - **Chart right-align fix**: `MetricChart._plotScroll.HorizontalContentAlignment = HorizontalAlignment.Right` so short histories (< window) plot from the right edge instead of being centered/left.
+  - **Log-scale Y-axis** (`MetricChart.ValueToY` / `SetLogScale`): maps value in [0.01*ceiling .. ceiling] to plot height via natural log; gridlines at powers of two (1..256).
+  - **PCIe ceiling**: `UpdateCharts` uses the max *possible* bandwidth across all GPUs (fastest card, e.g. PCIe 4.0 x16 = 32 GB/s) as the stable chart ceiling, so a degraded link sits visibly low.
+  - **Build**: `dotnet build nvidia_app.sln -c Debug` → 0 errors, 0 warnings (all 4 projects). `TreatWarningsAsErrors` on Contracts + NvmlCore passes.
+  - **NOTE**: PCIe bandwidth is **theoretical link bandwidth** (per-lane rate × width), not measured throughput — NVML exposes link gen/width but no live PCIe throughput counter.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (08-10-2026 03:49:32) Confirm the right-align chart fix + new PCIe column/chart look correct in the republished `bin/NvidiaMonitor\NvidiaMonitor.exe`.
+
+**Confirmed (user provided):**
+
+- (08-10-2026) "looks good, do it" → approved implementing the proposed PCIe overview column + PCIe bandwidth chart.
+
+### Subtasks / Plan
+
+- [x] Add `PcieLinkGen/Width` + `PcieMaxLinkGen/Width` to `GpuSnapshot` with computed `PcieBandwidthGbps` / `PcieMaxBandwidthGbps` / `PcieLabel` / `PciePerLaneGbps`
+- [x] Add `PcieBandwidthGbps` + `PcieMaxBandwidthGbps` to `GpuMetricSample`
+- [x] Wire the 4 NVML PCIe link calls into `NvmlCoreService.ReadGpu`
+- [x] Add log-scale Y-axis (`SetLogScale` / `ValueToY`) + log/linear horizontal gridlines to `MetricChart.Redraw`
+- [x] Add `Pcie` column to the overview grid + populate `GpuRow.Pcie` from `PcieLabel`
+- [x] Add "PCIe Bandwidth (GB/s)" log-scale chart spec; drive its ceiling from the fastest card's max possible bandwidth
+- [x] Add PCIe column to the headless `SmiFormatter` (verifies the NVML reads end-to-end)
+- [x] Build (0/0) + run `NvmlTest --print` to confirm live PCIe data
+- [ ] Commit (right-align fix + PCIe feature), push, republish `bin/NvidiaMonitor`, refresh project index
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: Self-contained knowledge base to resume without other context.
+
+- **Working dir**: `D:\Repos\nvidia_app`. Windows + PowerShell (use `;` not `&&`). dotnet at `C:\Program Files\dotnet\dotnet.exe` (may not be on PATH). SDK output is Spanish (normal). Target `net8.0-windows`. `TreatWarningsAsErrors=true` on Contracts + NvmlCore.
+- **Current branch**: `feat/ai-nvidia-monitor-app` (also the user's branch). HEAD = `59880bf`. Uncommitted (this task): `GpuMetricSample.cs`, `GpuSnapshot.cs`, `ChartController.cs` (incl. `HorizontalContentAlignment=Right`), `MainWindow.cs`, `NvmlCoreService.cs`, `SmiFormatter.cs`.
+- **Git identity**: env vars only — `GIT_AUTHOR_NAME=AI_bot`, `GIT_COMMITTER_NAME=AI_bot`; do NOT set `*_EMAIL` (use user's `git config user.email` = `hbravo@cuic.net`). Every commit message has `[ai]` after the type prefix. Push via HTTPS with the `gh` token (`gh` at `C:\Program Files\GitHub CLI\gh.exe`); never the user's SSH keys.
+- **Git workflow (established pattern from T5)**: commit code to the existing `feat/ai-nvidia-monitor-app` branch and push there; push `ai/AI_TASKLOG.md` to the user's current branch (here that is `feat/ai-nvidia-monitor-app`). Dedicated `docs(ai):` log commit before and after the code push.
+- **Contracts boundary**: `GpuSnapshot`/`GpuMetricSample` in `src/HectorBravo.Nvidia.Contracts/`. `NvmlCoreService` is the only place that P/Invokes `nvml.dll`; `NvidiaMonitor` (WPF) + `NvmlTest` (CLI) consume Contracts only.
+- **PCIe per-lane rate (GB/s, one direction, theoretical)**: gen1=0.25, gen2=0.5, gen3=1.0, gen4=2.0, gen5=4.0. So 4.0 x16 = 32 GB/s (ceiling), 1.0 x16 = 4 GB/s, 4.0 x4 = 8 GB/s, 1.0 x4 = 1 GB/s.
+- **`GpuSnapshot.PcieLabel`** = `{gen}.0 x{width}` or `N/A` (when gen or width == 0). Reused by both the WPF overview grid and the CLI formatter.
+- **`NvmlCoreService.ReadGpu`** PCIe fields wrapped in `Math.Max(0, GetU32(...))` (NVML returns -1 on error → 0 = N/A).
+- **`ChartController.cs`**: `MetricChart._logScale` (line ~113), `SetLogScale` (~202), `ValueToY` (~205; `Math.Log`, bottom=0.01*ceiling, top=ceiling). `Redraw` horizontal gridlines: log = `Math.Pow(2,0..8)` filtered to [0.01*max, max]; linear = 5 even divisions (top=max→0). Polylines use `ValueToY(values[i], max)`. Right-align fix = `_plotScroll` initializer `HorizontalContentAlignment=Right`.
+- **`MainWindow.cs`**: `GpuRow.Pcie`; grid `NumCol("PCIe","Pcie",alignRight:false)`; history sample populates both Pcie bandwidth fields; `_runningMax` 7th entry = 32; last `_specs` entry `LogScale:true` with chart creation calling `SetLogScale(true)`; `UpdateCharts` computes `maxPossible` from `PcieMaxBandwidthGbps` (fallback 32) for the log chart ceiling; `ChartSpec` record gained `bool LogScale = false`.
+- **Verified live (08-10-2026)**: `NvmlTest --print` PCIe column = `1.0 x16` / `4.0 x4` / `1.0 x4` (GPU0/1/2).
+- **Still to do**: commit + push, republish `bin/NvidiaMonitor` (kill running `NvidiaMonitor.exe` first via `Stop-Process -Name NvidiaMonitor -ErrorAction SilentlyContinue`), visual verify WPF window, refresh `ai/PROJECT_DESCRIPTION.md` + `AGENTS.md` via the `hector-project_indexer` skill (source changed).
+
+---
+
 
 ## Task T5: Synchronized live GPU charts + project indexer
 
