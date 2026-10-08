@@ -54,7 +54,7 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
-    private const double TopPad = 8;         // headroom so the top (max) value isn't clipped
+    private const double TopPad = 26;        // headroom so the top (max) value isn't clipped
 
     private readonly Grid _inner = new();
 
