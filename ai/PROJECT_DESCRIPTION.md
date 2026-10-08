@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-08-10 04:02:38
-git_head: 2036b0a81488fa17732018396301f0f373068e56
+last_indexed: 2026-08-10 05:22:38
+git_head: e379b01eb1a86b535dc9ffa16a182177d920cba8
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -14,7 +14,9 @@ A **Windows-native** (.NET 8, C#) NVIDIA GPU monitor that talks **directly** to 
 NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 `nvidia-smi`. Two front-ends share one NVML engine:
 - **`NvidiaMonitor`** — a WPF live dashboard (overview grid, synchronized line
-  charts, per-GPU processes, activity log), polling ~1 Hz.
+  charts), polling ~1 Hz. It opens on the **Charts** tab; the **Processes** and
+  **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
+  but is no longer surfaced as a tab).
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style table.
 
 Reads per-GPU telemetry: GPU/memory utilization, temperature, power (+limits), memory
@@ -55,7 +57,7 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   `NvmlTypes`, `NvmlError`; reference header `ref/nvml.h` (authoritative NVML
   signatures/structs/enums).
 - **NvidiaMonitor** (`HectorBravo.Nvidia.Monitor`): `App` (WPF entry point),
-  `MainWindow` (all UI: 4 tabs), `ChartController.cs` (`MetricChart` +
+  `MainWindow` (all UI: 2 tabs — Overview + Charts; Charts is the default startup tab), `ChartController.cs` (`MetricChart` +
   `ChartController` — synchronized native-WPF charts), `GpuPollingService`
   (~1 Hz background poller → UI thread), `GpuServiceFactory` (builds the concrete
   engine), `Theme` (dark theme + value formatters), `GlobalUsings`.
@@ -101,11 +103,9 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
             └─ GpuPollingService (~1 Hz background) → GpuHistory (per-GPU ring buffer, cap 720)
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
-                      ├─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                      │            driving 7 MetricChart cards (util, mem-util, temp,
-                      │            power, clock, mem-used, PCIe-bandwidth [log Y]) — native WPF shapes
-                      ├─ Processes: per-GPU process list (ProcessRow)
-                      └─ Log:       AppLog → ListBox
+                      └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
+                                   driving 7 MetricChart cards (util, mem-util, temp,
+                                   power, clock, mem-used, PCIe-bandwidth [log Y]) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -161,12 +161,21 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   polyline per GPU. `SetSeries` only stores data; the controller's `OnDataTick()`
   resizes then redraws all charts. Drag-and-drop reorder is handled per chart panel.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
-- **README staleness (as of this index):** `README.md` still lists the live **charts**,
-  the **Processes** tab and the **activity log** tab under "Planned (next iteration)",
-  but all three are now implemented in `NvidiaMonitor`. Consider updating the README to
-  move them into "Features".
+- **README staleness (as of this index):** `README.md` still lists the live **charts**
+  under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
+  (the **Processes** and **Log** tabs no longer exist — they were removed). Consider
+  updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-08-10 — Dashboard restructure: `MainWindow` now builds only the **Overview**
+  and **Charts** tabs (the **Processes** and **Log** tabs were removed) and opens on
+  the **Charts** tab by default (`TabControl.SelectedIndex = 1`). Tab headers use the
+  dark graph theme (muted text; the active header lights up with the NVIDIA-green
+  `Theme.Accent`). The `ProcessRow`/`BuildProcessGrid` and `AppendLog`/`ClearLog` UI
+  helpers and their fields were deleted; the engine's `AppLog`/`AppLogEntry` activity
+  logging is **retained** (still emitted to the console and consumed by the
+  monitor/poller/dispose). Single-file change (`MainWindow.cs`); `Theme.cs`,
+  `ChartController.cs`, Contracts and NvmlCore are unchanged.
 - 2026-08-10 — PCIe bandwidth: new `GpuSnapshot.Pcie*` fields (current/max gen+width,
   read from 4 NVML link calls in `NvmlCoreService`; `PciePerLaneGbps` gen1–5), a compact
   "PCIe" column in the WPF overview grid and the `NvmlTest` table (both use
