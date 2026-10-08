@@ -47,6 +47,10 @@ public class MetricChart : Border
     private static readonly Brush MinuteBlue = Frozen("#33508f");
     private static readonly Brush MinuteLabel = Frozen("#7f9bd1");
 
+    // Right-shift in pixels: when the timeline is shorter than the viewport, the whole
+    // plot is shifted right so the data pins to the right edge (no blank centered strip).
+    private double _rightShift;
+
     private const double PlotH = 128; // fixed plot height in px
 
     private readonly Grid _inner = new();
@@ -78,7 +82,6 @@ public class MetricChart : Border
     {
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-        HorizontalContentAlignment = HorizontalAlignment.Right,
         Height = PlotH,
         Background = Theme.Card,
     };
@@ -221,9 +224,18 @@ public class MetricChart : Border
         if (_ctl == null) return;
 
         double px = _ctl.PxPerSec;
-        double w = _tl.Length > 0 ? _tl[^1] * px : 0;
-        _canvas.Width = w;
+        double contentW = _tl.Length > 0 ? _tl[^1] * px : 0;
+
+        // The canvas must always be at least as wide as the plot viewport, otherwise a
+        // ScrollViewer centers the narrow canvas (blank strips on both sides). Size it to
+        // the viewport and right-shift the whole plot so short histories pin to the right
+        // edge — once history exceeds the window the shift is 0 and it scrolls normally.
+        double viewport = _plotScroll.ViewportWidth > 0 ? _plotScroll.ViewportWidth : _ctl.ViewportWidth;
+        if (viewport <= 0) viewport = 960;
+        _rightShift = Math.Max(0, viewport - contentW);
+        _canvas.Width = contentW + _rightShift;
         _canvas.Height = PlotH;
+        double off = _rightShift; // right-shift applied to every x coordinate
 
         // Remove every drawn element except the persistent crosshair. Reverse-index so we
         // never mutate the collection while enumerating it (avoids InvalidOperationException).
@@ -249,7 +261,7 @@ public class MetricChart : Border
         if (firstMin < 1) firstMin = 1;
         for (int m = firstMin; m * 60.0 <= tEnd; m++)
         {
-            double x = m * 60.0 * px;
+            double x = m * 60.0 * px + off;
             _canvas.Children.Add(new Line
             {
                 X1 = x, Y1 = 0, X2 = x, Y2 = PlotH,
@@ -282,7 +294,7 @@ public class MetricChart : Border
                 double y = ValueToY(val, max);
                 _canvas.Children.Add(new Line
                 {
-                    X1 = 0, Y1 = y, X2 = w, Y2 = y,
+                    X1 = 0, Y1 = y, X2 = contentW + off, Y2 = y,
                     Stroke = Theme.Grid,
                     StrokeThickness = 1,
                     IsHitTestVisible = false,
@@ -295,7 +307,7 @@ public class MetricChart : Border
                     FontSize = 10,
                     IsHitTestVisible = false,
                 };
-                Canvas.SetLeft(lbl2, 2);
+                Canvas.SetLeft(lbl2, off + 2);
                 Canvas.SetTop(lbl2, y - 6);
                 _canvas.Children.Add(lbl2);
             }
@@ -316,7 +328,7 @@ public class MetricChart : Border
             var pts = new PointCollection(i1 - i0 + 1);
             for (int i = i0; i <= i1; i++)
             {
-                double xv = _tl[i] * px;
+                double xv = _tl[i] * px + off;
                 double yv = ValueToY(values[i], max);
                 pts.Add(new Point(xv, Math.Clamp(yv, 0, PlotH)));
             }
@@ -336,7 +348,7 @@ public class MetricChart : Border
         // Baseline axis.
         _canvas.Children.Add(new Line
         {
-            X1 = 0, Y1 = PlotH, X2 = w, Y2 = PlotH,
+            X1 = 0, Y1 = PlotH, X2 = contentW + off, Y2 = PlotH,
             Stroke = Theme.Border,
             StrokeThickness = 1,
             IsHitTestVisible = false,
@@ -367,7 +379,7 @@ public class MetricChart : Border
         }
 
         double px = _ctl.PxPerSec;
-        double x = t * px;
+        double x = t * px + _rightShift;
         _crossLine.X1 = x;
         _crossLine.X2 = x;
         _crossLine.Y1 = 0;
@@ -413,7 +425,10 @@ public class MetricChart : Border
     {
         if (_ctl == null) return;
         double x = e.GetPosition(_canvas).X; // canvas coords: 0 == start, scroll-independent
-        _ctl.SetCross(x / _ctl.PxPerSec);
+        // Subtract the right-shift so the crosshair maps to the correct time in the data
+        // region (the left part of the canvas is blank padding when history < window).
+        double dataX = Math.Max(0, x - _rightShift);
+        _ctl.SetCross(dataX / _ctl.PxPerSec);
     }
 
     private void OnCanvasMouseLeave(object sender, MouseEventArgs e) => _ctl?.ClearCross();
