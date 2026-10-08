@@ -4,25 +4,25 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | in_progress | feat | 6/6 | 6m | none |
+| 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | done | feat | 6/6 | 8m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 6 completed task(s) - [View completed tasks](#completed-tasks)
+> 7 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T8: Console PCIe matches the GUI (bandwidth column)
 
-- **Status**: in_progress
+- **Status**: done
 - **Type**: feat
 - **Created**: 08-10-2026 17:03:00
-- **Last Updated**: 08-10-2026 17:10:00
-- **Time Spent**: 6m
+- **Last Updated**: 08-10-2026 17:14:00
+- **Time Spent**: 8m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
-- **Commit(s)**: pending
+- **Commit(s)**: [`8617b31`](https://github.com/HectorBravo/nvidia_app/commit/8617b31) (log before) + [`b2cb27c`](https://github.com/HectorBravo/nvidia_app/commit/b2cb27c) (code+docs) — pushed to `feat/ai-nvidia-monitor-app`
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (08-10-2026 ~17:03): "Change also the console app to show the PCIe values as on the GUI."
@@ -48,7 +48,7 @@ None yet.
 - [x] T8.3 — Widen `WPcie` 9→18; wire the value row to the new helper.
 - [x] T8.4 — Build Release (0/0) + publish `bin/NvmlTest`.
 - [x] T8.5 — Live `--print` smoke test: confirmed `4.0 x16 / 32 GB/s` / `1.0 x4 / 1 GB/s`.
-- [ ] T8.6 — Commit + push on `feat/ai-nvidia-monitor-app` (log before/after, code+docs), identity `AI_bot`, `[ai]`.
+- [x] T8.6 — Commit + push on `feat/ai-nvidia-monitor-app` (log before `8617b31`, code+docs `b2cb27c`, log after), identity `AI_bot`, `[ai]`.
 
 ### Full Context Notes for AI Agents
 
@@ -61,7 +61,7 @@ None yet.
 - **Build/run** (from `D:\Repos\nvidia_app`): dotnet at `C:\Program Files\dotnet\dotnet.exe`; Spanish SDK output. `dotnet build nvidia_app.sln -c Release` (0/0). Publish `dotnet publish src/NvmlTest -c Release -o bin/NvmlTest`. Run: `bin\NvmlTest\NvmlTest.exe --print`. **PowerShell gotchas**: the inline `powershell -Command` wrapper mangles `;`/quotes/`$()` — prefer a single-quoted `-File` script (write one via `Set-Content` to `%TEMP%`) or simple one-statement commands; stop a running `NvidiaMonitor.exe`/`NvmlTest.exe` with `Stop-Process -Name ... -ErrorAction SilentlyContinue` before publishing (file lock).
 - **Docs**: `ai/PROJECT_DESCRIPTION.md` §3 (NvmlTest line now notes the PCIe column) + §11 Change Log (new top bullet). No `docs/` folder exists.
 - **Git**: AI branch `feat/ai-nvidia-monitor-app` (user's protected = `main`; remote `https://github.com/HectorBravo/nvidia_app.git`). Pre-push HEAD was `d4c8789`. Identity `GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot` (do NOT set email; never touch `git config`). Code+docs commit message: `feat(cli): [ai] show PCIe bandwidth in the console table to match the GUI`. Dedicated log commits `docs(ai): [ai] ...` before and after the code push, pushed to the user's current branch (`feat/ai-nvidia-monitor-app`). Then `git push origin feat/ai-nvidia-monitor-app`.
-- **Current state**: code + docs edited, built clean, live-verified. **Next**: the pre-push `docs(ai)` log commit (this file), then the code+docs commit, then the post-push `docs(ai)` log commit (flip T8→done, fill commit hashes, add to Completed Tasks, bump count to 7), then push.
+- **Current state**: DONE. Code + docs committed (`b2cb27c`), built clean, live-verified (`4.0 x16 / 32 GB/s` / `1.0 x4 / 1 GB/s`). All commits authored by `AI_bot`. Pushed to `feat/ai-nvidia-monitor-app`.
 
 ---
 
@@ -552,6 +552,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | feat | 6/6 | 8m |
 | 08-10-2026 05:00:00 | [T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers](#task-t7-default-to-charts-tab-remove-processes--log-tabs-restyle-tab-headers) | refactor | 5/6 | 20m |
 | 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
 | 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | feat | 10/10 | 35m |
