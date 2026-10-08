@@ -22,7 +22,7 @@ public static class SmiFormatter
     private const int WMemClk  = 8;   // "MemClk"     | "9999 MHz"
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 5;   // "Fan"        | "100 %"
-    private const int WPcie    = 9;   // "PCIe"       | "4.0 x16"
+    private const int WPcie    = 18;  // "PCIe"       | "4.0 x16 / 8 GB/s"
     private const int Sep      = 2;
 
     public static string Format(SystemSnapshot s)
@@ -83,7 +83,7 @@ public static class SmiFormatter
             sb.Append(PadL(MemClkVal(g.MemoryClockMhz), WMemClk)).Append(Spaces(Sep));
             sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));
             sb.Append(PadL(Pct(g.FanSpeedPct), WFan)).Append(Spaces(Sep));
-            sb.Append(PadL(g.PcieLabel, WPcie));
+            sb.Append(PadL(Pcie(g), WPcie));
             sb.AppendLine();
         }
 
@@ -128,4 +128,16 @@ public static class SmiFormatter
 
     /// <summary>Bytes → MB (integer). Invariant culture so no thousands/comma separator is ever emitted.</summary>
     private static string Mb(long bytes) => (bytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// PCIe: "{gen}.0 x{width} / {bandwidth} GB/s" — mirrors the GUI's PCIe values:
+    /// the link config from <see cref="GpuSnapshot.PcieLabel"/> (the overview
+    /// grid cell) plus the theoretical bandwidth in GB/s from
+    /// <see cref="GpuSnapshot.PcieBandwidthGbps"/> (the charted "PCIe Bandwidth"
+    /// card). "N/A" when NVML reports no link (gen or width == 0).
+    /// </summary>
+    private static string Pcie(GpuSnapshot g) =>
+        g.PcieBandwidthGbps > 0
+            ? $"{g.PcieLabel} / {g.PcieBandwidthGbps.ToString("0.##", CultureInfo.InvariantCulture)} GB/s"
+            : "N/A";
 }

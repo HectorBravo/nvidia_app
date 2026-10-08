@@ -62,7 +62,9 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   (~1 Hz background poller → UI thread), `GpuServiceFactory` (builds the concrete
   engine), `Theme` (dark theme + value formatters), `GlobalUsings`.
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry), `SmiFormatter`
-  (nvidia-smi-style table).
+  (nvidia-smi-style table). Its "PCIe" column shows the link config plus the
+  theoretical bandwidth (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the
+  WPF GUI's PCIe values.
 
 ## 4. Entry Points
 - **WPF dashboard:** `NvidiaMonitor` → `App.Main` (`[STAThread]`). No args = launches
@@ -167,6 +169,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-08-10 — Console PCIe now matches the GUI: the `SmiFormatter` "PCIe" column
+  shows the full link config **and** the theoretical bandwidth — `{gen}.0 x{width} /
+  {bandwidth} GB/s` (e.g. `4.0 x16 / 32 GB/s`) — mirroring the GUI's overview grid
+  cell (`GpuSnapshot.PcieLabel`) and the charted "PCIe Bandwidth (GB/s)" value
+  (`GpuSnapshot.PcieBandwidthGbps`). `WPcie` widened 9→18 and a new
+  `SmiFormatter.Pcie(GpuSnapshot)` helper was added; "N/A" when NVML reports no
+  link. Single-file change (`src/NvmlTest/SmiFormatter.cs`).
 - 2026-08-10 — Dashboard restructure: `MainWindow` now builds only the **Overview**
   and **Charts** tabs (the **Processes** and **Log** tabs were removed) and opens on
   the **Charts** tab by default (`TabControl.SelectedIndex = 1`). Tab headers use the
