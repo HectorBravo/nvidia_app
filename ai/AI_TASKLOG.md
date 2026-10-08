@@ -21,7 +21,7 @@
 - **Last Updated**: 08-10-2026 05:20:00
 - **Time Spent**: 20m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
-- **Commit(s)**: <pending — filled by the "after push" log commit>
+- **Commit(s)**: [`6ce04e0`](https://github.com/HectorBravo/nvidia_app/commit/6ce04e0) (code) + [`4e2dbaf`](https://github.com/HectorBravo/nvidia_app/commit/4e2dbaf) (log before) — pushed to `feat/ai-nvidia-monitor-app`
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (08-10-2026 ~05:00): "Make the Nvidia monitor start on the Charts tab, remove the Processes and Log tabs, and style the remaining tabs (Overview/Charts) with the app's dark graph aesthetic."
