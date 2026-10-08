@@ -49,6 +49,38 @@ public sealed record GpuSnapshot
     public int FanSpeedPct { get; init; }
     public int PerfState { get; init; } = -1; // NVML_PERF_STATE_*; -1 = N/A
 
+    // ── PCIe link ────────────────────────────────────────────────────────────────────
+    public int PcieLinkGen { get; init; }      // 1-5; 0 = N/A
+    public int PcieLinkWidth { get; init; }    // 1,2,4,8,16; 0 = N/A
+    public int PcieMaxLinkGen { get; init; }   // max supported gen for this GPU
+    public int PcieMaxLinkWidth { get; init; } // max supported width for this GPU
+
+    /// <summary>Current PCIe bandwidth in GB/s, or 0 if unavailable.</summary>
+    public double PcieBandwidthGbps => PcieLinkGen > 0 && PcieLinkWidth > 0
+        ? PciePerLaneGbps(PcieLinkGen) * PcieLinkWidth
+        : 0;
+
+    /// <summary>Maximum possible PCIe bandwidth in GB/s for this GPU.</summary>
+    public double PcieMaxBandwidthGbps => PcieMaxLinkGen > 0 && PcieMaxLinkWidth > 0
+        ? PciePerLaneGbps(PcieMaxLinkGen) * PcieMaxLinkWidth
+        : 0;
+
+    /// <summary>Per-lane transfer rate in GB/s for a given PCIe generation.</summary>
+    public static double PciePerLaneGbps(int gen) => gen switch
+    {
+        1 => 0.25,
+        2 => 0.5,
+        3 => 1.0,
+        4 => 2.0,
+        5 => 4.0,
+        _ => 0,
+    };
+
+    /// <summary>Display string like "4.0 x16" or "N/A".</summary>
+    public string PcieLabel => PcieLinkGen > 0 && PcieLinkWidth > 0
+        ? $"{PcieLinkGen}.0 x{PcieLinkWidth}"
+        : "N/A";
+
     // ── ECC ────────────────────────────────────────────────────
     public int EccCurrentMode { get; init; }   // 0 = disabled, 1 = enabled, -1 = N/A
     public int EccPersistingMode { get; init; }

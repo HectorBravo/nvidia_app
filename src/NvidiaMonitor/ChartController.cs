@@ -78,6 +78,7 @@ public class MetricChart : Border
     {
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalContentAlignment = HorizontalAlignment.Right,
         Height = PlotH,
         Background = Theme.Card,
     };
@@ -107,6 +108,9 @@ public class MetricChart : Border
     private int _dec;
     private double _ceiling = 1;
     private string _title = string.Empty;
+
+    // When true, Y-axis uses logarithmic scale (for metrics with wide dynamic range).
+    private bool _logScale;
 
     public MetricChart(string title)
     {
@@ -194,6 +198,23 @@ public class MetricChart : Border
 
     public ScrollViewer PlotScroll => _plotScroll;
 
+    /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
+    public void SetLogScale(bool log) => _logScale = log;
+
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling, bottom=0).</summary>
+    private double ValueToY(double value, double ceiling)
+    {
+        if (!_logScale)
+            return PlotH - (value / ceiling) * PlotH;
+
+        // Log scale: bottom = 0.01 * ceiling (never draw value=0 at the very bottom), top = ceiling.
+        double minLog = Math.Log(ceiling * 0.01);
+        double maxLog = Math.Log(ceiling);
+        double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
+        double frac = (vLog - minLog) / (maxLog - minLog);
+        return PlotH * (1 - Math.Clamp(frac, 0, 1));
+    }
+
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
     public void Redraw()
     {
@@ -249,6 +270,37 @@ public class MetricChart : Border
             _canvas.Children.Add(lbl);
         }
 
+        // Horizontal gridlines with value labels — only drawn on log-scale charts
+        // (e.g. PCIe Bandwidth) where the linear charts previously had none.
+        if (_logScale)
+        {
+            // Draw gridlines at powers of two within [0.01*max, max].
+            for (int p = 0; p <= 8; p++)
+            {
+                double val = Math.Pow(2, p);
+                if (val < max * 0.01 || val > max) continue;
+                double y = ValueToY(val, max);
+                _canvas.Children.Add(new Line
+                {
+                    X1 = 0, Y1 = y, X2 = w, Y2 = y,
+                    Stroke = Theme.Grid,
+                    StrokeThickness = 1,
+                    IsHitTestVisible = false,
+                });
+                var lbl2 = new TextBlock
+                {
+                    Text = val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G",
+                    Foreground = Theme.Muted,
+                    FontFamily = Theme.Mono,
+                    FontSize = 10,
+                    IsHitTestVisible = false,
+                };
+                Canvas.SetLeft(lbl2, 2);
+                Canvas.SetTop(lbl2, y - 6);
+                _canvas.Children.Add(lbl2);
+            }
+        }
+
         // ── per-GPU polylines (only the portion inside/near the viewport) ──
         foreach (var kvp in _ser)
         {
@@ -265,7 +317,7 @@ public class MetricChart : Border
             for (int i = i0; i <= i1; i++)
             {
                 double xv = _tl[i] * px;
-                double yv = PlotH - (values[i] / max) * PlotH;
+                double yv = ValueToY(values[i], max);
                 pts.Add(new Point(xv, Math.Clamp(yv, 0, PlotH)));
             }
 

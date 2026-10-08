@@ -422,6 +422,11 @@ public sealed class NvmlCoreService : IGpuMonitorService
             FanSpeedPct = GetU32(dev, Resolve<Nvml.DeviceGetFanSpeed>("nvmlDeviceGetFanSpeed"), (f, p) => f(dev, p)),
             PerfState = GetU32(dev, Resolve<Nvml.DeviceGetPerformanceState>("nvmlDeviceGetPerformanceState"), (f, p) => f(dev, p)),
 
+            PcieLinkGen = Math.Max(0, GetU32(dev, Resolve<Nvml.DeviceGetCurrPcieLinkGeneration>("nvmlDeviceGetCurrPcieLinkGeneration"), (f, p) => f(dev, p))),
+            PcieLinkWidth = Math.Max(0, GetU32(dev, Resolve<Nvml.DeviceGetCurrPcieLinkWidth>("nvmlDeviceGetCurrPcieLinkWidth"), (f, p) => f(dev, p))),
+            PcieMaxLinkGen = Math.Max(0, GetU32(dev, Resolve<Nvml.DeviceGetMaxPcieLinkGeneration>("nvmlDeviceGetMaxPcieLinkGeneration"), (f, p) => f(dev, p))),
+            PcieMaxLinkWidth = Math.Max(0, GetU32(dev, Resolve<Nvml.DeviceGetMaxPcieLinkWidth>("nvmlDeviceGetMaxPcieLinkWidth"), (f, p) => f(dev, p))),
+
             EccCurrentMode = eccModes.Current,
             EccPersistingMode = eccModes.Persistent,
             EccErrorsCorrected = eccCorr,

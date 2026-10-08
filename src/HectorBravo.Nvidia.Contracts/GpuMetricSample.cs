@@ -15,4 +15,6 @@ public sealed record GpuMetricSample
     public long MemoryUsedBytes { get; init; }
     public int TemperatureGpu { get; init; }
     public int GpuClockMhz { get; init; }
+    public double PcieBandwidthGbps { get; init; }
+    public double PcieMaxBandwidthGbps { get; init; }
 }

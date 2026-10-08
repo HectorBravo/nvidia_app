@@ -45,8 +45,8 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed.
-    private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384 };
+    // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed, pcieBw.
+    private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384, 32 };
 
     public MainWindow()
     {
@@ -257,6 +257,8 @@ public class MainWindow : Window
                 MemoryUsedBytes = g.MemoryUsedBytes,
                 TemperatureGpu = g.TemperatureGpu,
                 GpuClockMhz = g.GpuClockMhz,
+                PcieBandwidthGbps = g.PcieBandwidthGbps,
+                PcieMaxBandwidthGbps = g.PcieMaxBandwidthGbps,
                 Timestamp = snap.Timestamp,
             });
         }
@@ -276,6 +278,7 @@ public class MainWindow : Window
                 MemClock = g.MemoryClockMhz > 0 ? $"{g.MemoryClockMhz} MHz" : "N/A",
                 Fan = g.FanSpeedPct > 0 ? $"{g.FanSpeedPct} %" : "N/A",
                 PState = g.PerfStateLabel,
+                Pcie = g.PcieLabel,
             });
         }
         _grid.ItemsSource = rows;
@@ -374,7 +377,26 @@ public class MainWindow : Window
             }
 
             _runningMax[c] = max;
-            double ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
+
+            // PCIe chart: use the max *possible* bandwidth of the fastest card as the
+            // ceiling so a degraded link sits visibly low on the log scale.
+            double ceiling;
+            if (spec.LogScale)
+            {
+                double maxPossible = 0;
+                foreach (var kv in samplesByGpu)
+                    for (int i = 0; i < kv.Value.Count; i++)
+                    {
+                        double v = kv.Value[i].PcieMaxBandwidthGbps;
+                        if (v > maxPossible) maxPossible = v;
+                    }
+                ceiling = maxPossible > 0 ? maxPossible : 32; // fallback: PCIe 4.0 x16
+            }
+            else
+            {
+                ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
+            }
+
             _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals);
         }
 
@@ -430,6 +452,7 @@ public class MainWindow : Window
         grid.Columns.Add(NumCol("Mem Clock", "MemClock"));
         grid.Columns.Add(NumCol("Fan", "Fan"));
         grid.Columns.Add(NumCol("P-State", "PState"));
+        grid.Columns.Add(NumCol("PCIe", "Pcie", alignRight: false));
 
         return grid;
     }
@@ -473,6 +496,7 @@ public class MainWindow : Window
         public string MemClock { get; init; } = string.Empty;
         public string Fan { get; init; } = string.Empty;
         public string PState { get; init; } = string.Empty;
+        public string Pcie { get; init; } = string.Empty;
     }
 
     /// <summary>Per-row view model for the Processes tab (pre-formatted strings).</summary>
@@ -494,7 +518,8 @@ public class MainWindow : Window
         string Title,
         string Unit,
         int Decimals,
-        Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, List<double>> Selector);
+        Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, List<double>> Selector,
+        bool LogScale = false);
 
     /// <summary>Builds the 4-tab control (Overview / Charts / Processes / Log).</summary>
     private TabControl BuildTabs()
@@ -525,9 +550,13 @@ public class MainWindow : Window
             s => s.Select(x => (double)x.GpuClockMhz).ToList()));
         _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
             s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList()));
+        _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
+            s => s.Select(x => x.PcieBandwidthGbps).ToList(),
+            LogScale: true));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);
+            if (spec.LogScale) chart.SetLogScale(true);
             _charts.Add(chart);
             chart.Bind(_chartCtl);
             stack.Children.Add(chart);

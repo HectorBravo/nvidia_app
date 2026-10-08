@@ -22,6 +22,7 @@ public static class SmiFormatter
     private const int WMemClk  = 8;   // "MemClk"     | "9999 MHz"
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 5;   // "Fan"        | "100 %"
+    private const int WPcie    = 9;   // "PCIe"       | "4.0 x16"
     private const int Sep      = 2;
 
     public static string Format(SystemSnapshot s)
@@ -52,7 +53,8 @@ public static class SmiFormatter
         sb.Append(PadL("Memory", WMemory)).Append(Spaces(Sep));
         sb.Append(PadL("MemClk", WMemClk)).Append(Spaces(Sep));
         sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));
-        sb.Append(PadL("Fan", WFan));
+        sb.Append(PadL("Fan", WFan)).Append(Spaces(Sep));
+        sb.Append(PadL("PCIe", WPcie));
         sb.AppendLine();
 
         // Separator row (dashes).
@@ -65,7 +67,8 @@ public static class SmiFormatter
         sb.Append(Dash(WMemory)).Append(Spaces(Sep));
         sb.Append(Dash(WMemClk)).Append(Spaces(Sep));
         sb.Append(Dash(WPSt)).Append(Spaces(Sep));
-        sb.Append(Dash(WFan));
+        sb.Append(Dash(WFan)).Append(Spaces(Sep));
+        sb.Append(Dash(WPcie));
         sb.AppendLine();
 
         foreach (var g in s.Gpus)
@@ -79,7 +82,8 @@ public static class SmiFormatter
             sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMemory)).Append(Spaces(Sep));
             sb.Append(PadL(MemClkVal(g.MemoryClockMhz), WMemClk)).Append(Spaces(Sep));
             sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));
-            sb.Append(PadL(Pct(g.FanSpeedPct), WFan));
+            sb.Append(PadL(Pct(g.FanSpeedPct), WFan)).Append(Spaces(Sep));
+            sb.Append(PadL(g.PcieLabel, WPcie));
             sb.AppendLine();
         }
 
