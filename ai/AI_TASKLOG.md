@@ -9,9 +9,54 @@
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 5 completed task(s) - [View completed tasks](#completed-tasks)
+> 6 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+
+## Task T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
+- **Created**: 08-10-2026 05:00:00
+- **Last Updated**: 08-10-2026 05:20:00
+- **Time Spent**: 20m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: <pending — filled by the "after push" log commit>
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (08-10-2026 ~05:00): "Make the Nvidia monitor start on the Charts tab, remove the Processes and Log tabs, and style the remaining tabs (Overview/Charts) with the app's dark graph aesthetic."
+  - **Changes** (all in `src/NvidiaMonitor/MainWindow.cs`): `BuildTabs` now builds only Overview + Charts and sets `tabs.SelectedIndex = 1` so **Charts** is the startup tab. Removed the **Processes** tab (`BuildProcessGrid`, `ProcessRow`, `_processGrid`, the `ApplySnapshot` rebuild block) and the **Log** tab (`_logList`, `_clearLogBtn`, `AppendLog`, `ClearLog`, the `OnLoaded` seed/subscribe). **`_log` is kept** — it's still consumed by `CreateMonitor`/`GpuPollingService`/`Dispose` and console — only its UI consumers were removed. `StyleTabControl`: unselected headers `Theme.Muted`; a new `IsSelected=true` trigger sets the active header to `Theme.Accent` (NVIDIA green `#76B900`, same as the chart lines) to match the graph look.
+  - **Build**: `dotnet build nvidia_app.sln -c Release` → **0 warnings, 0 errors**. **Publish**: `bin/NvidiaMonitor/NvidiaMonitor.exe` refreshed. **Live smoke**: relaunched (PID 16276, alive, 168 MB) — no startup crash from the restructure.
+  - **Supersedes T4's Processes/Log tabs** (added in `2036b0a`) — now removed at the user's request.
+  - **VERIFY**: confirming Charts-as-startup-tab, Processes/Log gone, and header styling is a **manual** step (headless session cannot display the WPF window); the successful launch is the automated proxy.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- (08-10-2026 05:20:00) Manually run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm: (a) window opens on the **Charts** tab, (b) only **Overview** + **Charts** exist (Processes & Log removed), (c) the active header is green-highlighted / matches the graph aesthetic, (d) internal logging (start/stop/GPU-loss) is unaffected.
+
+### Subtasks / Plan
+
+- [x] T7.1 — `BuildTabs`: drop Processes + Log; add only Overview + Charts; `SelectedIndex = 1` (Charts default).
+- [x] T7.2 — Remove Processes UI (`BuildProcessGrid`, `ProcessRow`, `_processGrid`, `ApplySnapshot` rebuild).
+- [x] T7.3 — Remove Log UI (`_logList`, `_clearLogBtn`, `AppendLog`, `ClearLog`, OnLoaded seed/subscribe); keep `_log`.
+- [x] T7.4 — `StyleTabControl`: green (`Theme.Accent`) on the selected header, muted otherwise.
+- [x] T7.5 — Build Release (0/0) + publish + relaunch smoke test (alive).
+- [ ] T7.6 — Manual WPF verification (blocked to user — headless session cannot display the window).
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery notes (written for the agent, not the user).
+
+- **Single file changed**: `src/NvidiaMonitor/MainWindow.cs` only. No changes to `Theme.cs`, `ChartController.cs`, `MetricChart`, `App.cs`, or Contracts/NvmlCore.
+- **Remaining fields**: `_grid` (Overview DataGrid), `_tabs` (2 tabs), `_chartsScroll`, `_chartCtl`, `_history` (720), `_specs`, `_charts`, `_monitor`, `_polling`, `_log` (kept). Removed fields: `_processGrid`, `_logList`, `_clearLogBtn`.
+- **`BuildTabs` current shape**: `TabControl{Bg, Border, 0, margin(8,0,8,0)}` → `StyleTabControl`; `overview = TabItem{Header="Overview", Content=_grid}`; charts tab = 7 `MetricChart`s (GPU%, Mem%, Temp, Power, Clock, Mem MiB, PCIe-log) in a `StackPanel` inside `_chartsScroll` (Ctrl+wheel zoom, `SizeChanged`→`SetViewportWidth`). Then `Items.Add(overview); Items.Add(chartsTab); SelectedIndex = 1; return`. **Index 1 = Charts.**
+- **`StyleTabControl`**: `ItemContainerStyle = Style(TabItem)` — setters `Foreground=Muted`, `FontFamily=Mono`, `FontSize=12`, `Padding(12,6,12,6)` + `Trigger{IsSelected=true → Foreground=Accent}`. `Theme`: Bg#0B0B0D, Panel#15161C, Border#262833, Fg#E8E9EC, Muted#8B8E98, Accent#76B900.
+- **`_log` retention (critical)**: `AppLog`/`AppLogEntry` still consumed by `CreateMonitor`, `GpuPollingService`, `Dispose`, and `App.cs` console — only the WPF Log tab was removed. Do NOT remove `_log` again.
+- **Build/run** (from `D:\Repos\nvidia_app`): `dotnet build nvidia_app.sln -c Release` (0/0); publish `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL). dotnet at `C:\Program Files\dotnet\dotnet.exe`; Spanish SDK output; `net8.0-windows` WPF.
+- **Git**: AI branch `feat/ai-nvidia-monitor-app` (user's protected = `main`). Code commit `feat(monitor): [ai] ...`; log commits `docs(ai): [ai] ...` before/after. Identity `GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot` (email untouched; never modify `git config`).
+- **PowerShell gotchas**: wrapper mangles `"`/`>`/complex quoting — use single-quoted commands; `?:` unsupported. `read_files` returned clean UTF-8 here.
 
 ## Task T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix
 
@@ -455,6 +500,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 08-10-2026 05:00:00 | [T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers](#task-t7-default-to-charts-tab-remove-processes--log-tabs-restyle-tab-headers) | refactor | 5/6 | 20m |
 | 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
 | 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | feat | 10/10 | 35m |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
