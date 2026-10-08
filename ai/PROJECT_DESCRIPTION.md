@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-08-10 10:36:23
-git_head: e30e8af00d60153617756bfe8b42042e62f915f4
+last_indexed: 2026-08-10 04:02:38
+git_head: 2036b0a81488fa17732018396301f0f373068e56
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -18,7 +18,8 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style table.
 
 Reads per-GPU telemetry: GPU/memory utilization, temperature, power (+limits), memory
-used/total/free, clocks, fan, P-state, ECC, NVLink count, throttle reasons, and a
+used/total/free, clocks, fan, P-state, **PCIe link (gen × width)** and derived
+theoretical **PCIe bandwidth (GB/s)**, ECC, NVLink count, throttle reasons, and a
 per-GPU process list (compute + graphics) with PID, kind and memory. When NVML/GPU is
 unavailable it degrades to a friendly message (UI) or a non-zero exit code (CLI).
 
@@ -101,8 +102,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       ├─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                      │            driving 6 MetricChart cards (util, mem-util, temp,
-                      │            power, clock, mem-used) — native WPF shapes
+                      │            driving 7 MetricChart cards (util, mem-util, temp,
+                      │            power, clock, mem-used, PCIe-bandwidth [log Y]) — native WPF shapes
                       ├─ Processes: per-GPU process list (ProcessRow)
                       └─ Log:       AppLog → ListBox
 ```
@@ -166,6 +167,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   move them into "Features".
 
 ## 11. Change Log
+- 2026-08-10 — PCIe bandwidth: new `GpuSnapshot.Pcie*` fields (current/max gen+width,
+  read from 4 NVML link calls in `NvmlCoreService`; `PciePerLaneGbps` gen1–5), a compact
+  "PCIe" column in the WPF overview grid and the `NvmlTest` table (both use
+  `GpuSnapshot.PcieLabel`), and a 7th chart card "PCIe Bandwidth (GB/s)" with a
+  **logarithmic Y-axis** (`MetricChart.SetLogScale`/`ValueToY`; gridlines at powers of
+  two; ceiling = fastest card's max possible bandwidth). Chart fix: short histories
+  (< window) now **right-align** (`_plotScroll.HorizontalContentAlignment=Right`).
 - 2026-08-10 — Initial project map (project-indexer skill). Reflects the new
   `ChartController.cs` (native-WPF synchronized charts: timeline history, shared
   crosshair, scroll-sync, Ctrl+wheel zoom, drag-to-reorder), the removal of the old
