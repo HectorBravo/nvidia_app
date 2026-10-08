@@ -51,7 +51,10 @@ public class MetricChart : Border
     // plot is shifted right so the data pins to the right edge (no blank centered strip).
     private double _rightShift;
 
-    private const double PlotH = 128; // fixed plot height in px
+    private const double PlotH = 128;        // fixed plot (drawing) height in px
+    private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
+    private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
+    private const double TopPad = 8;         // headroom so the top (max) value isn't clipped
 
     private readonly Grid _inner = new();
 
@@ -82,7 +85,8 @@ public class MetricChart : Border
     {
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-        Height = PlotH,
+        VerticalContentAlignment = VerticalAlignment.Top,
+        Height = PlotH + AxisH + ScrollReserve,
         Background = Theme.Card,
     };
 
@@ -210,12 +214,15 @@ public class MetricChart : Border
         if (!_logScale)
             return PlotH - (value / ceiling) * PlotH;
 
-        // Log scale: bottom = 0.01 * ceiling (never draw value=0 at the very bottom), top = ceiling.
+        // Log scale with top headroom: bottom = 0.01 * ceiling at y = PlotH,
+        // top = ceiling at y = TopPad, so the max value sits just below the top
+        // edge instead of being clipped right at it.
         double minLog = Math.Log(ceiling * 0.01);
         double maxLog = Math.Log(ceiling);
         double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
         double frac = (vLog - minLog) / (maxLog - minLog);
-        return PlotH * (1 - Math.Clamp(frac, 0, 1));
+        double span = PlotH - TopPad;
+        return TopPad + span * (1 - Math.Clamp(frac, 0, 1));
     }
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
@@ -234,7 +241,7 @@ public class MetricChart : Border
         if (viewport <= 0) viewport = 960;
         _rightShift = Math.Max(0, viewport - contentW);
         _canvas.Width = contentW + _rightShift;
-        _canvas.Height = PlotH;
+        _canvas.Height = PlotH + AxisH;
         double off = _rightShift; // right-shift applied to every x coordinate
 
         // Remove every drawn element except the persistent crosshair. Reverse-index so we
@@ -274,11 +281,11 @@ public class MetricChart : Border
                 Text = $"{m}m",
                 Foreground = MinuteLabel,
                 FontFamily = Theme.Mono,
-                FontSize = 9,
+                FontSize = 11,
                 IsHitTestVisible = false,
             };
             Canvas.SetLeft(lbl, x + 3);
-            Canvas.SetTop(lbl, PlotH - 13);
+            Canvas.SetTop(lbl, PlotH + 2);
             _canvas.Children.Add(lbl);
         }
 
@@ -302,13 +309,13 @@ public class MetricChart : Border
                 var lbl2 = new TextBlock
                 {
                     Text = val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G",
-                    Foreground = Theme.Muted,
+                    Foreground = Theme.Fg,
                     FontFamily = Theme.Mono,
-                    FontSize = 10,
+                    FontSize = 12,
                     IsHitTestVisible = false,
                 };
                 Canvas.SetLeft(lbl2, off + 2);
-                Canvas.SetTop(lbl2, y - 6);
+                Canvas.SetTop(lbl2, y - 7);
                 _canvas.Children.Add(lbl2);
             }
         }
@@ -392,7 +399,7 @@ public class MetricChart : Border
             double v = ValueAt(t, _tl, kvp.Value);
             _readout.Children.Add(new Border
             {
-                Background = CrossRed,
+                Background = Palette[kvp.Key % Palette.Length],
                 Width = 9,
                 Height = 9,
                 CornerRadius = new CornerRadius(2),
@@ -404,7 +411,7 @@ public class MetricChart : Border
                 Text = Fmt(v) + _unit,
                 Foreground = CrossRed,
                 FontFamily = Theme.Mono,
-                FontSize = 10,
+                FontSize = 12,
                 Margin = new Thickness(0, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
@@ -526,9 +533,9 @@ public class MetricChart : Border
             _legend.Children.Add(new TextBlock
             {
                 Text = Fmt(cur) + _unit,
-                Foreground = Theme.Muted,
+                Foreground = Theme.Fg,
                 FontFamily = Theme.Mono,
-                FontSize = 10,
+                FontSize = 12,
                 Margin = new Thickness(0, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
