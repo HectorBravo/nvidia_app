@@ -4,12 +4,64 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | in_progress | feat | 6/6 | 6m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 6 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T8: Console PCIe matches the GUI (bandwidth column)
+
+- **Status**: in_progress
+- **Type**: feat
+- **Created**: 08-10-2026 17:03:00
+- **Last Updated**: 08-10-2026 17:10:00
+- **Time Spent**: 6m
+- **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (08-10-2026 ~17:03): "Change also the console app to show the PCIe values as on the GUI."
+  - **Analysis**: the GUI surfaces two PCIe values — the **Overview** grid cell = `GpuSnapshot.PcieLabel` (`4.0 x16`) and the **Charts** tab (now the default) = **PCIe Bandwidth (GB/s)** = `GpuSnapshot.PcieBandwidthGbps`. The console `SmiFormatter` already showed the label but **not** the bandwidth, so it was missing a PCIe value the GUI displays.
+  - **Change** (single file `src/NvmlTest/SmiFormatter.cs`): the "PCIe" column now renders `{gen}.0 x{width} / {bandwidth} GB/s` (e.g. `4.0 x16 / 32 GB/s`) via a new `Pcie(GpuSnapshot)` helper (label + `PcieBandwidthGbps`, invariant `0.##`, `N/A` when no link). `WPcie` widened `9 → 18`. Mirrors the GUI's compound value style (` / `) used by `Power`/`Memory`.
+  - **Build**: `dotnet build nvidia_app.sln -c Release` → **0 warnings, 0 errors**. **Publish** `bin/NvmlTest` + live `--print`: `4.0 x16 / 32 GB/s` (GPU0, gen4×16) and `1.0 x4 / 1 GB/s` (GPU1, gen1×4) — values verified correct.
+  - **Scope**: only `SmiFormatter.cs`. The WPF `App.cs --print` one-liner and the GUI were NOT touched (the request was specifically about the console table). Docs: `ai/PROJECT_DESCRIPTION.md` (changelog + §3 NvmlTest note) updated in the same commit.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+None yet.
+
+### Subtasks / Plan
+
+- [x] T8.1 — Inspect GUI PCIe rendering (Overview `PcieLabel` cell + Charts `PcieBandwidthGbps` card) and console `SmiFormatter`.
+- [x] T8.2 — Add `SmiFormatter.Pcie(GpuSnapshot)` → `label / bandwidth GB/s` (N/A-aware).
+- [x] T8.3 — Widen `WPcie` 9→18; wire the value row to the new helper.
+- [x] T8.4 — Build Release (0/0) + publish `bin/NvmlTest`.
+- [x] T8.5 — Live `--print` smoke test: confirmed `4.0 x16 / 32 GB/s` / `1.0 x4 / 1 GB/s`.
+- [ ] T8.6 — Commit + push on `feat/ai-nvidia-monitor-app` (log before/after, code+docs), identity `AI_bot`, `[ai]`.
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery notes (written for the agent, not the user).
+
+- **Only file changed**: `src/NvmlTest/SmiFormatter.cs`. `Contracts`, `NvmlCore`, `NvidiaMonitor` (MainWindow/App/Theme/ChartController), and `NvmlTest/Program.cs` are **unchanged**.
+- **Key contract** (`GpuSnapshot.cs`, `HectorBravo.Nvidia.Contracts`): `PcieLabel => PcieLinkGen>0 && PcieLinkWidth>0 ? "{gen}.0 x{width}" : "N/A"`. `PcieBandwidthGbps => PcieLinkGen>0 && PcieLinkWidth>0 ? PciePerLaneGbps(gen)*width : 0`. `PciePerLaneGbps`: 1→0.25, 2→0.5, 3→1.0, 4→2.0, 5→4.0. So a gen4×16 = 2.0*16 = **32 GB/s**; gen1×4 = 0.25*4 = **1 GB/s**. Both the GUI grid cell and the console use `PcieLabel`; the GUI chart plots `PcieBandwidthGbps`.
+- **`SmiFormatter.cs` post-change**: `WPcie = 18` (comment `"PCIe" | "4.0 x16 / 8 GB/s"`). Header row uses `PadL("PCIe", WPcie)`; separator `Dash(WPcie)`; value row `PadL(Pcie(g), WPcie)` (was `PadL(g.PcieLabel, WPcie)`). New helper: `private static string Pcie(GpuSnapshot g) => g.PcieBandwidthGbps > 0 ? $"{g.PcieLabel} / {g.PcieBandwidthGbps.ToString("0.##", CultureInfo.InvariantCulture)} GB/s" : "N/A";`
+- **Why compound `label / bandwidth`**: the GUI's headline PCIe metric is the bandwidth chart; the label alone is already shown, so adding `/ N GB/s` brings the console in line with **both** GUI PCIe values in the file's existing ` / ` compound-value style (Power/Memory). Kept the label first so the `x16`/`x4` topology is still readable.
+- **Build/run** (from `D:\Repos\nvidia_app`): dotnet at `C:\Program Files\dotnet\dotnet.exe`; Spanish SDK output. `dotnet build nvidia_app.sln -c Release` (0/0). Publish `dotnet publish src/NvmlTest -c Release -o bin/NvmlTest`. Run: `bin\NvmlTest\NvmlTest.exe --print`. **PowerShell gotchas**: the inline `powershell -Command` wrapper mangles `;`/quotes/`$()` — prefer a single-quoted `-File` script (write one via `Set-Content` to `%TEMP%`) or simple one-statement commands; stop a running `NvidiaMonitor.exe`/`NvmlTest.exe` with `Stop-Process -Name ... -ErrorAction SilentlyContinue` before publishing (file lock).
+- **Docs**: `ai/PROJECT_DESCRIPTION.md` §3 (NvmlTest line now notes the PCIe column) + §11 Change Log (new top bullet). No `docs/` folder exists.
+- **Git**: AI branch `feat/ai-nvidia-monitor-app` (user's protected = `main`; remote `https://github.com/HectorBravo/nvidia_app.git`). Pre-push HEAD was `d4c8789`. Identity `GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot` (do NOT set email; never touch `git config`). Code+docs commit message: `feat(cli): [ai] show PCIe bandwidth in the console table to match the GUI`. Dedicated log commits `docs(ai): [ai] ...` before and after the code push, pushed to the user's current branch (`feat/ai-nvidia-monitor-app`). Then `git push origin feat/ai-nvidia-monitor-app`.
+- **Current state**: code + docs edited, built clean, live-verified. **Next**: the pre-push `docs(ai)` log commit (this file), then the code+docs commit, then the post-push `docs(ai)` log commit (flip T8→done, fill commit hashes, add to Completed Tasks, bump count to 7), then push.
 
 ---
 
