@@ -18,7 +18,7 @@
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-10-2026 03:49:32
-- **Last Updated**: 08-10-2026 04:06:19
+- **Last Updated**: 08-10-2026 04:50:00
 - **Time Spent**: 17m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
 - **Commit(s)**: [`8c0c51d`](https://github.com/HectorBravo/nvidia_app/commit/8c0c51d) (log) + [`2036b0a`](https://github.com/HectorBravo/nvidia_app/commit/2036b0a) (code) + [`52eb24d`](https://github.com/HectorBravo/nvidia_app/commit/52eb24d) (index) — all pushed to `feat/ai-nvidia-monitor-app`
@@ -32,16 +32,19 @@
   - **PCIe ceiling**: `UpdateCharts` uses the max *possible* bandwidth across all GPUs (fastest card, e.g. PCIe 4.0 x16 = 32 GB/s) as the stable chart ceiling, so a degraded link sits visibly low.
   - **Build**: `dotnet build nvidia_app.sln -c Debug` → 0 errors, 0 warnings (all 4 projects). `TreatWarningsAsErrors` on Contracts + NvmlCore passes.
   - **NOTE**: PCIe bandwidth is **theoretical link bandwidth** (per-lane rate × width), not measured throughput — NVML exposes link gen/width but no live PCIe throughput counter.
+  - **Follow-up (08-10-2026, "now it works" + 6 improvements)** — `ChartController.cs` readability pass (commit `7c6c7b6` then this one): added an `AxisH` (16 px) strip below the plot for the per-minute labels (`_canvas.Height = PlotH + AxisH`, labels at `y = PlotH + 2`), a `ScrollReserve` (16 px) row so the `ScrollViewer` height = `PlotH + AxisH + ScrollReserve` puts the horizontal scrollbar under the labels instead of over them (`VerticalContentAlignment = Top`); legend value text `Theme.Muted` → `Theme.Fg` and font 10 → 12; minute label 9 → 11, gridline label 10 → 12, red readout 10 → 12; log-scale `ValueToY` now maps ceiling → `TopPad` (8 px headroom) so the max isn't clipped; hover-readout swatch `CrossRed` → `Palette[key]` (values stay red).
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (08-10-2026 03:49:32) Confirm the right-align chart fix + new PCIe column/chart look correct in the republished `bin/NvidiaMonitor\NvidiaMonitor.exe`.
+- [ ] (08-10-2026 04:50:00) Confirm the six chart readability fixes (minute labels in the bottom axis strip, horizontal scrollbar under the labels, white/larger legend values, PCIe max not clipped, hover-readout GPU-coloured swatch with red values) in the republished `bin/NvidiaMonitor\NvidiaMonitor.exe`.
 
 **Confirmed (user provided):**
 
 - (08-10-2026) "looks good, do it" → approved implementing the proposed PCIe overview column + PCIe bandwidth chart.
+- (08-10-2026) "now it works" → confirmed the right-align short-history chart fix + the new PCIe column/chart render correctly.
+- (08-10-2026) Requested 6 chart readability improvements: (1) put the per-minute labels in a strip at the very bottom (they overlapped the graph), (2) move the horizontal scrollbar to its own row below the minute-label strip (it overlapped the labels), (3) change the per-GPU "latest value" legend text from gray to white, (4) increase the graph value font sizes (barely visible), (5) the PCIe chart's top/max value was clipped at the top edge, (6) keep the hover readout values red but colour each swatch to match its GPU line (GPU0 light green `#76b900`, GPU1 darker green `#3ba55c`, GPU2 yellow `#e0b400`).
 
 ### Subtasks / Plan
 
