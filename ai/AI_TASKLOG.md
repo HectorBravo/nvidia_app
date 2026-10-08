@@ -4,25 +4,24 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | in_progress | feat | 0/9 | 0m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 4 completed task(s) - [View completed tasks](#completed-tasks)
+> 5 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-10-2026 03:49:32
-- **Last Updated**: 08-10-2026 03:49:32
-- **Time Spent**: 0m
+- **Last Updated**: 08-10-2026 04:06:19
+- **Time Spent**: 17m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
-- **Commit(s)**: pending
+- **Commit(s)**: [`8c0c51d`](https://github.com/HectorBravo/nvidia_app/commit/8c0c51d) (log) + [`2036b0a`](https://github.com/HectorBravo/nvidia_app/commit/2036b0a) (code) + [`52eb24d`](https://github.com/HectorBravo/nvidia_app/commit/52eb24d) (index) — all pushed to `feat/ai-nvidia-monitor-app`
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (08-10-2026, "looks good, do it"): implement the proposed PCIe feature — a compact PCIe column in the overview pane, a new log-scale "PCIe Bandwidth" chart, theoretical bandwidth from current gen/width, and a shared ceiling from the fastest card's max possible bandwidth.
@@ -54,7 +53,7 @@
 - [x] Add "PCIe Bandwidth (GB/s)" log-scale chart spec; drive its ceiling from the fastest card's max possible bandwidth
 - [x] Add PCIe column to the headless `SmiFormatter` (verifies the NVML reads end-to-end)
 - [x] Build (0/0) + run `NvmlTest --print` to confirm live PCIe data
-- [ ] Commit (right-align fix + PCIe feature), push, republish `bin/NvidiaMonitor`, refresh project index
+- [x] Commit (right-align fix + PCIe feature), push, republish `bin/NvidiaMonitor`, refresh project index (all done — index `52eb24d`)
 
 ### Full Context Notes for AI Agents
 
@@ -453,6 +452,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
 | 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | feat | 10/10 | 35m |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
