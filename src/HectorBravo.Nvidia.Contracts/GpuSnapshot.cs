@@ -76,10 +76,14 @@ public sealed record GpuSnapshot
         _ => 0,
     };
 
-    /// <summary>Display string like "4.0 x16" or "N/A".</summary>
-    public string PcieLabel => PcieLinkGen > 0 && PcieLinkWidth > 0
-        ? $"{PcieLinkGen}.0 x{PcieLinkWidth}"
-        : "N/A";
+    /// <summary>Display string like "4.0 x16" or "N/A" (current link).</summary>
+    public string PcieLabel => PcieLinkLabel(PcieLinkGen, PcieLinkWidth);
+
+    /// <summary>Display string for a given PCIe gen/width, like "4.0 x16" or "N/A".</summary>
+    /// <remarks>Static so per-sample history (e.g. the chart legend/hover) can format any
+    /// gen/width consistently with the current-link <see cref="PcieLabel"/>.</remarks>
+    public static string PcieLinkLabel(int gen, int width)
+        => gen > 0 && width > 0 ? $"{gen}.0 x{width}" : "N/A";
 
     // ── ECC ────────────────────────────────────────────────────
     public int EccCurrentMode { get; init; }   // 0 = disabled, 1 = enabled, -1 = N/A

@@ -17,4 +17,8 @@ public sealed record GpuMetricSample
     public int GpuClockMhz { get; init; }
     public double PcieBandwidthGbps { get; init; }
     public double PcieMaxBandwidthGbps { get; init; }
+    // Current link gen/width (0 = N/A) per sample, so the PCIe chart can show the full
+    // link config ("4.0 x16") in the legend and in the hover readout, not just GB/s.
+    public int PcieLinkGen { get; init; }
+    public int PcieLinkWidth { get; init; }
 }

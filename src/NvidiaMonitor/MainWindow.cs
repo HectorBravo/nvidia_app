@@ -247,6 +247,8 @@ public class MainWindow : Window
                 GpuClockMhz = g.GpuClockMhz,
                 PcieBandwidthGbps = g.PcieBandwidthGbps,
                 PcieMaxBandwidthGbps = g.PcieMaxBandwidthGbps,
+                PcieLinkGen = g.PcieLinkGen,
+                PcieLinkWidth = g.PcieLinkWidth,
                 Timestamp = snap.Timestamp,
             });
         }
@@ -318,6 +320,8 @@ public class MainWindow : Window
         {
             var spec = _specs[c];
             var seriesList = new List<KeyValuePair<int, double[]>>();
+            var pcieGenMap = new List<KeyValuePair<int, int[]>>();
+            var pcieWidthMap = new List<KeyValuePair<int, int[]>>();
             double max = _runningMax[c];
 
             foreach (var kv in samplesByGpu)
@@ -347,6 +351,22 @@ public class MainWindow : Window
                     if (arr[i] > max) max = arr[i];
                 }
                 seriesList.Add(new KeyValuePair<int, double[]>(kv.Key, arr));
+
+                // For the PCIe chart, keep the link gen/width per sample (aligned to the
+                // shared timeline exactly like arr) so the legend/hover can show the link
+                // config at any point in the history, not just the current one.
+                if (spec.Pcie)
+                {
+                    int[] genArr = new int[n];
+                    int[] widthArr = new int[n];
+                    for (int i = 0; i < n - lead; i++)
+                    {
+                        genArr[lead + i] = kv.Value[srcStart + i].PcieLinkGen;
+                        widthArr[lead + i] = kv.Value[srcStart + i].PcieLinkWidth;
+                    }
+                    pcieGenMap.Add(new KeyValuePair<int, int[]>(kv.Key, genArr));
+                    pcieWidthMap.Add(new KeyValuePair<int, int[]>(kv.Key, widthArr));
+                }
             }
 
             _runningMax[c] = max;
@@ -370,7 +390,8 @@ public class MainWindow : Window
                 ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
             }
 
-            _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals);
+            _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals,
+                spec.Pcie ? pcieGenMap : null, spec.Pcie ? pcieWidthMap : null);
         }
 
         // All charts share the timeline (same samples), so one combined tick resizes + follows +
@@ -468,7 +489,8 @@ public class MainWindow : Window
         string Unit,
         int Decimals,
         Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, List<double>> Selector,
-        bool LogScale = false);
+        bool LogScale = false,
+        bool Pcie = false);
 
     /// <summary>Builds the 2-tab control (Overview / Charts); Charts is the default tab.</summary>
     private TabControl BuildTabs()
@@ -501,7 +523,8 @@ public class MainWindow : Window
             s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList()));
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
-            LogScale: true));
+            LogScale: true,
+            Pcie: true));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);

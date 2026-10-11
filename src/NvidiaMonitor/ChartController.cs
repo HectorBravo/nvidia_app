@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using HectorBravo.Nvidia.Contracts;
 
 namespace HectorBravo.Nvidia.Monitor;
 
@@ -43,13 +44,17 @@ public class MetricChart : Border
 
     // Crosshair + per-GPU value readout are always red (per spec).
     private static readonly Brush CrossRed = Frozen("#ff5252");
-    // Per-minute gridlines are dark blue (per spec).
-    private static readonly Brush MinuteBlue = Frozen("#33508f");
+    // Per-minute gridlines are light blue (per spec); the t = 0 "start" marker is a brighter
+    // blue so it stands out from the repeating per-minute lines.
+    private static readonly Brush MinuteBlue = Frozen("#7f9bd1");
+    private static readonly Brush StartMarkBlue = Frozen("#58a6ff");
     private static readonly Brush MinuteLabel = Frozen("#7f9bd1");
 
     // Right-shift in pixels: when the timeline is shorter than the viewport, the whole
     // plot is shifted right so the data pins to the right edge (no blank centered strip).
     private double _rightShift;
+    // Fixed right-hand Y-axis: reserved width for the axis column (value labels + tick marks).
+    private const int AxisPad = 62;
 
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
@@ -86,7 +91,25 @@ public class MetricChart : Border
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
         VerticalContentAlignment = VerticalAlignment.Top,
-        Height = PlotH + AxisH + ScrollReserve,
+        MinWidth = 1,
+        Background = Theme.Card,
+    };
+
+    // Right-hand Y-axis. Lives in its own ScrollViewer (fixed-width, so it never scrolls
+    // horizontally) placed to the RIGHT of the plot; it stays fixed while the plot scrolls
+    // across time. Its height follows the plot so tick labels align with the drawn values.
+    private readonly ScrollViewer _axisScroll = new()
+    {
+        VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        VerticalContentAlignment = VerticalAlignment.Top,
+        MinWidth = 1,
+        Background = Theme.Card,
+    };
+
+    // The axis drawing surface (value labels + tick marks), hosted inside _axisScroll.
+    private readonly Canvas _axisCanvas = new()
+    {
         Background = Theme.Card,
     };
 
@@ -118,6 +141,10 @@ public class MetricChart : Border
 
     // When true, Y-axis uses logarithmic scale (for metrics with wide dynamic range).
     private bool _logScale;
+    // Per-GPU PCIe link config (gen and width, aligned to the timeline; 0 = N/A) for the
+    // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
+    private Dictionary<int, int[]> _pcieGen = new();
+    private Dictionary<int, int[]> _pcieWidth = new();
 
     public MetricChart(string title)
     {
@@ -148,11 +175,26 @@ public class MetricChart : Border
         header.Children.Add(_titleText);
         Grid.SetRow(header, 0);
 
+        // Body: the plot fills the remaining width; the fixed right-hand Y-axis sits in a
+        // dedicated (non-scrolling, fixed-width) column to its right, so it stays put while
+        // the plot scrolls across time.
+        var body = new Grid();
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(AxisPad) });
+
         _plotScroll.Content = _canvas;
-        Grid.SetRow(_plotScroll, 1);
+        Grid.SetColumn(_plotScroll, 0);
+
+        _axisScroll.Content = _axisCanvas;
+        _axisCanvas.Height = PlotH + AxisH; // match the plot so value labels line up
+        Grid.SetColumn(_axisScroll, 1);
+
+        body.Children.Add(_plotScroll);
+        body.Children.Add(_axisScroll);
+        Grid.SetRow(body, 1);
 
         _inner.Children.Add(header);
-        _inner.Children.Add(_plotScroll);
+        _inner.Children.Add(body);
         Child = _inner;
 
         Background = Theme.Card;
@@ -193,7 +235,9 @@ public class MetricChart : Border
         double ceiling,
         string title,
         string unit,
-        int decimals)
+        int decimals,
+        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null,
+        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null)
     {
         _tl = timelineSec ?? Array.Empty<double>();
         _ser = values ?? new List<KeyValuePair<int, double[]>>();
@@ -201,6 +245,10 @@ public class MetricChart : Border
         _title = title;
         _unit = unit ?? string.Empty;
         _dec = decimals;
+        _pcieGen = new Dictionary<int, int[]>();
+        _pcieWidth = new Dictionary<int, int[]>();
+        if (pcieGen != null) foreach (var kv in pcieGen) _pcieGen[kv.Key] = kv.Value;
+        if (pcieWidth != null) foreach (var kv in pcieWidth) _pcieWidth[kv.Key] = kv.Value;
     }
 
     public ScrollViewer PlotScroll => _plotScroll;
@@ -259,6 +307,28 @@ public class MetricChart : Border
 
         double max = _ceiling > 0 ? _ceiling : 1;
 
+        // t = 0 "start" marker: a brighter-blue vertical bar at the very first sample (left
+        // edge) with a "0m" label, so the timeline's origin is always visible.
+        double x0 = _rightShift; // left edge of the data region (t = 0)
+        _canvas.Children.Add(new Line
+        {
+            X1 = x0, Y1 = 0, X2 = x0, Y2 = PlotH,
+            Stroke = StartMarkBlue,
+            StrokeThickness = 2,
+            IsHitTestVisible = false,
+        });
+        var lbl0 = new TextBlock
+        {
+            Text = "0m",
+            Foreground = StartMarkBlue,
+            FontFamily = Theme.Mono,
+            FontSize = 11,
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(lbl0, x0 + 3);
+        Canvas.SetTop(lbl0, PlotH + 2);
+        _canvas.Children.Add(lbl0);
+
         // ── per-minute dark-blue gridlines within the visible window ──
         double viewSec = _ctl.WindowSeconds;
         double tStart = _ctl.ViewStartSec();
@@ -293,7 +363,8 @@ public class MetricChart : Border
         // (e.g. PCIe Bandwidth) where the linear charts previously had none.
         if (_logScale)
         {
-            // Draw gridlines at powers of two within [0.01*max, max].
+            // Gridlines at powers of two within [0.01*max, max]. Their value labels live on
+            // the fixed right-hand Y-axis (DrawAxis), not in the plot, so the plot stays clear.
             for (int p = 0; p <= 8; p++)
             {
                 double val = Math.Pow(2, p);
@@ -306,17 +377,6 @@ public class MetricChart : Border
                     StrokeThickness = 1,
                     IsHitTestVisible = false,
                 });
-                var lbl2 = new TextBlock
-                {
-                    Text = val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G",
-                    Foreground = Theme.Fg,
-                    FontFamily = Theme.Mono,
-                    FontSize = 12,
-                    IsHitTestVisible = false,
-                };
-                Canvas.SetLeft(lbl2, off + 2);
-                Canvas.SetTop(lbl2, y - 7);
-                _canvas.Children.Add(lbl2);
             }
         }
 
@@ -363,10 +423,80 @@ public class MetricChart : Border
 
         if (!_canvas.Children.Contains(_crossLine)) _canvas.Children.Add(_crossLine);
 
+        DrawAxis(max);
+
         _maxText.Text = $"max {max:0}";
         UpdateLegend();
         UpdateCrosshair();
     }
+
+    // Draws the fixed right-hand Y-axis value labels + tick marks on _axisCanvas, aligned with
+    // the plot's values (linear: 0..max with evenly spaced ticks; PCIe/log: powers of two).
+    private void DrawAxis(double max)
+    {
+        for (int i = _axisCanvas.Children.Count - 1; i >= 0; i--)
+            _axisCanvas.Children.RemoveAt(i);
+
+        // Axis line at the left edge of the axis column (abuts the plot's right edge).
+        _axisCanvas.Children.Add(new Line
+        {
+            X1 = 0, Y1 = 0, X2 = 0, Y2 = PlotH,
+            Stroke = Theme.Border,
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        });
+
+        double topY = _logScale ? TopPad : 0; // y of the topmost tick (value = max)
+        if (_logScale)
+        {
+            for (int p = 0; p <= 8; p++)
+            {
+                double val = Math.Pow(2, p);
+                if (val < max * 0.01 || val > max) continue;
+                DrawAxisTick(val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G", ValueToY(val, max));
+            }
+        }
+        else
+        {
+            for (int i = 0; i <= 5; i++)
+            {
+                double val = max * i / 5.0;
+                DrawAxisTick(Fmt(val), topY + (PlotH - topY) * (1 - i / 5.0));
+            }
+        }
+    }
+
+    private void DrawAxisTick(string text, double y)
+    {
+        _axisCanvas.Children.Add(new Line
+        {
+            X1 = 0, Y1 = y, X2 = 6, Y2 = y,
+            Stroke = Theme.Border,
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        });
+        var lbl = new TextBlock
+        {
+            Text = text,
+            Foreground = Theme.Muted,
+            FontFamily = Theme.Mono,
+            FontSize = 10,
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(lbl, 8);
+        Canvas.SetTop(lbl, y - 7);
+        _axisCanvas.Children.Add(lbl);
+    }
+
+    // PCIe gen/width at a timeline index for a GPU (0/0 when unavailable or not a PCIe chart).
+    private void PcieAt(int gpu, int idx, out int gen, out int width)
+    {
+        gen = 0;
+        width = 0;
+        if (_pcieGen.TryGetValue(gpu, out int[]? g) && idx >= 0 && idx < g.Length) gen = g[idx];
+        if (_pcieWidth.TryGetValue(gpu, out int[]? w) && idx >= 0 && idx < w.Length) width = w[idx];
+    }
+
     /// <summary>Cheap update: move the red crosshair and refresh the red per-GPU readout.</summary>
     public void UpdateCrosshair()
     {
@@ -394,6 +524,7 @@ public class MetricChart : Border
         _crossLine.Visibility = Visibility.Visible;
 
         _readout.Children.Clear();
+        int sampleIdx = _tl.Length > 0 ? LowerIndex(t) : 0;
         foreach (var kvp in _ser.OrderBy(p => p.Key))
         {
             double v = ValueAt(t, _tl, kvp.Value);
@@ -406,9 +537,13 @@ public class MetricChart : Border
                 Margin = new Thickness(0, 0, 4, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
+            string text = Fmt(v) + _unit;
+            PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
+            if (gen > 0 || width > 0)
+                text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
             _readout.Children.Add(new TextBlock
             {
-                Text = Fmt(v) + _unit,
+                Text = text,
                 Foreground = CrossRed,
                 FontFamily = Theme.Mono,
                 FontSize = 12,
@@ -530,9 +665,14 @@ public class MetricChart : Border
                 Margin = new Thickness(0, 0, 4, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
+            int n = s.Length;
+            PcieAt(kvp.Key, n > 0 ? n - 1 : 0, out int pgen, out int pwidth);
+            string legendText = Fmt(cur) + _unit;
+            if (pgen > 0 || pwidth > 0)
+                legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
             _legend.Children.Add(new TextBlock
             {
-                Text = Fmt(cur) + _unit,
+                Text = legendText,
                 Foreground = Theme.Fg,
                 FontFamily = Theme.Mono,
                 FontSize = 12,
@@ -597,6 +737,19 @@ public sealed class ChartController
         AutoFollow();
         _syncing = false;
         RaiseRedraw();      // re-render (gridlines shift) after the scroll offset changed
+
+        // Re-pin the following charts to the newest data on every tick. AutoFollow above may
+        // have been undone by a programmatic ScrollChanged that slipped through the _syncing
+        // guard (WPF fires ScrollChanged during the layout pass, after _syncing is cleared),
+        // which used to drop the follow intent and leave the view left-aligned once the
+        // timeline exceeded the window. Re-asserting the pin here keeps it glued to the
+        // right edge until the user genuinely scrolls into history.
+        if (_followRight)
+        {
+            _syncing = true;
+            AutoFollow(pinAll: true);
+            _syncing = false;
+        }
     }
 
     /// <summary>CTRL+wheel zoom: change how many minutes fit the viewport, anchored at the newest data.</summary>
@@ -633,12 +786,16 @@ public sealed class ChartController
     public void SetScrolled(MetricChart src, double offsetPx)
     {
         _lastScroll = offsetPx;
+        // Ignore programmatic scrolls (zoom / follow / cross-chart sync). They are wrapped in
+        // _syncing by the caller; latching follow intent from them is what let a follow pin
+        // get silently reverted by a ScrollChanged fired during the layout pass. Only a real
+        // user scroll (horizontal change while NOT syncing) latches the follow intent.
+        if (_syncing) return;
         // Real user scroll (the ScrollChanged guard guarantees HorizontalChange != 0): latch
         // the follow intent — at/near the right edge means "keep following", otherwise "I've
         // scrolled into history, hold my position".
         double srcMax = Math.Max(0, src.PlotScroll.ScrollableWidth);
         _followRight = srcMax <= 0 || offsetPx >= srcMax - 8.0;
-        if (_syncing) return;
         _syncing = true;
         try
         {
