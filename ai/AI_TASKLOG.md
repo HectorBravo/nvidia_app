@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 11-10-2026 23:44:07 | [T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 32m | none |
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | done | feat | 6/6 | 8m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
@@ -11,6 +12,94 @@
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 7 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 11-10-2026 23:44:07
+- **Last Updated**: 12-10-2026 00:16:00
+- **Time Spent**: 32m
+- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (carried from the prior interrupted session): extend the WPF PCIe chart to (a) store/show **per-sample** PCIe gen+width in the legend and hover, (b) add a **fixed right-side Y-axis**, (c) add a **minute-0 (t=0) start marker**, and (d) make the chart **reliably pin to the newest data**.
+  - **Per-sample PCIe**: `GpuMetricSample` now carries `PcieLinkGen`/`PcieLinkWidth` (0 = N/A) per sample, so the chart can show the *historical* link config, not just the current one. `MainWindow` populates them from the per-GPU snapshot; only the PCIe chart feeds them (new `ChartSpec.Pcie` flag + optional `SetSeries` PCIe arrays, aligned to the shared timeline exactly like the value arrays).
+  - **Shared formatter**: `GpuSnapshot.PcieLinkLabel(gen,width)` is the single source for "4.0 x16"/"N/A". The prior session had added a *static* method named `PcieLabel` which **collided with the existing `PcieLabel` property** (CS0102 — a property and method can't share a name); renamed the static to `PcieLinkLabel` and the property now delegates to it.
+  - **Fixed right Y-axis**: each `MetricChart` hosts a second, **non-scrolling** `ScrollViewer`/`Canvas` (`_axisScroll`/`_axisCanvas`) in a fixed-width (`AxisPad = 62`) column to the right of the plot (plot + axis live in a `body` grid inside `_inner`). `DrawAxis(max)` renders the axis line + tick marks + value labels on that canvas — linear charts = evenly spaced 0…max (6 ticks); the log-scale PCIe chart = powers of two (`1G 2G 4G 8G 16G 32G`). The old in-plot value labels were removed so the plot stays clear and the values read on the fixed axis that doesn't move during horizontal time-scroll.
+  - **t = 0 start marker**: a brighter-blue (`StartMarkBlue #58a6ff`) vertical bar at the data-region left edge (x = `_rightShift`) with a `0m` label; the repeating per-minute gridlines were lightened (`MinuteBlue` `#33508f`→`#7f9bd1`) so the t=0 marker stands out.
+  - **Follow-right fix**: the "left-aligned at 10 min" bug was a **scroll-state race**. `SetScrolled` used to latch `_followRight` even for programmatic scrolls (zoom/follow/cross-chart sync); those are now wrapped in `_syncing` and `SetScrolled` returns before latching, so only a genuine user scroll updates the intent. `OnDataTick` additionally re-pins following charts to the right edge on every tick, defeating any `ScrollChanged` fired during the layout pass after `_syncing` was cleared.
+  - **Build**: `dotnet build nvidia_app.sln -c Release` → **0 warnings, 0 errors**. **WPF harness** (throwaway STA project referencing `NvidiaMonitor`): built the PCIe chart on a real WPF visual tree, pumped layout, fed ~11.7 min of data, asserted — **all passed** (`0m`, `10m`, 1 polyline, axis `1G`/`32G`, legend `[4.0 x16]`, hover no-exception). **Real app** `NvidiaMonitor.exe` launched and stayed alive 6 s with live NVML (no crash). (Visual/eyeball of the pin at exactly 10+ min is left to the user; the headless harness can't fully drive the ScrollViewer viewport.)
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+None yet.
+
+### Subtasks / Plan
+
+- [x] T9.1 — Per-sample PCIe: `GpuMetricSample.PcieLinkGen/Width`; `GpuSnapshot.PcieLinkLabel(gen,width)` (renamed from the colliding static `PcieLabel`); property delegates to it.
+- [x] T9.2 — `MainWindow`: populate `PcieLinkGen/Width` in `GpuMetricSample`; `ChartSpec.Pcie` flag; build timeline-aligned PCIe gen/width arrays; pass to `SetSeries`.
+- [x] T9.3 — `ChartController`: store per-GPU PCIe in `SetSeries`; show the link config in the legend and the hover readout (`[4.0 x16]`) via `PcieLinkLabel`.
+- [x] T9.4 — Fixed right-hand Y-axis (`_axisScroll`/`_axisCanvas` + `DrawAxis`/`DrawAxisTick`): linear 0…max / PCIe powers-of-two; removed in-plot value labels.
+- [x] T9.5 — t = 0 start marker (`StartMarkBlue` bar + `0m`); lightened per-minute gridlines.
+- [x] T9.6 — Follow-right fix: ignore programmatic scroll in `SetScrolled`; re-pin following charts on every `OnDataTick`.
+- [x] T9.7 — Build (0/0) + WPF harness + real-app smoke test.
+- [x] T9.8 — Refresh `ai/PROJECT_DESCRIPTION.md`; write/commit `ai/AI_TASKLOG.md` (log-before on `main`, code+docs on `feat/ai-chart-pcie-axis-and-0bar`, push).
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a new session can resume this task without other context.
+
+**Repo / environment**
+- Repo root `D:\Repos\nvidia_app`; remote `https://github.com/HectorBravo/nvidia_app.git`.
+- Baseline `HEAD = d492304` ("docs(ai): [ai] update task log after push (T8 done)"), on branch **`main`** (the user's current branch). T1–T8 all landed on `main` (the old `feat/ai-nvidia-monitor-app` branch no longer exists).
+- Dotnet SDK at `C:\Program Files\dotnet\dotnet.exe` (8.0.425; prints **Spanish** output — "Compilación correcta / 0 Advertencia(s) / 0 Errores" = success).
+- **Filemode (Rule 5)**: this is an **existing checkout** (not a fresh clone), so the clone/`core.filemode` procedure was **not** triggered (local `core.filemode = false`, global unset — Windows default; no change made).
+- **Git identity (Rule 1/4)**: every commit uses env vars `GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot`; email comes from `git config user.email` (`hbravo@cuic.net`) — never set `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`, never touch `git config`; every commit message has the `[ai]` tag after the colon.
+
+**The 4 changed source files (working tree, uncommitted at this point):**
+1. `src/HectorBravo.Nvidia.Contracts/GpuMetricSample.cs` — added `PcieLinkGen`/`PcieLinkWidth` (int, 0 = N/A) so each stored sample carries the link config.
+2. `src/HectorBravo.Nvidia.Contracts/GpuSnapshot.cs` — current-link **property** is now `public string PcieLabel => PcieLinkLabel(PcieLinkGen, PcieLinkWidth);` and the new **static** formatter is `public static string PcieLinkLabel(int gen, int width) => gen > 0 && width > 0 ? $"{gen}.0 x{width}" : "N/A";`. **Why renamed:** the prior session added a *static* method also named `PcieLabel` → **CS0102** (a property and method can't share a name) — that was the one real build break. `MainWindow`/`SmiFormatter` use the **property** `g.PcieLabel` (unchanged). `PciePerLaneGbps` (gen1–5 → 0.25/0.5/1.0/2.0/4.0) unchanged.
+3. `src/NvidiaMonitor/MainWindow.cs` — `ChartSpec` record gained `bool Pcie = false`; the "PCIe Bandwidth (GB/s)" spec is `... LogScale: true, Pcie: true`. In `UpdateCharts`, for `spec.Pcie` it builds `pcieGenMap`/`pcieWidthMap` (`List<KeyValuePair<int,int[]>>`) where each per-GPU `int[]` is aligned to the shared timeline with the **same front-padding** as the value array (`lead = n - (m - srcStart)`, `srcStart = max(0, m - n)`; leading 0s = "no link yet"). Then `_charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals, spec.Pcie ? pcieGenMap : null, spec.Pcie ? pcieWidthMap : null);`. (PCIe ceiling = max `PcieMaxBandwidthGbps` of any GPU, fallback 32.)
+4. `src/NvidiaMonitor/ChartController.cs` —
+   - Added `using HectorBravo.Nvidia.Contracts;`.
+   - Colors: `MinuteBlue` `#33508f`→`#7f9bd1`; new `StartMarkBlue = #58a6ff` (t=0 marker); `MinuteLabel` stays `#7f9bd1`. New `const int AxisPad = 62;`.
+   - New `_axisScroll` (non-scrolling `ScrollViewer`) + `_axisCanvas` (`Canvas`, `Background = Theme.Card`, `Height = PlotH + AxisH`). `_plotScroll` **lost** its fixed `Height` (now Auto) and sits in a new `body` Grid (col0 = star, col1 = `AxisPad`) in `_inner` row 1 (row 0 = header). **Do NOT use `GridLength.Star`** (doesn't exist) — use `new GridLength(1, GridUnitType.Star)`.
+   - `SetSeries(..., IReadOnlyCollection<KeyValuePair<int,int[]>>? pcieGen = null, ... pcieWidth = null)` stores them into `_pcieGen`/`_pcieWidth` (re-created empty each call).
+   - `Redraw()`: right after `double max = ...` draws the t=0 marker (bright-blue `Line` at `x = _rightShift`, thickness 2, full height + a `0m` `TextBlock` at `x+3`,`PlotH+2`); per-minute gridlines as before; **removed** the in-plot log value labels (gridlines only); calls `DrawAxis(max)` before the `_maxText` line.
+   - `DrawAxis(double max)`/`DrawAxisTick(text,y)`: clears `_axisCanvas`; axis line (x0, y0→PlotH, `Theme.Border`); log-scale ticks = powers of two `2^p` in [0.01*max,max] labelled `val>=1024 ? $"{val/1024:0.#}G" : $"{val:0}G"` at `ValueToY(val,max)`; linear ticks = 6 evenly spaced `max*i/5` at `topY + (PlotH-topY)*(1-i/5)`, `topY = _logScale ? TopPad : 0`. Tick = short line (0→6) + `TextBlock` (left 8, top y-7, `Theme.Muted`, size 10).
+   - `PcieAt(gpu, idx, out gen, out width)`: bounds-checked read of `_pcieGen`/`_pcieWidth` (0/0 if absent).
+   - `UpdateLegend()` (latest index `n-1`) and `UpdateCrosshair()` (sample index `LowerIndex(t)`) append `  [GpuSnapshot.PcieLinkLabel(gen,width)]` when a GPU's PCIe is non-zero.
+   - **Follow-right fix**: `SetScrolled(src, offsetPx)` does `if (_syncing) return;` *before* latching `_followRight` (programmatic scrolls wrapped in `_syncing` never change the intent; only a real user scroll latches it). `OnDataTick()` ends with `if (_followRight) { _syncing = true; AutoFollow(pinAll: true); _syncing = false; }` to re-pin following charts every tick. `Zoom()` and cross-chart sync already wrap their programmatic scrolls in `_syncing`.
+
+**Build / verify (from `D:\Repos\nvidia_app`):**
+- `& 'C:\Program Files\dotnet\dotnet.exe' build nvidia_app.sln -c Release` → **0 warnings, 0 errors** (verified).
+- A throwaway WPF STA harness (`net8.0-windows`, `UseWPF`, referencing `NvidiaMonitor.csproj`) was created in `.ai_harness/` (git-ignored via the `.ai_harness/` pattern — **already deleted**) that constructed a `MetricChart`, bound it to a `ChartController`, pumped layout, fed ~11.7 min of synthetic PCIe data, and asserted: pin-to-newest, `0m`, `10m`, exactly 1 polyline, axis `1G`/`32G` + tick lines, legend `[4.0 x16]`, hover no-exception — **ALL PASSED**. Note: the harness could not make `ScrollViewer.ViewportWidth`/`ScrollableWidth` non-zero (WPF computes the viewport during a full layout pass a synthetic `Arrange` doesn't fully drive), so the *actual* right-edge pin past 10 min is **not** machine-verified headlessly; the real `NvidiaMonitor.exe` was launched and stayed alive 6 s with live NVML (no crash). **Left for the user to eyeball:** pinning at ≥10 min, and the look of the right axis + `0m` bar + lightened per-minute gridlines.
+- PowerShell gotcha (recurring): the inline `powershell -Command` wrapper mangles `;`/quotes/`$()` and here-strings — use simple single-statement commands, single-quoted strings, or a `.ps1` run with `-File`.
+
+**Docs state (already done this session):**
+- `ai/PROJECT_DESCRIPTION.md` **refreshed**: `git_head` → `d492304` (baseline), `last_indexed` → now, new top **Change Log** bullet for T9, and **§10 Charts** bullet expanded (right-axis / t=0-marker / per-sample-Pcie / follow-right). Required by the freshness rule since the task modifies source.
+- `ai/AI_TASKLOG.md`: T9 row added to the Summary table (top) + this T9 section written. **T5** is still `in_progress` (5/6, pre-existing — not part of this task; left as-is). T1,T2,T3,T7,T8 done; T4,T6 done (Completed Tasks).
+
+**Current git / close-out state (the interrupted part — what's left to do, in order):**
+- The **log-before** commit and the **code+docs** commit have **NOT** been made in this resumed session (the prior interruption happened before any commit; this session did the code + docs but has not committed).
+1. On **`main`**: commit **only** `ai/AI_TASKLOG.md` (the "before" log, T9 in_progress) as `docs(ai): [ai] update task log before push (T9: PCIe chart axis/0bar/follow-right)`; then `git push origin main` (the log file is the *only* thing allowed directly on the user's current branch).
+2. `git checkout -b feat/ai-chart-pcie-axis-and-0bar` (from `main`).
+3. Commit the 4 source files **plus** `ai/PROJECT_DESCRIPTION.md` as `feat(chart): [ai] per-sample PCIe config, fixed right Y-axis, t=0 marker, follow-right fix`.
+4. `git push origin feat/ai-chart-pcie-axis-and-0bar` (**mandatory** — a local-only branch is not a deliverable).
+5. Report to the user: branch name, commit hashes, and what to eyeball (right-axis values, `0m` bar, per-minute gridlines, PCIe legend/hover, and the pin staying at the right edge once ≥10 min of history shows). Ask the user to **merge** the branch.
+6. **After the user merges**: update T9 → status `done`, real `Commit(s)` hash, final Time Spent; commit it as the **next commit on `main`** (`docs(ai): [ai] update task log after push (T9 done)`); push `main`; then `git fetch origin`, `git checkout feat/ai-chart-pcie-axis-and-0bar`, `git merge --ff-only origin/main`, `git push --force-with-lease origin feat/ai-chart-pcie-axis-and-0bar` (fast-forward the AI branch onto the final log). **Exception:** if the user squash-merges/rebases, the fast-forward is impossible — leave the branch as-is and tell the user.
+
+**Verification checklist (per the git-usage rules):** `GIT_AUTHOR_NAME`/`GIT_COMMITTER_NAME` = `AI_bot` on every git command; no `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`; user's `git config` untouched; `[ai]` tag on every commit; work on a `feat/ai-*` branch (not `main`); branch pushed to remote; `ai/AI_TASKLOG.md` log-before on `main` + final log after merge; `ai/PROJECT_DESCRIPTION.md` refreshed.
 
 ---
 
