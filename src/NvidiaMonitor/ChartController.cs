@@ -44,15 +44,20 @@ public class MetricChart : Border
 
     // Crosshair + per-GPU value readout are always red (per spec).
     private static readonly Brush CrossRed = Frozen("#ff5252");
-    // Per-minute gridlines are light blue (per spec); the t = 0 "start" marker is a brighter
-    // blue so it stands out from the repeating per-minute lines.
+    // Per-minute gridlines AND the t = 0 "start" marker share one light blue and the same
+    // format (per user spec: minute 0 looks exactly like every other minute line).
     private static readonly Brush MinuteBlue = Frozen("#7f9bd1");
-    private static readonly Brush StartMarkBlue = Frozen("#58a6ff");
     private static readonly Brush MinuteLabel = Frozen("#7f9bd1");
 
     // Right-shift in pixels: when the timeline is shorter than the viewport, the whole
     // plot is shifted right so the data pins to the right edge (no blank centered strip).
     private double _rightShift;
+    // Target offset of the controller's latest programmatic pin on this chart. A
+    // ScrollChanged landing within ±8 px of it is the layout pass applying OUR scroll
+    // (it can fire after _syncing is cleared), never a user gesture — so it must not
+    // touch the follow-right latch. -1 when no programmatic scroll is pending.
+    private double _progOffset = -1;
+    internal void QueueProgrammaticScroll(double target) => _progOffset = target;
     // Fixed right-hand Y-axis: reserved width for the axis column (value labels + tick marks).
     private const int AxisPad = 62;
 
@@ -256,11 +261,13 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling, bottom=0).</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling at
+    /// y=TopPad, bottom=0 at y=PlotH — both scales keep TopPad headroom so the max value
+    /// and its axis label are never clipped at the top edge).</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return PlotH - (value / ceiling) * PlotH;
+            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
 
         // Log scale with top headroom: bottom = 0.01 * ceiling at y = PlotH,
         // top = ceiling at y = TopPad, so the max value sits just below the top
@@ -307,20 +314,22 @@ public class MetricChart : Border
 
         double max = _ceiling > 0 ? _ceiling : 1;
 
-        // t = 0 "start" marker: a brighter-blue vertical bar at the very first sample (left
-        // edge) with a "0m" label, so the timeline's origin is always visible.
+        // t = 0 "start" marker: drawn in EXACTLY the same format as the other per-minute
+        // gridlines (same light blue, same thickness, same "0m" label style), so minute 0
+        // reads as the first of the minute lines — only its position marks the timeline's
+        // origin (per user spec).
         double x0 = _rightShift; // left edge of the data region (t = 0)
         _canvas.Children.Add(new Line
         {
             X1 = x0, Y1 = 0, X2 = x0, Y2 = PlotH,
-            Stroke = StartMarkBlue,
-            StrokeThickness = 2,
+            Stroke = MinuteBlue,
+            StrokeThickness = 1,
             IsHitTestVisible = false,
         });
         var lbl0 = new TextBlock
         {
             Text = "0m",
-            Foreground = StartMarkBlue,
+            Foreground = MinuteLabel,
             FontFamily = Theme.Mono,
             FontSize = 11,
             IsHitTestVisible = false,
@@ -446,7 +455,7 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         });
 
-        double topY = _logScale ? TopPad : 0; // y of the topmost tick (value = max)
+        double topY = TopPad; // y of the topmost tick (value = max) — both scales keep headroom
         if (_logScale)
         {
             for (int p = 0; p <= 8; p++)
@@ -560,7 +569,35 @@ public class MetricChart : Border
     }
     private void OnPlotScroll(object sender, ScrollChangedEventArgs e)
     {
-        if (e.HorizontalChange != 0) _ctl?.SetScrolled(this, _plotScroll.HorizontalOffset);
+        if (_ctl == null) return;
+        if (e.HorizontalChange != 0)
+        {
+            // A ScrollChanged landing near the controller's queued programmatic pin is the
+            // layout pass applying OUR scroll — it can fire after _syncing is cleared, so
+            // without a discriminator it would be misread as a user gesture (the very race
+            // that used to poison the follow intent). A real user scroll travels a visible
+            // distance (the scrollbar thumb spans the whole range), whereas our pin moves
+            // at most a tick or two — so call it programmatic only when the movement is
+            // small AND lands on the queued target. A user who drags back to the right edge
+            // from deep in history moves a long way and therefore resumes following.
+            bool programmatic = _progOffset >= 0
+                && Math.Abs(e.HorizontalOffset - _progOffset) < 8.0
+                && Math.Abs(e.HorizontalChange) <= 30.0;
+            _progOffset = -1;
+            _ctl.SetScrolled(this, e.HorizontalOffset, programmatic);
+            return;
+        }
+        // The offset didn't move, but the content range did (the canvas grew past the
+        // viewport — history outgrew the window — or the window was resized). While
+        // following, re-pin to the newest data now that the range is up to date: this is
+        // what keeps every chart glued to its right edge.
+        _progOffset = -1;
+        if (_ctl.Following)
+        {
+            double max = Math.Max(0, _plotScroll.ScrollableWidth);
+            if (_plotScroll.HorizontalOffset < max - 0.5)
+                _ctl.PinFollow(this, max);
+        }
     }
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
@@ -732,18 +769,21 @@ public sealed class ChartController
     public void OnDataTick()
     {
         RecomputePx();
-        RaiseRedraw();      // resize canvases first so ScrollableWidth reflects the new width
+        RaiseRedraw();      // resize the canvases to the new timeline
+        // Force every plot's ScrollViewer to measure/arrange NOW, before pinning. Without
+        // this the pin below targets the STALE (previous-tick) ScrollableWidth, and as the
+        // canvas outgrows the viewport the offset lags further and further left of the
+        // newest data — the "left-aligned at 10 min" symptom.
+        foreach (var c in _charts) c.PlotScroll.UpdateLayout();
         _syncing = true;    // suppress the ScrollChanged events this causes
         AutoFollow();
         _syncing = false;
         RaiseRedraw();      // re-render (gridlines shift) after the scroll offset changed
 
-        // Re-pin the following charts to the newest data on every tick. AutoFollow above may
-        // have been undone by a programmatic ScrollChanged that slipped through the _syncing
-        // guard (WPF fires ScrollChanged during the layout pass, after _syncing is cleared),
-        // which used to drop the follow intent and leave the view left-aligned once the
-        // timeline exceeded the window. Re-asserting the pin here keeps it glued to the
-        // right edge until the user genuinely scrolls into history.
+        // Safety re-pin: a ScrollChanged for our own pin can still land during the layout
+        // pass after _syncing cleared; if it ever moved a following chart off the right
+        // edge, put it back. (A user scroll into history sets _followRight = false, in
+        // which case this block does nothing and their position is preserved.)
         if (_followRight)
         {
             _syncing = true;
@@ -783,19 +823,24 @@ public sealed class ChartController
     public double ViewStartSec() => _lastScroll / (PxPerSec <= 0 ? 1 : PxPerSec);
 
     /// <summary>Scroll-sync: propagate one chart's offset to the others (guarded against loops).</summary>
-    public void SetScrolled(MetricChart src, double offsetPx)
+    public void SetScrolled(MetricChart src, double offsetPx, bool programmatic = false)
     {
         _lastScroll = offsetPx;
-        // Ignore programmatic scrolls (zoom / follow / cross-chart sync). They are wrapped in
-        // _syncing by the caller; latching follow intent from them is what let a follow pin
-        // get silently reverted by a ScrollChanged fired during the layout pass. Only a real
-        // user scroll (horizontal change while NOT syncing) latches the follow intent.
+        // Only a REAL user scroll latches the follow intent. Programmatic scrolls (zoom /
+        // follow / cross-chart sync) arrive wrapped in _syncing, and the layout pass
+        // applying our own pin arrives flagged programmatic — latching from either is what
+        // used to drop the follow intent and leave the view left-aligned once history
+        // outgrew the window.
+        if (!_syncing && !programmatic)
+        {
+            double srcMax0 = Math.Max(0, src.PlotScroll.ScrollableWidth);
+            _followRight = srcMax0 <= 0 || offsetPx >= srcMax0 - 8.0;
+        }
         if (_syncing) return;
-        // Real user scroll (the ScrollChanged guard guarantees HorizontalChange != 0): latch
-        // the follow intent — at/near the right edge means "keep following", otherwise "I've
-        // scrolled into history, hold my position".
+        // Real user scroll: propagate the same view position (as a fraction of each
+        // chart's range) to the other charts, queueing programmatic offsets so their
+        // later layout events can't be misread as user scrolls either.
         double srcMax = Math.Max(0, src.PlotScroll.ScrollableWidth);
-        _followRight = srcMax <= 0 || offsetPx >= srcMax - 8.0;
         _syncing = true;
         try
         {
@@ -806,7 +851,35 @@ public sealed class ChartController
                 double target = frac * Math.Max(0, c.PlotScroll.ScrollableWidth);
                 if (Math.Abs(c.PlotScroll.HorizontalOffset - target) > 0.5)
                 {
+                    c.QueueProgrammaticScroll(target);
                     c.PlotScroll.ScrollToHorizontalOffset(target);
+                }
+            }
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    /// <summary>True while the charts are pinned to the newest data (until the user scrolls into history).</summary>
+    public bool Following => _followRight;
+
+    /// <summary>Pin <paramref name="src"/> — and keep every other chart in sync — to the newest
+    /// data. Used when the content range grows while following (history outgrew the window,
+    /// or the window was resized) and the ScrollViewer's own scroll didn't reach the edge.</summary>
+    public void PinFollow(MetricChart src, double srcMax)
+    {
+        _syncing = true;
+        try
+        {
+            foreach (var c in _charts)
+            {
+                double m = c == src ? srcMax : Math.Max(0, c.PlotScroll.ScrollableWidth);
+                if (Math.Abs(c.PlotScroll.HorizontalOffset - m) > 0.5)
+                {
+                    c.QueueProgrammaticScroll(m);
+                    c.PlotScroll.ScrollToHorizontalOffset(m);
                 }
             }
         }
@@ -828,18 +901,23 @@ public sealed class ChartController
     {
         // After a timeline / zoom change, pin charts to the newest data when the user is in
         // follow mode (or on an explicit zoom). While the user has scrolled into history we
-        // keep their offset (clamped to the new max). Run AFTER the canvases have been resized.
+        // keep their offset (clamped to the new max). Run AFTER the canvases have been
+        // resized (and, on a data tick, after a forced UpdateLayout so the range is fresh).
         foreach (var c in _charts)
         {
             double max = Math.Max(0, c.PlotScroll.ScrollableWidth);
+            double target;
             if (pinAll || _followRight)
-            {
-                c.PlotScroll.ScrollToHorizontalOffset(max);
-            }
+                target = max;
             else
             {
                 double o = c.PlotScroll.HorizontalOffset;
-                if (o > max) c.PlotScroll.ScrollToHorizontalOffset(max);
+                target = o > max ? max : -1;
+            }
+            if (target >= 0)
+            {
+                c.QueueProgrammaticScroll(target);
+                c.PlotScroll.ScrollToHorizontalOffset(target);
             }
         }
     }
