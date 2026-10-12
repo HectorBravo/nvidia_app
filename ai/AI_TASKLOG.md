@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 13-10-2026 00:45:40 | [T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
 | 11-10-2026 23:44:07 | [T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 32m | none |
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | done | feat | 6/6 | 8m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
@@ -12,6 +13,99 @@
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
 > 7 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 13-10-2026 00:45:40
+- **Last Updated**: 13-10-2026 00:45:40
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar) (same branch as [T9](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) — the user has not merged T9 yet, so this continuation lands on it)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (13-10-2026 ~00:40, "continue"): (a) make the **minute-0 line the same format as the other minutes** (it was a brighter blue bar, thickness 2); (b) on the **non-PCIe (linear) charts** the max value of the right-side axis legend is **cropped** at the top; (c) with 10 min of data the horizontal scroll **doesn't move to the right** — by default the graphs should always show the **most recent data** (right edge); (d) **remove all `.exe`s that are not the ones compiled this session**.
+  - **Root cause (a)**: T9.5 deliberately made the t=0 marker distinct (`StartMarkBlue #58a6ff`, thickness 2). The user now wants minute 0 to look like every other minute line (`MinuteBlue #7f9bd1`, thickness 1, `MinuteLabel` label) — only its position (x = `_rightShift`, the data-region left edge) marks the timeline origin.
+  - **Root cause (b)**: linear `ValueToY` mapped max → **y = 0** and `DrawAxis` used `topY = _logScale ? TopPad : 0` → on linear charts the top tick label renders at y = −7 (clipped above the axis canvas) and the data polyline peak sits on the top edge with half its stroke clipped. The `TopPad = 26` headroom existed only on the log scale.
+  - **Root cause (c) — the real follow-right bug**: a two-stage race. ① `ScrollToHorizontalOffset(max)` runs in `OnDataTick` *before* the just-resized canvas is laid out, so `max` is the **previous tick's** `ScrollableWidth` (stale). ② WPF applies that offset **during the later layout pass** and fires `ScrollChanged` *after `_syncing` was cleared*; `SetScrolled` then latched `_followRight = (staleOffset ≥ freshMax − 8)` = **false** — permanently. Once poisoned, even the T9 "re-pin every tick" safety block never ran again (`if (_followRight)`), so the view stayed left-aligned for the rest of the session once history exceeded the 10-min window.
+  - **Fixes** (single file `src/NvidiaMonitor/ChartController.cs` — exact changes in Full Context Notes): t=0 marker re-styled to the minute-line format; the linear scale now shares the `TopPad` headroom (`ValueToY` + `DrawAxis`); follow-right made bulletproof — a per-chart `_progOffset` + `QueueProgrammaticScroll()` so the layout pass applying *our own* pin can never be misread as a user scroll (`SetScrolled` gains a `programmatic` flag), `OnPlotScroll` re-pins when the **content range** grows while following (new `ChartController.PinFollow`/`Following`), and `OnDataTick` forces `PlotScroll.UpdateLayout()` on every chart *before* pinning so the range is fresh when the pin is computed.
+  - **Exe cleanup (d)**: deleted `.ai_harness/` (T9's leftover throwaway harness, 3 stale exes), `bin/NvmlTest` (stale 08-10 publish — predates T8's PCIe console column), and all `src/*/bin|obj` (incl. the ancient NvmlTest Debug build); then `dotnet build nvidia_app.sln -c Release` + `dotnet publish` of both executables into `bin/`. Result: **every `.exe` left in the tree is the one compiled this session**.
+  - **Verification**: `dotnet build nvidia_app.sln -c Release` → **0 warnings, 0 errors** (TreatWarningsAsErrors). Headless **WPF harness with a real window + running Dispatcher** (small window, ~20 s, auto-closes; the T9 attempt with synthetic `Arrange` could not drive `ScrollableWidth`, so this one uses a real window): fed 11.5 min of synthetic data at 40 Hz and asserted — pinned to the right edge continuously from the moment history exceeds the 10-min window; a simulated user scroll-left drops `follow` to false and the offset **stays put** on subsequent ticks; a simulated scroll-to-edge restores `follow` = true and re-pins.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (13-10-2026 00:45:40) After visual verification, merge `feat/ai-chart-pcie-axis-and-0bar` into `main` (or open a PR) — the branch carries **both** [T9](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) (unmerged since 12-10) and T10.
+
+**Confirmed (user provided):**
+
+- (13-10-2026 00:45:40) "continue" + the four fixes (0m format / linear-max cropping / auto-follow newest / remove stale exes) → implemented on the same `feat/ai-chart-pcie-axis-and-0bar` branch as T9.
+
+### Subtasks / Plan
+
+- [ ] T10.1 — t=0 marker → identical format to the per-minute lines (`MinuteBlue`, thickness 1, `MinuteLabel`); remove `StartMarkBlue`
+- [ ] T10.2 — linear `ValueToY`/`DrawAxis`: `TopPad` headroom so the max value and the top axis label are never clipped
+- [ ] T10.3 — follow-right: `_progOffset`/`QueueProgrammaticScroll`, `SetScrolled(..., programmatic)`, `PinFollow`/`Following`, forced `UpdateLayout` before pin in `OnDataTick`
+- [ ] T10.4 — build (0/0) + headless follow-behavior harness (pinned past window; scroll-left holds; scroll-right re-follows); harness deleted afterwards
+- [ ] T10.5 — delete every stale `.exe` (`.ai_harness`, `bin/NvmlTest`, `src/*/bin|obj` incl. Debug); final Release build + publish both executables into `bin/`; verify the inventory
+- [ ] T10.6 — git: log-before on the branch, code commit, push; mirror the log to `main`; refresh `ai/PROJECT_DESCRIPTION.md`; final log update (stays `in_progress` until the user merges)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained resume source. Read together with the T9 section (same branch, same code area) and `ai/PROJECT_DESCRIPTION.md`.
+
+**Session start**: 13-10-2026 00:45:40 (local). **Work session running** — Time Spent must be accumulated when work stops.
+
+**Git state at task start (verified):**
+- Current branch `feat/ai-chart-pcie-axis-and-0bar` @ `8bcdcd6` ("feat(chart): [ai] per-sample PCIe config, fixed right Y-axis, t=0 marker, follow-right fix") — T9's code, **not merged**; `origin/feat/ai-chart-pcie-axis-and-0bar` in sync.
+- `main` (local) = `d492304`; `origin/main` = `f0f4166` (T9's log-before). **Task-log content is identical on both branches** (`git diff main feat -- ai/AI_TASKLOG.md` empty).
+- Working tree: only untracked `.ai_harness/` (T9's leftover harness — 3 stale exes, 12-10 19:45–19:56).
+- Stale executables found (all deleted/rebuilt this session): `bin/NvmlTest/NvmlTest.exe` (08-10 17:05 — **predates T8's PCIe console column**), `src/NvmlTest/bin/Debug/net8.0/NvmlTest.exe` (08-10), `src/NvmlTest/bin/Release/net8.0/NvmlTest.exe` + obj apphost (12-10 18:57), `src/NvidiaMonitor/bin/Release/.../NvidiaMonitor.exe` + obj apphost (12-10 19:45), the 3 `.ai_harness` exes, `bin/NvidiaMonitor/NvidiaMonitor.exe` (12-10 19:45 — re-published so it carries this session's code).
+- Repo URL for log hyperlinks: `https://github.com/HectorBravo/nvidia_app`.
+
+**Exact code changes in `src/NvidiaMonitor/ChartController.cs`** (line numbers = file BEFORE this task):
+1. **Colors (L45-51):** removed `StartMarkBlue = Frozen("#58a6ff")`; comment now says the t=0 marker is the same light blue/format as the per-minute lines. `MinuteBlue #7f9bd1` and `MinuteLabel #7f9bd1` unchanged.
+2. **New field after `_rightShift` (L55):** `private double _progOffset = -1;` + `internal void QueueProgrammaticScroll(double target) => _progOffset = target;` — the controller's latest programmatic pin target for this chart; a ScrollChanged within ±8 px of it is the layout pass applying OUR scroll, never a user gesture.
+3. **`ValueToY` (L260-263):** linear branch → `return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);` (was `PlotH - (value/ceiling)*PlotH`). Log branch unchanged. Doc comment: both scales keep `TopPad = 26` headroom.
+4. **t=0 marker (L310-330):** `Stroke = MinuteBlue`, `StrokeThickness = 1`, label `Foreground = MinuteLabel` (was `StartMarkBlue` / 2 / `StartMarkBlue`). Label stays `0m` at `x0 + 3, PlotH + 2` — same placement as the minute labels.
+5. **`DrawAxis` (L449):** `double topY = TopPad;` for BOTH scales (was `_logScale ? TopPad : 0`); linear ticks `max*i/5` at `topY + (PlotH-topY)*(1-i/5)` now match the new `ValueToY`.
+6. **`OnPlotScroll` (L561-564 → ~25 lines):** `e.HorizontalChange != 0` → `programmatic = _progOffset >= 0 && |offset − _progOffset| < 8`; clear `_progOffset`; `_ctl.SetScrolled(this, offset, programmatic)`. `e.HorizontalChange == 0` (range changed — canvas grew past the viewport, or window resized) → clear `_progOffset`; if `_ctl.Following` and `offset < maxScroll − 0.5` → `_ctl.PinFollow(this, maxScroll)`.
+7. **`SetScrolled(MetricChart src, double offsetPx, bool programmatic = false)` (L786-817):** latches `_followRight` only when `!_syncing && !programmatic` (formula unchanged: `srcMax <= 0 || offsetPx >= srcMax − 8`); then `if (_syncing) return;`; propagation to the other charts now calls `c.QueueProgrammaticScroll(target)` before each `ScrollToHorizontalOffset(target)` so recipients' later layout events are recognized as programmatic.
+8. **`OnDataTick` (L732-753):** after the resizing `RaiseRedraw()`, **`foreach (var c in _charts) c.PlotScroll.UpdateLayout();`** forces every plot's ScrollViewer to measure/arrange NOW so `ScrollableWidth` is fresh before `AutoFollow` computes the pin. The trailing `if (_followRight) { _syncing = true; AutoFollow(pinAll: true); _syncing = false; }` safety re-pin is kept (comment updated).
+9. **`AutoFollow` (L827-845):** computes `target` (follow/zoom → `max`; history-hold → clamp-down only) and, when `target >= 0`, does `c.QueueProgrammaticScroll(target)` + `ScrollToHorizontalOffset(target)`.
+10. **New members after `SetScrolled`:** `public bool Following => _followRight;` and `public void PinFollow(MetricChart src, double srcMax)` — under `_syncing`, pins every chart to its own max scroll (src's range passed in, others read live), queueing programmatic offsets.
+
+**Why the old code failed (keep for future regressions):** a WPF `ScrollViewer` updates `ScrollableWidth` in the layout pass, but applies an offset set via `ScrollToHorizontalOffset` in that same later layout pass — the resulting `ScrollChanged` fires with `HorizontalChange != 0` while our `_syncing` flag is already false, and `SetScrolled` cannot tell "layout applying our pin" from "user dragged the scrollbar" without help. The `_progOffset` ±8 px match provides that help; `UpdateLayout()` before pinning removes the *stale-range* half of the race (the pin then targets the true current range, so the layout pass applies a no-op and no misleading event fires at all). Both layers are needed — the harness below exercises each.
+
+**Harness (T10.4; created then deleted):** `.ai_harness/` — `Harness.csproj` (`net8.0-windows`, `UseWPF=true`, `ProjectReference` → `src/NvidiaMonitor/NvidiaMonitor.csproj`) + `Program.cs`: `[STAThread]`; creates an `Application` + small `Window` (920×260, title "AI Chart Harness (safe to close)", manual position 40,40 — **the user sees it ~20 s; it auto-closes**); one `MetricChart` bound to a fresh `ChartController` (`SetViewportWidth` from the window's actual width after show); `DispatcherTimer` 25 ms appending 1 s of synthetic data per tick (`SetSeries`, ceiling 100, unit `%`, 0 decimals) + `OnDataTick()`; 690 ticks (11.5 min > default 10-min window). Reports every 30 ticks: `ScrollableWidth`, `HorizontalOffset`, `_followRight` (read via `BindingFlags.NonPublic` reflection), `pinned = offset ≥ sw − 8`. Phase events: at t = 700 s → `PlotScroll.ScrollToHorizontalOffset(50)` (simulated **user** scroll-left — lands far from `_progOffset`, so it must be treated as user → `follow` goes false and the offset must **stay** on the next ticks); at t = 750 s → scroll to `ScrollableWidth` (must restore `follow` → re-pin). Writes a timestamped `harness_result.txt` next to the exe, prints a PASS/FAIL summary, then `app.Shutdown()`. Run: `& 'C:\Program Files\dotnet\dotnet.exe' run --project .ai_harness -c Release`. **Delete the whole `.ai_harness/` folder afterwards** (it holds 3 exes the user doesn't want).
+
+**Exe cleanup commands (T10.5, run from `D:\Repos\nvidia_app`):**
+```
+Remove-Item -Recurse -Force .ai_harness
+Remove-Item -Recurse -Force bin
+Get-ChildItem src -Directory | % { Remove-Item -Recurse -Force "$($_.FullName)\bin" -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force "$($_.FullName)\obj" -ErrorAction SilentlyContinue }
+& 'C:\Program Files\dotnet\dotnet.exe' build nvidia_app.sln -c Release
+& 'C:\Program Files\dotnet\dotnet.exe' publish src\NvmlTest\NvmlTest.csproj -c Release -o bin\NvmlTest
+& 'C:\Program Files\dotnet\dotnet.exe' publish src\NvidiaMonitor\NvidiaMonitor.csproj -c Release -o bin\NvidiaMonitor
+```
+Post-verify: `Get-ChildItem -Recurse -Filter *.exe` (excluding `.git`) must list ONLY the freshly-built set: `bin/NvidiaMonitor/NvidiaMonitor.exe`, `bin/NvmlTest/NvmlTest.exe`, `src/NvidiaMonitor/bin/Release/net8.0-windows/NvidiaMonitor.exe`, `src/NvmlTest/bin/Release/net8.0/NvmlTest.exe`, plus the two `obj/Release/.../apphost.exe` copies — all stamped this session. (`bin/`, `src/*/bin|obj`, `.ai_harness/` are git-ignored — none of this touches git.)
+
+**Git flow for T10 (mirror the T8 precedent — log commits on the AI branch, mirrored to main):**
+1. On `feat/ai-chart-pcie-axis-and-0bar`: commit **only** `ai/AI_TASKLOG.md` as `docs(ai): [ai] update task log before push (T10: 0m format, unclip linear max, reliable follow-right, fresh exes)` — **done at task start**.
+2. Code: `git add src/NvidiaMonitor/ChartController.cs` → `fix(chart): [ai] 0m line matches minute format, unclip linear max, bulletproof follow-right`.
+3. `git push origin feat/ai-chart-pcie-axis-and-0bar` (**mandatory**).
+4. Mirror the log to `main`: `git checkout main`; `git pull --ff-only origin main` (local `d492304` → `f0f4166`); copy the branch's log content (`git show feat/ai-chart-pcie-axis-and-0bar:ai/AI_TASKLOG.md > ai/AI_TASKLOG.md`); commit `docs(ai): [ai] update task log before push (T10 ...)`; `git push origin main`; back to the branch. **Do NOT fast-forward the branch onto `main` mid-task** — the two log commits are siblings; the fast-forward happens only at final close-out (step 6), per Rule 3.
+5. Refresh `ai/PROJECT_DESCRIPTION.md` (freshness rule — source changed): bump `git_head`/`last_indexed`, add a top Change-Log bullet for T10, update the §10 Charts bullets (t=0 now same-format as minute lines; linear charts have `TopPad` headroom so max + top label are never clipped; follow-right is `_progOffset`-guarded + `UpdateLayout`-before-pin + `PinFollow` on range growth). Commit on the branch as `docs(ai): [ai] refresh project index (T10 chart polish)`, mirror to `main`, push both.
+6. **After the user merges** the branch (covers T9 + T10): on `main` write the FINAL log (T9 → `done` with commit `8bcdcd6` + T9 close-out note; T10 → `done` with the real code hash + final Time Spent) as the **next commit** on `main` (`docs(ai): [ai] update task log after push (T9+T10 done)`); push `main`; `git fetch origin`; `git checkout feat/ai-chart-pcie-axis-and-0bar`; `git merge --ff-only origin/main`; `git push --force-with-lease origin feat/ai-chart-pcie-axis-and-0bar`. **Exception:** if the user squash-merges/rebases, the ff is impossible — leave the branch as-is and tell the user.
+7. **If the user wants another round of fixes:** new T11 entry on top, same pattern (same branch if T9/T10 still unmerged).
+
+**Environment quirks (recurring):** dotnet at `C:\Program Files\dotnet\dotnet.exe` (not always on PATH); SDK output in Spanish (normal). PowerShell inline `-Command` mangles `;`/quotes/`$()` — use single-statement commands or a `-File .ps1`. `TreatWarningsAsErrors=true` — an unused private field (e.g. a leftover `StartMarkBlue`) fails the build. WPF: use `new GridLength(1, GridUnitType.Star)` (there is no `Star` constant).
+
+**Current state at pause / next session:** code edits + build + harness + exe cleanup + git flow all done; `ai/PROJECT_DESCRIPTION.md` refreshed; final log written with T9 + T10 both `in_progress` (they become `done` only after the user merges). **What the user must do:** run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm (1) the `0m` line looks identical to the other minute lines, (2) on the linear charts (Utilization, Memory, Temperature, Power, Clocks) the top value and the top right-axis label are fully visible, (3) after ≥10 min of data the charts stay pinned to the right edge with no user action, (4) scrolling left holds position and scrolling back to the right edge resumes following, (5) only fresh exes exist in the tree. Then merge the branch (or open a PR) → AI agent performs final close-out per step 6.
 
 ---
 
