@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-12 00:15:20
-git_head: d49230468b9fd56ce12941ee5446022ce338b931
+last_indexed: 2026-10-13 01:12:30
+git_head: 9ad8f4f8afe63add15a47b25ff26a73b5626f53a
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -163,17 +163,24 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   polyline per GPU. `SetSeries` only stores data; the controller's `OnDataTick()`
   resizes then redraws all charts. Drag-and-drop reorder is handled per chart panel.
   Layout: a **fixed right-hand Y-axis** column (a non-scrolling `Canvas` beside the
-  plot) shows value labels + tick marks — linear charts: evenly spaced 0…max; the
-  log-scale PCIe chart: powers of two (1G, 2G, 4G, 8G, 16G, 32G …) — and a **t = 0
-  start marker** (bright-blue vertical bar + "0m") marks the timeline origin; per-
-  minute gridlines are light blue. The PCIe chart carries **per-sample link gen/width**
-  (new `GpuMetricSample.PcieLinkGen/Width`) so the **legend and hover readout show the
-  link config** (e.g. `4.0 x16`) for current and historical points, formatted by
-  `GpuSnapshot.PcieLinkLabel(gen,width)` (the `PcieLabel` property delegates to it).
-  The **follow-right** pin keeps the view on the newest data until the user scrolls
-  into history; programmatic scrolls (zoom/follow/cross-chart sync) are wrapped in
-  `_syncing` so they never latch the follow intent, and following charts are re-pinned
-  every `OnDataTick()` (fixes the "left-aligned at 10 min" scroll race).
+  plot) shows value labels + tick marks — linear charts: evenly spaced 0…max with the
+  same top headroom as the log chart (`TopPad = 26`, so the max value and the top
+  axis label are never clipped at `y = 0`); the log-scale PCIe chart: powers of two
+  (1G, 2G, 4G, 8G, 16G, 32G …). The **t = 0** marker is a normal `MinuteBlue`
+  (1 px) vertical line with a `MinuteLabel` "0m" — the same styling as the other
+  per-minute gridlines (light blue). The PCIe chart carries **per-sample link
+  gen/width** (`GpuMetricSample.PcieLinkGen/Width`) so the **legend and hover readout
+  show the link config** (e.g. `4.0 x16`) for current and historical points, formatted
+  by `GpuSnapshot.PcieLinkLabel(gen,width)`. The **follow-right** pin keeps the view
+  on the newest data until the user scrolls into history: programmatic pin targets
+  are remembered per chart (`_progOffset`) and `OnPlotScroll` treats a
+  `ScrollChanged` as programmatic only when it lands within 8 px of the queued target
+  **and** travelled ≤ 30 px (WPF applies the scroll in a later layout pass, after
+  `_syncing` is cleared, so without this the pin re-application was misread as a
+  user gesture and permanently killed following); `OnDataTick()` forces
+  `UpdateLayout()` before re-pinning (so `ScrollableWidth` is current) and re-pins
+  when the content range grows while following (fixes the "left-aligned at 10 min"
+  scroll race).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -181,6 +188,18 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-13 — Charts polish: the **t = 0 marker** now uses the same `MinuteBlue`
+  (1 px) line + `MinuteLabel` "0m" as the other minute lines (it was a brighter,
+  thicker bar before). Linear `ValueToY`/`DrawAxis` apply the same `TopPad` headroom
+  as the log scale, so the **max value and top right-axis label are no longer
+  clipped** at `y = 0`. **Follow-right is bulletproofed**: per-chart `_progOffset` +
+  a two-part programmatic discriminator in `OnPlotScroll` (≤ 8 px from the queued
+  target AND ≤ 30 px of travel), `SetScrolled`/`PinFollow` take a `programmatic`
+  flag, and `OnDataTick()` forces `UpdateLayout()` before pinning and re-pins when
+  the content range grows while following — verified 26/26 with a real-window WPF
+  harness (`.ai_harness/`, deleted after the run). Stale `bin/`/`obj/`/Debug
+  executables were removed; only the fresh `dotnet publish` outputs in `bin/` remain
+  (git-ignored). File: `src/NvidiaMonitor/ChartController.cs`.
 - 2026-10-12 — Charts: each `MetricChart` gained a **fixed right-hand Y-axis** (value
   labels + ticks on a separate non-scrolling canvas, so they stay put while the
   timeline scrolls; linear 0…max / PCIe powers-of-two), a **t = 0 start marker**
