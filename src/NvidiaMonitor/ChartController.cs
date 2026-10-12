@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using HectorBravo.Nvidia.Contracts;
 
 namespace HectorBravo.Nvidia.Monitor;
 
@@ -43,13 +44,22 @@ public class MetricChart : Border
 
     // Crosshair + per-GPU value readout are always red (per spec).
     private static readonly Brush CrossRed = Frozen("#ff5252");
-    // Per-minute gridlines are dark blue (per spec).
-    private static readonly Brush MinuteBlue = Frozen("#33508f");
+    // Per-minute gridlines AND the t = 0 "start" marker share one light blue and the same
+    // format (per user spec: minute 0 looks exactly like every other minute line).
+    private static readonly Brush MinuteBlue = Frozen("#7f9bd1");
     private static readonly Brush MinuteLabel = Frozen("#7f9bd1");
 
     // Right-shift in pixels: when the timeline is shorter than the viewport, the whole
     // plot is shifted right so the data pins to the right edge (no blank centered strip).
     private double _rightShift;
+    // Target offset of the controller's latest programmatic pin on this chart. A
+    // ScrollChanged landing within ±8 px of it is the layout pass applying OUR scroll
+    // (it can fire after _syncing is cleared), never a user gesture — so it must not
+    // touch the follow-right latch. -1 when no programmatic scroll is pending.
+    private double _progOffset = -1;
+    internal void QueueProgrammaticScroll(double target) => _progOffset = target;
+    // Fixed right-hand Y-axis: reserved width for the axis column (value labels + tick marks).
+    private const int AxisPad = 62;
 
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
@@ -86,7 +96,25 @@ public class MetricChart : Border
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
         VerticalContentAlignment = VerticalAlignment.Top,
-        Height = PlotH + AxisH + ScrollReserve,
+        MinWidth = 1,
+        Background = Theme.Card,
+    };
+
+    // Right-hand Y-axis. Lives in its own ScrollViewer (fixed-width, so it never scrolls
+    // horizontally) placed to the RIGHT of the plot; it stays fixed while the plot scrolls
+    // across time. Its height follows the plot so tick labels align with the drawn values.
+    private readonly ScrollViewer _axisScroll = new()
+    {
+        VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        VerticalContentAlignment = VerticalAlignment.Top,
+        MinWidth = 1,
+        Background = Theme.Card,
+    };
+
+    // The axis drawing surface (value labels + tick marks), hosted inside _axisScroll.
+    private readonly Canvas _axisCanvas = new()
+    {
         Background = Theme.Card,
     };
 
@@ -118,6 +146,10 @@ public class MetricChart : Border
 
     // When true, Y-axis uses logarithmic scale (for metrics with wide dynamic range).
     private bool _logScale;
+    // Per-GPU PCIe link config (gen and width, aligned to the timeline; 0 = N/A) for the
+    // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
+    private Dictionary<int, int[]> _pcieGen = new();
+    private Dictionary<int, int[]> _pcieWidth = new();
 
     public MetricChart(string title)
     {
@@ -148,11 +180,26 @@ public class MetricChart : Border
         header.Children.Add(_titleText);
         Grid.SetRow(header, 0);
 
+        // Body: the plot fills the remaining width; the fixed right-hand Y-axis sits in a
+        // dedicated (non-scrolling, fixed-width) column to its right, so it stays put while
+        // the plot scrolls across time.
+        var body = new Grid();
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(AxisPad) });
+
         _plotScroll.Content = _canvas;
-        Grid.SetRow(_plotScroll, 1);
+        Grid.SetColumn(_plotScroll, 0);
+
+        _axisScroll.Content = _axisCanvas;
+        _axisCanvas.Height = PlotH + AxisH; // match the plot so value labels line up
+        Grid.SetColumn(_axisScroll, 1);
+
+        body.Children.Add(_plotScroll);
+        body.Children.Add(_axisScroll);
+        Grid.SetRow(body, 1);
 
         _inner.Children.Add(header);
-        _inner.Children.Add(_plotScroll);
+        _inner.Children.Add(body);
         Child = _inner;
 
         Background = Theme.Card;
@@ -193,7 +240,9 @@ public class MetricChart : Border
         double ceiling,
         string title,
         string unit,
-        int decimals)
+        int decimals,
+        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null,
+        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null)
     {
         _tl = timelineSec ?? Array.Empty<double>();
         _ser = values ?? new List<KeyValuePair<int, double[]>>();
@@ -201,6 +250,10 @@ public class MetricChart : Border
         _title = title;
         _unit = unit ?? string.Empty;
         _dec = decimals;
+        _pcieGen = new Dictionary<int, int[]>();
+        _pcieWidth = new Dictionary<int, int[]>();
+        if (pcieGen != null) foreach (var kv in pcieGen) _pcieGen[kv.Key] = kv.Value;
+        if (pcieWidth != null) foreach (var kv in pcieWidth) _pcieWidth[kv.Key] = kv.Value;
     }
 
     public ScrollViewer PlotScroll => _plotScroll;
@@ -208,11 +261,13 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling, bottom=0).</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling at
+    /// y=TopPad, bottom=0 at y=PlotH — both scales keep TopPad headroom so the max value
+    /// and its axis label are never clipped at the top edge).</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return PlotH - (value / ceiling) * PlotH;
+            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
 
         // Log scale with top headroom: bottom = 0.01 * ceiling at y = PlotH,
         // top = ceiling at y = TopPad, so the max value sits just below the top
@@ -259,6 +314,30 @@ public class MetricChart : Border
 
         double max = _ceiling > 0 ? _ceiling : 1;
 
+        // t = 0 "start" marker: drawn in EXACTLY the same format as the other per-minute
+        // gridlines (same light blue, same thickness, same "0m" label style), so minute 0
+        // reads as the first of the minute lines — only its position marks the timeline's
+        // origin (per user spec).
+        double x0 = _rightShift; // left edge of the data region (t = 0)
+        _canvas.Children.Add(new Line
+        {
+            X1 = x0, Y1 = 0, X2 = x0, Y2 = PlotH,
+            Stroke = MinuteBlue,
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        });
+        var lbl0 = new TextBlock
+        {
+            Text = "0m",
+            Foreground = MinuteLabel,
+            FontFamily = Theme.Mono,
+            FontSize = 11,
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(lbl0, x0 + 3);
+        Canvas.SetTop(lbl0, PlotH + 2);
+        _canvas.Children.Add(lbl0);
+
         // ── per-minute dark-blue gridlines within the visible window ──
         double viewSec = _ctl.WindowSeconds;
         double tStart = _ctl.ViewStartSec();
@@ -293,7 +372,8 @@ public class MetricChart : Border
         // (e.g. PCIe Bandwidth) where the linear charts previously had none.
         if (_logScale)
         {
-            // Draw gridlines at powers of two within [0.01*max, max].
+            // Gridlines at powers of two within [0.01*max, max]. Their value labels live on
+            // the fixed right-hand Y-axis (DrawAxis), not in the plot, so the plot stays clear.
             for (int p = 0; p <= 8; p++)
             {
                 double val = Math.Pow(2, p);
@@ -306,17 +386,6 @@ public class MetricChart : Border
                     StrokeThickness = 1,
                     IsHitTestVisible = false,
                 });
-                var lbl2 = new TextBlock
-                {
-                    Text = val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G",
-                    Foreground = Theme.Fg,
-                    FontFamily = Theme.Mono,
-                    FontSize = 12,
-                    IsHitTestVisible = false,
-                };
-                Canvas.SetLeft(lbl2, off + 2);
-                Canvas.SetTop(lbl2, y - 7);
-                _canvas.Children.Add(lbl2);
             }
         }
 
@@ -363,10 +432,80 @@ public class MetricChart : Border
 
         if (!_canvas.Children.Contains(_crossLine)) _canvas.Children.Add(_crossLine);
 
+        DrawAxis(max);
+
         _maxText.Text = $"max {max:0}";
         UpdateLegend();
         UpdateCrosshair();
     }
+
+    // Draws the fixed right-hand Y-axis value labels + tick marks on _axisCanvas, aligned with
+    // the plot's values (linear: 0..max with evenly spaced ticks; PCIe/log: powers of two).
+    private void DrawAxis(double max)
+    {
+        for (int i = _axisCanvas.Children.Count - 1; i >= 0; i--)
+            _axisCanvas.Children.RemoveAt(i);
+
+        // Axis line at the left edge of the axis column (abuts the plot's right edge).
+        _axisCanvas.Children.Add(new Line
+        {
+            X1 = 0, Y1 = 0, X2 = 0, Y2 = PlotH,
+            Stroke = Theme.Border,
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        });
+
+        double topY = TopPad; // y of the topmost tick (value = max) — both scales keep headroom
+        if (_logScale)
+        {
+            for (int p = 0; p <= 8; p++)
+            {
+                double val = Math.Pow(2, p);
+                if (val < max * 0.01 || val > max) continue;
+                DrawAxisTick(val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G", ValueToY(val, max));
+            }
+        }
+        else
+        {
+            for (int i = 0; i <= 5; i++)
+            {
+                double val = max * i / 5.0;
+                DrawAxisTick(Fmt(val), topY + (PlotH - topY) * (1 - i / 5.0));
+            }
+        }
+    }
+
+    private void DrawAxisTick(string text, double y)
+    {
+        _axisCanvas.Children.Add(new Line
+        {
+            X1 = 0, Y1 = y, X2 = 6, Y2 = y,
+            Stroke = Theme.Border,
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        });
+        var lbl = new TextBlock
+        {
+            Text = text,
+            Foreground = Theme.Muted,
+            FontFamily = Theme.Mono,
+            FontSize = 10,
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(lbl, 8);
+        Canvas.SetTop(lbl, y - 7);
+        _axisCanvas.Children.Add(lbl);
+    }
+
+    // PCIe gen/width at a timeline index for a GPU (0/0 when unavailable or not a PCIe chart).
+    private void PcieAt(int gpu, int idx, out int gen, out int width)
+    {
+        gen = 0;
+        width = 0;
+        if (_pcieGen.TryGetValue(gpu, out int[]? g) && idx >= 0 && idx < g.Length) gen = g[idx];
+        if (_pcieWidth.TryGetValue(gpu, out int[]? w) && idx >= 0 && idx < w.Length) width = w[idx];
+    }
+
     /// <summary>Cheap update: move the red crosshair and refresh the red per-GPU readout.</summary>
     public void UpdateCrosshair()
     {
@@ -394,6 +533,7 @@ public class MetricChart : Border
         _crossLine.Visibility = Visibility.Visible;
 
         _readout.Children.Clear();
+        int sampleIdx = _tl.Length > 0 ? LowerIndex(t) : 0;
         foreach (var kvp in _ser.OrderBy(p => p.Key))
         {
             double v = ValueAt(t, _tl, kvp.Value);
@@ -406,9 +546,13 @@ public class MetricChart : Border
                 Margin = new Thickness(0, 0, 4, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
+            string text = Fmt(v) + _unit;
+            PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
+            if (gen > 0 || width > 0)
+                text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
             _readout.Children.Add(new TextBlock
             {
-                Text = Fmt(v) + _unit,
+                Text = text,
                 Foreground = CrossRed,
                 FontFamily = Theme.Mono,
                 FontSize = 12,
@@ -425,7 +569,35 @@ public class MetricChart : Border
     }
     private void OnPlotScroll(object sender, ScrollChangedEventArgs e)
     {
-        if (e.HorizontalChange != 0) _ctl?.SetScrolled(this, _plotScroll.HorizontalOffset);
+        if (_ctl == null) return;
+        if (e.HorizontalChange != 0)
+        {
+            // A ScrollChanged landing near the controller's queued programmatic pin is the
+            // layout pass applying OUR scroll — it can fire after _syncing is cleared, so
+            // without a discriminator it would be misread as a user gesture (the very race
+            // that used to poison the follow intent). A real user scroll travels a visible
+            // distance (the scrollbar thumb spans the whole range), whereas our pin moves
+            // at most a tick or two — so call it programmatic only when the movement is
+            // small AND lands on the queued target. A user who drags back to the right edge
+            // from deep in history moves a long way and therefore resumes following.
+            bool programmatic = _progOffset >= 0
+                && Math.Abs(e.HorizontalOffset - _progOffset) < 8.0
+                && Math.Abs(e.HorizontalChange) <= 30.0;
+            _progOffset = -1;
+            _ctl.SetScrolled(this, e.HorizontalOffset, programmatic);
+            return;
+        }
+        // The offset didn't move, but the content range did (the canvas grew past the
+        // viewport — history outgrew the window — or the window was resized). While
+        // following, re-pin to the newest data now that the range is up to date: this is
+        // what keeps every chart glued to its right edge.
+        _progOffset = -1;
+        if (_ctl.Following)
+        {
+            double max = Math.Max(0, _plotScroll.ScrollableWidth);
+            if (_plotScroll.HorizontalOffset < max - 0.5)
+                _ctl.PinFollow(this, max);
+        }
     }
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
@@ -530,9 +702,14 @@ public class MetricChart : Border
                 Margin = new Thickness(0, 0, 4, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             });
+            int n = s.Length;
+            PcieAt(kvp.Key, n > 0 ? n - 1 : 0, out int pgen, out int pwidth);
+            string legendText = Fmt(cur) + _unit;
+            if (pgen > 0 || pwidth > 0)
+                legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
             _legend.Children.Add(new TextBlock
             {
-                Text = Fmt(cur) + _unit,
+                Text = legendText,
                 Foreground = Theme.Fg,
                 FontFamily = Theme.Mono,
                 FontSize = 12,
@@ -592,11 +769,27 @@ public sealed class ChartController
     public void OnDataTick()
     {
         RecomputePx();
-        RaiseRedraw();      // resize canvases first so ScrollableWidth reflects the new width
+        RaiseRedraw();      // resize the canvases to the new timeline
+        // Force every plot's ScrollViewer to measure/arrange NOW, before pinning. Without
+        // this the pin below targets the STALE (previous-tick) ScrollableWidth, and as the
+        // canvas outgrows the viewport the offset lags further and further left of the
+        // newest data — the "left-aligned at 10 min" symptom.
+        foreach (var c in _charts) c.PlotScroll.UpdateLayout();
         _syncing = true;    // suppress the ScrollChanged events this causes
         AutoFollow();
         _syncing = false;
         RaiseRedraw();      // re-render (gridlines shift) after the scroll offset changed
+
+        // Safety re-pin: a ScrollChanged for our own pin can still land during the layout
+        // pass after _syncing cleared; if it ever moved a following chart off the right
+        // edge, put it back. (A user scroll into history sets _followRight = false, in
+        // which case this block does nothing and their position is preserved.)
+        if (_followRight)
+        {
+            _syncing = true;
+            AutoFollow(pinAll: true);
+            _syncing = false;
+        }
     }
 
     /// <summary>CTRL+wheel zoom: change how many minutes fit the viewport, anchored at the newest data.</summary>
@@ -630,15 +823,24 @@ public sealed class ChartController
     public double ViewStartSec() => _lastScroll / (PxPerSec <= 0 ? 1 : PxPerSec);
 
     /// <summary>Scroll-sync: propagate one chart's offset to the others (guarded against loops).</summary>
-    public void SetScrolled(MetricChart src, double offsetPx)
+    public void SetScrolled(MetricChart src, double offsetPx, bool programmatic = false)
     {
         _lastScroll = offsetPx;
-        // Real user scroll (the ScrollChanged guard guarantees HorizontalChange != 0): latch
-        // the follow intent — at/near the right edge means "keep following", otherwise "I've
-        // scrolled into history, hold my position".
-        double srcMax = Math.Max(0, src.PlotScroll.ScrollableWidth);
-        _followRight = srcMax <= 0 || offsetPx >= srcMax - 8.0;
+        // Only a REAL user scroll latches the follow intent. Programmatic scrolls (zoom /
+        // follow / cross-chart sync) arrive wrapped in _syncing, and the layout pass
+        // applying our own pin arrives flagged programmatic — latching from either is what
+        // used to drop the follow intent and leave the view left-aligned once history
+        // outgrew the window.
+        if (!_syncing && !programmatic)
+        {
+            double srcMax0 = Math.Max(0, src.PlotScroll.ScrollableWidth);
+            _followRight = srcMax0 <= 0 || offsetPx >= srcMax0 - 8.0;
+        }
         if (_syncing) return;
+        // Real user scroll: propagate the same view position (as a fraction of each
+        // chart's range) to the other charts, queueing programmatic offsets so their
+        // later layout events can't be misread as user scrolls either.
+        double srcMax = Math.Max(0, src.PlotScroll.ScrollableWidth);
         _syncing = true;
         try
         {
@@ -649,7 +851,35 @@ public sealed class ChartController
                 double target = frac * Math.Max(0, c.PlotScroll.ScrollableWidth);
                 if (Math.Abs(c.PlotScroll.HorizontalOffset - target) > 0.5)
                 {
+                    c.QueueProgrammaticScroll(target);
                     c.PlotScroll.ScrollToHorizontalOffset(target);
+                }
+            }
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    /// <summary>True while the charts are pinned to the newest data (until the user scrolls into history).</summary>
+    public bool Following => _followRight;
+
+    /// <summary>Pin <paramref name="src"/> — and keep every other chart in sync — to the newest
+    /// data. Used when the content range grows while following (history outgrew the window,
+    /// or the window was resized) and the ScrollViewer's own scroll didn't reach the edge.</summary>
+    public void PinFollow(MetricChart src, double srcMax)
+    {
+        _syncing = true;
+        try
+        {
+            foreach (var c in _charts)
+            {
+                double m = c == src ? srcMax : Math.Max(0, c.PlotScroll.ScrollableWidth);
+                if (Math.Abs(c.PlotScroll.HorizontalOffset - m) > 0.5)
+                {
+                    c.QueueProgrammaticScroll(m);
+                    c.PlotScroll.ScrollToHorizontalOffset(m);
                 }
             }
         }
@@ -671,18 +901,23 @@ public sealed class ChartController
     {
         // After a timeline / zoom change, pin charts to the newest data when the user is in
         // follow mode (or on an explicit zoom). While the user has scrolled into history we
-        // keep their offset (clamped to the new max). Run AFTER the canvases have been resized.
+        // keep their offset (clamped to the new max). Run AFTER the canvases have been
+        // resized (and, on a data tick, after a forced UpdateLayout so the range is fresh).
         foreach (var c in _charts)
         {
             double max = Math.Max(0, c.PlotScroll.ScrollableWidth);
+            double target;
             if (pinAll || _followRight)
-            {
-                c.PlotScroll.ScrollToHorizontalOffset(max);
-            }
+                target = max;
             else
             {
                 double o = c.PlotScroll.HorizontalOffset;
-                if (o > max) c.PlotScroll.ScrollToHorizontalOffset(max);
+                target = o > max ? max : -1;
+            }
+            if (target >= 0)
+            {
+                c.QueueProgrammaticScroll(target);
+                c.PlotScroll.ScrollToHorizontalOffset(target);
             }
         }
     }
