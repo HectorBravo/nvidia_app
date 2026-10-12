@@ -4,27 +4,25 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 13-10-2026 00:45:40 | [T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 28m | none |
-| 11-10-2026 23:44:07 | [T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 32m | none |
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | done | feat | 6/6 | 8m | none |
 | 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 7 completed task(s) - [View completed tasks](#completed-tasks)
+> 9 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 13-10-2026 00:45:40
-- **Last Updated**: 13-10-2026 01:13:49
+- **Last Updated**: 13-10-2026 01:36:15
 - **Time Spent**: 28m
-- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar) (same branch as [T9](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) — the user has not merged T9 yet, so this continuation lands on it)
-- **Commit(s)**: [9ad8f4f](https://github.com/HectorBravo/nvidia_app/commit/9ad8f4f8afe63add15a47b25ff26a73b5626f53a) (code), [bb34280](https://github.com/HectorBravo/nvidia_app/commit/bb3428067b08f71c727b183d2efea3bcb3dce4f7) (index) — both on the feature branch; they reach `main` when the branch is merged (it carries unmerged T9 + T10 together)
+- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar) (same branch as [T9](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix); both merged into `main` together)
+- **Commit(s)**: [9ad8f4f](https://github.com/HectorBravo/nvidia_app/commit/9ad8f4f8afe63add15a47b25ff26a73b5626f53a) (code) + [bb34280](https://github.com/HectorBravo/nvidia_app/commit/bb3428067b08f71c727b183d2efea3bcb3dce4f7) (index) — merged into `main` via [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0) (13-10-2026 01:31:49, clean merge)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (13-10-2026 ~00:40, "continue"): (a) make the **minute-0 line the same format as the other minutes** (it was a brighter blue bar, thickness 2); (b) on the **non-PCIe (linear) charts** the max value of the right-side axis legend is **cropped** at the top; (c) with 10 min of data the horizontal scroll **doesn't move to the right** — by default the graphs should always show the **most recent data** (right edge); (d) **remove all `.exe`s that are not the ones compiled this session**.
@@ -39,11 +37,12 @@
 
 **Pending (awaiting user response):**
 
-- [ ] (13-10-2026 00:45:40) After visual verification, merge `feat/ai-chart-pcie-axis-and-0bar` into `main` (or open a PR) — the branch carries **both** [T9](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) (unmerged since 12-10) and T10.
+None yet.
 
 **Confirmed (user provided):**
 
 - (13-10-2026 00:45:40) "continue" + the four fixes (0m format / linear-max cropping / auto-follow newest / remove stale exes) → implemented on the same `feat/ai-chart-pcie-axis-and-0bar` branch as T9.
+- (13-10-2026 01:36:15) Merge `feat/ai-chart-pcie-axis-and-0bar` into `main` (T9 + T10) → "hecho ya el merge a main" — clean (non-squash) merge, merge commit [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0).
 
 ### Subtasks / Plan
 
@@ -107,17 +106,19 @@ Post-verify: `Get-ChildItem -Recurse -Filter *.exe` (excluding `.git`) must list
 
 **Current state at pause / next session:** code edits + build + harness + exe cleanup + git flow all done; `ai/PROJECT_DESCRIPTION.md` refreshed; final log written with T9 + T10 both `in_progress` (they become `done` only after the user merges). **What the user must do:** run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm (1) the `0m` line looks identical to the other minute lines, (2) on the linear charts (Utilization, Memory, Temperature, Power, Clocks) the top value and the top right-axis label are fully visible, (3) after ≥10 min of data the charts stay pinned to the right edge with no user action, (4) scrolling left holds position and scrolling back to the right edge resumes following, (5) only fresh exes exist in the tree. Then merge the branch (or open a PR) → AI agent performs final close-out per step 6.
 
+**Final state (13-10-2026 01:36:15):** user merged the branch into `main` (clean merge [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0), non-squash — branch tip was an ancestor of `main`, so the fast-forward close-out applied). T10 → `done` (with T9). The AI branch was fast-forwarded onto `origin/main` and re-pushed. **Task complete — nothing left to do.**
+
 ---
 
 ## Task T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 11-10-2026 23:44:07
-- **Last Updated**: 12-10-2026 00:16:00
+- **Last Updated**: 13-10-2026 01:36:15
 - **Time Spent**: 32m
-- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar)
-- **Commit(s)**: pending
+- **Branch**: [`feat/ai-chart-pcie-axis-and-0bar`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-pcie-axis-and-0bar) (merged into `main` together with [T10](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only))
+- **Commit(s)**: [8bcdcd6](https://github.com/HectorBravo/nvidia_app/commit/8bcdcd62794984eda1102d341235b0c910647830) (code+docs), [f0f4166](https://github.com/HectorBravo/nvidia_app/commit/f0f416607ce1d6df90438551631988ef82c56f64) (log before) — merged into `main` via [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0) (13-10-2026 01:31:49, clean merge)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (carried from the prior interrupted session): extend the WPF PCIe chart to (a) store/show **per-sample** PCIe gen+width in the legend and hover, (b) add a **fixed right-side Y-axis**, (c) add a **minute-0 (t=0) start marker**, and (d) make the chart **reliably pin to the newest data**.
@@ -136,7 +137,7 @@ None yet.
 
 **Confirmed (user provided):**
 
-None yet.
+- (13-10-2026 01:36:15) Merge `feat/ai-chart-pcie-axis-and-0bar` into `main` (T9 + T10) → "hecho ya el merge a main" — clean (non-squash) merge, merge commit [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0).
 
 ### Subtasks / Plan
 
@@ -194,6 +195,8 @@ None yet.
 6. **After the user merges**: update T9 → status `done`, real `Commit(s)` hash, final Time Spent; commit it as the **next commit on `main`** (`docs(ai): [ai] update task log after push (T9 done)`); push `main`; then `git fetch origin`, `git checkout feat/ai-chart-pcie-axis-and-0bar`, `git merge --ff-only origin/main`, `git push --force-with-lease origin feat/ai-chart-pcie-axis-and-0bar` (fast-forward the AI branch onto the final log). **Exception:** if the user squash-merges/rebases, the fast-forward is impossible — leave the branch as-is and tell the user.
 
 **Verification checklist (per the git-usage rules):** `GIT_AUTHOR_NAME`/`GIT_COMMITTER_NAME` = `AI_bot` on every git command; no `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`; user's `git config` untouched; `[ai]` tag on every commit; work on a `feat/ai-*` branch (not `main`); branch pushed to remote; `ai/AI_TASKLOG.md` log-before on `main` + final log after merge; `ai/PROJECT_DESCRIPTION.md` refreshed.
+
+**Final state (13-10-2026 01:36:15):** branch merged into `main` (clean merge [722c242](https://github.com/HectorBravo/nvidia_app/commit/722c2425f8f7eb85596b8f9746f82b4ffc4254e0)); T9 → `done` (with T10). **Task complete — nothing left to do.**
 
 ---
 
@@ -735,6 +738,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 13-10-2026 00:45:40 | [T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only) | feat | 6/6 | 28m |
+| 11-10-2026 23:44:07 | [T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) | feat | 8/8 | 32m |
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | feat | 6/6 | 8m |
 | 08-10-2026 05:00:00 | [T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers](#task-t7-default-to-charts-tab-remove-processes--log-tabs-restyle-tab-headers) | refactor | 5/6 | 20m |
 | 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
