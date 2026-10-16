@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/7 | 1h 43m | none |
+| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 18m | none |
 
 > 10 completed task(s) - [View completed tasks](#completed-tasks)
 
@@ -15,10 +15,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-10-2026 13:04:01
-- **Last Updated**: 16-10-2026 14:47:27
-- **Time Spent**: 1h 43m
+- **Last Updated**: 16-10-2026 15:22:29
+- **Time Spent**: 2h 18m
 - **Branch**: [`feat/ai-chart-readout-pct-gpu-name`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-readout-pct-gpu-name)
-- **Commit(s)**: pending
+- **Commit(s)**: [b774e9c](https://github.com/HectorBravo/nvidia_app/commit/b774e9cc3821926f31d452a09fdfb5ae549906fa) (code) + [952cf07](https://github.com/HectorBravo/nvidia_app/commit/952cf07c0eb4cac408fe60b56efdee4e264c3471) (index) — pushed on the branch; status stays `in_progress` until the branch is merged into `main`, when the final `done` update lands
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (16-10-2026, "adjust the charts"): (a) show a **percentage** on the **Memory Used** and **Power** charts (persistent value + mouse-over value); (b) **temperature** axis should top out at **~100 °C, not the current 110**; (c) the app should **start with the full height of all graphs** (user can still resize as before); (d) the **right-side legend text** looks grayish → make it **white**; (e) show the **CUDA device index and the GPU card name** in brackets in the current-value and hover readouts.
@@ -37,13 +37,13 @@
 
 ### Subtasks / Plan
 
-- [ ] T11.1 — Memory Used chart: append `(NN %)` of total memory to legend + hover readout.
-- [ ] T11.2 — Power chart: append `(NN %)` of the enforced power cap to legend + hover readout.
-- [ ] T11.3 — All charts: append `[idx: GPU name]` (CUDA ordinal + card name) to legend + hover readout.
-- [ ] T11.4 — Temperature chart: Y-axis ceiling fixed at 100 °C (auto-expands only if exceeded).
-- [ ] T11.5 — Right-side legend text → pure white (#FFFFFF).
-- [ ] T11.6 — Window starts maximized so all graphs open at full height (resize preserved).
-- [ ] T11.7 — Refresh `ai/PROJECT_DESCRIPTION.md`; `dotnet build` Release (expect 0/0); commit on `feat/ai-chart-readout-pct-gpu-name` + push.
+- [x] T11.1 — Memory Used chart: append `(NN %)` of total memory to legend + hover readout.
+- [x] T11.2 — Power chart: append `(NN %)` of the enforced power cap to legend + hover readout.
+- [x] T11.3 — All charts: append `[idx: GPU name]` (CUDA ordinal + card name) to legend + hover readout.
+- [x] T11.4 — Temperature chart: Y-axis ceiling fixed at 100 °C (auto-expands only if exceeded).
+- [x] T11.5 — Right-side legend text → pure white (#FFFFFF).
+- [x] T11.6 — Window starts maximized so all graphs open at full height (resize preserved).
+- [x] T11.7 — Refresh `ai/PROJECT_DESCRIPTION.md`; `dotnet build` Release (0/0); commit on `feat/ai-chart-readout-pct-gpu-name` + push.
 
 ### Full Context Notes for AI Agents
 
