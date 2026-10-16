@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-16 15:19:55
-git_head: b774e9cc3821926f31d452a09fdfb5ae549906fa
+last_indexed: 2026-10-16 17:27:57
+git_head: ed0e4f198c72bc5402c0194d43c00e06def391a2
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -14,10 +14,12 @@ A **Windows-native** (.NET 8, C#) NVIDIA GPU monitor that talks **directly** to 
 NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 `nvidia-smi`. Two front-ends share one NVML engine:
 - **`NvidiaMonitor`** — a WPF live dashboard (overview grid, synchronized line
-  charts), polling ~1 Hz. It opens on the **Charts** tab; the **Processes** and
+  charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
+  fit-to-content window size** (never maximized); the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab).
-- **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style table.
+- **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
+  table, or a live `--watch` feed (the interval defaults to 1 s when omitted).
 
 Reads per-GPU telemetry: GPU/memory utilization, temperature, power (+limits), memory
 used/total/free, clocks, fan, P-state, **PCIe link (gen × width)** and derived
@@ -57,21 +59,29 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   `NvmlTypes`, `NvmlError`; reference header `ref/nvml.h` (authoritative NVML
   signatures/structs/enums).
 - **NvidiaMonitor** (`HectorBravo.Nvidia.Monitor`): `App` (WPF entry point),
-  `MainWindow` (all UI: 2 tabs — Overview + Charts; Charts is the default startup tab), `ChartController.cs` (`MetricChart` +
-  `ChartController` — synchronized native-WPF charts), `GpuPollingService`
-  (~1 Hz background poller → UI thread), `GpuServiceFactory` (builds the concrete
-  engine), `Theme` (dark theme + value formatters), `GlobalUsings`.
-- **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry), `SmiFormatter`
-  (nvidia-smi-style table). Its "PCIe" column shows the link config plus the
-  theoretical bandwidth (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the
-  WPF GUI's PCIe values.
+  `MainWindow` (all UI: 2 tabs — Overview + Charts; Charts is the default startup tab;
+  the window opens at a calculated fit-to-content size — never maximized),
+  `ChartController.cs` (`MetricChart` + `ChartController` — synchronized native-WPF
+  charts), `GpuPollingService` (~1 Hz background poller → UI thread), `GpuServiceFactory`
+  (builds the concrete engine), `Theme` (dark theme + value formatters + the green
+  "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`.
+- **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
+  table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
+  value is omitted), `SmiFormatter` (nvidia-smi-style table). Its "PCIe" column
+  shows the link config plus the theoretical bandwidth
+  (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the WPF GUI's PCIe values.
 
 ## 4. Entry Points
 - **WPF dashboard:** `NvidiaMonitor` → `App.Main` (`[STAThread]`). No args = launches
-  `MainWindow`; `--print` = headless single refresh printing a one-line summary per
+  `MainWindow` at a **calculated fit-to-content size** (never maximized; the no-NVML
+  fallback screen keeps the 1040×640 default) with the green "slide" scrollbars;
+  `--print` = headless single refresh printing a one-line summary per
   GPU (never opens a window), exit 0 on success / 1 when NVML unavailable.
 - **CLI:** `NvmlTest` → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
-  exits 0 on success, 1 when NVML/GPU unavailable (reason on stdout).
+  `--print --watch [<seconds>]` = live feed that re-prints the table every N seconds
+  until Ctrl-C (**N defaults to 1** when the value is omitted; an explicit
+  non-numeric value exits 2). Exits 0 on success, 1 when NVML/GPU unavailable
+  (reason on stdout).
 
 ## 5. Build / Run / Test
 ```powershell
@@ -187,8 +197,8 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   **Memory Used** and **Power** charts additionally show **`(NN %)`** of the
   per-GPU total memory / enforced power cap (omitted when the denominator is N/A);
   the **legend text is pure white** (`Theme.White`), the **temperature Y-axis is
-  capped at 100 °C** (auto-expanding only if a card runs hotter), and the **window
-  opens maximized** (its `Width`/`Height` now act as the restored size).
+  capped at 100 °C** (auto-expanding only if a card runs hotter), and the **window opens at a calculated fit-to-content size** (T12 superseded the
+  "opens maximized" behaviour — see the T12 change-log entry below).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -196,6 +206,20 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-16 — **T12: fit-to-content window + green "slide" scrollbars** (`MainWindow`
+  + `Theme`) and **NvmlTest `--watch` default**: (1) the WPF window **no longer opens
+  maximized** — a one-shot `LayoutUpdated` pass measures each tab's content at
+  infinite size (unwrapping `ScrollViewer`s), adds the measured chrome (frame +
+  caption, tab strip, header, status row), clamps to the work area (-16 px) and
+  re-centers; the no-NVML fallback screen keeps the 1040×640 default. (2) `Theme`
+  gained the green "slide" scrollbar styles (aqua `#18FFCC` → emerald `#048D5F`
+  gradient thumb on a slim dark rounded track, hover/drag states), applied
+  idempotently to every `ScrollBar` on each `ContentRendered`
+  (`Theme.ApplyScrollStyles`). (3) `NvmlTest`: the `--watch` seconds value is now
+  **optional** — bare `--watch` defaults to a **1 s** feed, an explicit non-numeric
+  value still exits 2, and the feed no longer crashes when stdout is redirected
+  (guarded `Console.Clear`). The WPF build is still verified headlessly via
+  `--print` (exit 0).
 - 2026-10-16 — **T11 chart readouts** (`GpuMetricSample` + `NvidiaMonitor`): the
   **Memory Used** and **Power** charts now show **(NN %)** of the per-GPU total
   memory / enforced power cap in the legend and hover readout; every chart shows
