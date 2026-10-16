@@ -361,7 +361,7 @@ None yet.
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-10-2026 01:35:00
-- **Last Updated**: 16-10-2026 12:15:00
+- **Last Updated**: 16-10-2026 12:17:24
 - **Time Spent**: 1h 10m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
 - **Commit(s)**: [`30373b7`](https://github.com/HectorBravo/nvidia_app/commit/30373b7) (code) + [`ab46071`](https://github.com/HectorBravo/nvidia_app/commit/ab46071) (project index) — pushed to `feat/ai-nvidia-monitor-app`
@@ -740,7 +740,7 @@ src/
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | feat | 6/6 | 8m |
 | 08-10-2026 05:00:00 | [T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers](#task-t7-default-to-charts-tab-remove-processes--log-tabs-restyle-tab-headers) | refactor | 5/6 | 20m |
 | 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
-| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | feat | 6/6 | 1h 08m |
+| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | feat | 6/6 | 1h 10m |
 | 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | feat | 10/10 | 35m |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
