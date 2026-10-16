@@ -1,5 +1,5 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-16 02:32:00
+last_indexed: 2026-10-16 12:17:24
 git_head: 5ffcf3bdf13a912202056e0228498a74a9b1e1b6
 PROJECT_INDEXER:END -->
 
@@ -188,6 +188,10 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-16 — **T5 log follow-up** (log/index metadata only): T5's **Time Spent** corrected
+  1h 08m → 1h 10m (the 12:15 close-out session) so the task section and the Completed-Tasks
+  row agree; `last_indexed` bumped. Content is still current at `5ffcf3b` (no source, build,
+  or dependency files changed since T9/T10), so `git_head` is unchanged.
 - 2026-10-16 — **T5 close-out** (log/index metadata only — no source, build, or dependency
   files changed): the last open subtask, the **manual WPF chart verification** (T5.5 — a
   headless session cannot display the window), was closed on the user's confirmation; the
