@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-13 01:12:30
-git_head: 9ad8f4f8afe63add15a47b25ff26a73b5626f53a
+last_indexed: 2026-10-16 02:32:00
+git_head: 5ffcf3bdf13a912202056e0228498a74a9b1e1b6
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -188,6 +188,14 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-16 — **T5 close-out** (log/index metadata only — no source, build, or dependency
+  files changed): the last open subtask, the **manual WPF chart verification** (T5.5 — a
+  headless session cannot display the window), was closed on the user's confirmation; the
+  automated proxies (headless `--print` against live NVML, 12 s GUI smoke test) had already
+  passed. The `PROJECT_INDEXER` freshness block is re-pointed at `5ffcf3b` (current HEAD of
+  `main`; the chart code T5 shipped is in `main` — today's `ChartController.cs` /
+  `MainWindow.cs` carry it). `ai/AI_TASKLOG.md`: T5 → done (6/6), moved to Completed Tasks;
+  the Summary table was pruned to incomplete-tasks-only (now empty).
 - 2026-10-13 — Charts polish: the **t = 0 marker** now uses the same `MinuteBlue`
   (1 px) line + `MinuteLabel` "0m" as the other minute lines (it was a brighter,
   thicker bar before). Linear `ValueToY`/`DrawAxis` apply the same `TopPad` headroom
