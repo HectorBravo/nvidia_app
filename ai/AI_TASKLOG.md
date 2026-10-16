@@ -4,12 +4,67 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/7 | 1h 43m | none |
 
 > 10 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
+## Task T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 16-10-2026 13:04:01
+- **Last Updated**: 16-10-2026 14:47:27
+- **Time Spent**: 1h 43m
+- **Branch**: [`feat/ai-chart-readout-pct-gpu-name`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-readout-pct-gpu-name)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (16-10-2026, "adjust the charts"): (a) show a **percentage** on the **Memory Used** and **Power** charts (persistent value + mouse-over value); (b) **temperature** axis should top out at **~100 °C, not the current 110**; (c) the app should **start with the full height of all graphs** (user can still resize as before); (d) the **right-side legend text** looks grayish → make it **white**; (e) show the **CUDA device index and the GPU card name** in brackets in the current-value and hover readouts.
+  - (a) denominators: memory → `GpuSnapshot.MemoryTotalBytes` (MiB); power → `GpuSnapshot.EnforcedPowerLimitMw` (enforced cap, mW → W). Plumbed per-sample into `GpuMetricSample` (new `GpuName`, `MemoryTotalBytes`, `PowerCapWatts`); 0/N-A denominators simply omit the percentage.
+  - (b) `UpdateCharts` used `max * 1.1` → 110 at 100 °C. New `ChartSpec.MinCeiling` (100 for Temperature) applied as `Math.Max(MinCeiling, dynamicCeiling)`: fixed 100 up to 100 °C, auto-expands if hotter.
+  - (c) ctor had fixed `Width = 1040 / Height = 640`; now also sets `WindowState = WindowState.Maximized` (Width/Height kept as the restored size, so normal resize behavior is unchanged; charts adapt via existing `SetViewportWidth`).
+  - (d) legend entries used `Theme.Fg` (#e6e9ef off-white → "grayish"); now a new pure-white `Theme.White` (#ffffff).
+  - (e) per-GPU identity ` [idx: name]` (e.g. `[0: NVIDIA GeForce RTX 3090]`) appended to **every** chart's legend entry and red hover readout, from the sample's new `GpuName` (copied from `GpuSnapshot.Name`).
+  - Session note: session started 13:04, compacted ~14:40; Time Spent from real timestamps (13:04 → 14:47 = 1h 43m).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (16-10-2026 14:47:27) Manual run of `bin\NvidiaMonitor\NvidiaMonitor.exe` to verify: (a) memory/power charts show `(NN %)` in legend + hover, (b) `[idx: name]` shown on all charts, (c) legend text is white, (d) temperature axis tops at 100 °C, (e) window opens maximized / full graph height (headless session cannot display the window).
+
+### Subtasks / Plan
+
+- [ ] T11.1 — Memory Used chart: append `(NN %)` of total memory to legend + hover readout.
+- [ ] T11.2 — Power chart: append `(NN %)` of the enforced power cap to legend + hover readout.
+- [ ] T11.3 — All charts: append `[idx: GPU name]` (CUDA ordinal + card name) to legend + hover readout.
+- [ ] T11.4 — Temperature chart: Y-axis ceiling fixed at 100 °C (auto-expands only if exceeded).
+- [ ] T11.5 — Right-side legend text → pure white (#FFFFFF).
+- [ ] T11.6 — Window starts maximized so all graphs open at full height (resize preserved).
+- [ ] T11.7 — Refresh `ai/PROJECT_DESCRIPTION.md`; `dotnet build` Release (expect 0/0); commit on `feat/ai-chart-readout-pct-gpu-name` + push.
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery notes (written for the agent, not the user).
+
+- **Files to change (exact)**:
+  1. `src/HectorBravo.Nvidia.Contracts/GpuMetricSample.cs` — append `public string GpuName { get; init; } = string.Empty;`, `public long MemoryTotalBytes { get; init; }`, `public double PowerCapWatts { get; init; }`.
+  2. `src/NvidiaMonitor/MainWindow.cs` — (i) ctor L51-53: add `WindowState = WindowState.Maximized;`; (ii) `ApplySnapshot` sample init (L239-253): add `GpuName = g.Name, MemoryTotalBytes = g.MemoryTotalBytes, PowerCapWatts = g.EnforcedPowerLimitMw > 0 ? g.EnforcedPowerLimitMw / 1000.0 : 0.0,`; (iii) `record ChartSpec` (L487-493): add `bool Pct = false, double MinCeiling = 0, Func<GpuMetricSample, double>? PctBase = null`; (iv) specs L512-527: Temperature `MinCeiling: 100`, Power `Pct: true, PctBase: s => s.PowerCapWatts`, Memory Used `Pct: true, PctBase: s => s.MemoryTotalBytes / 1048576.0`; (v) `UpdateCharts` (L288-399): build `gpuNames`/`pctBase` lists from each GPU's **last** sample; L390 → `ceiling = Math.Max(spec.MinCeiling, c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));`; L393-394: `SetSeries(..., spec.Pct ? pctBase : null, gpuNames)`.
+  3. `src/NvidiaMonitor/ChartController.cs` (`MetricChart`) — fields after L152 (`_pcieWidth`): `Dictionary<int, string> _gpuNames`, `Dictionary<int, double> _pctBase`; `SetSeries` (L237-257): add optional params `IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null, IReadOnlyCollection<KeyValuePair<int, string>>? gpuNames = null` + copy into the dicts; `UpdateLegend` (L689-720, `Foreground = Theme.Fg` at L713): text = `Fmt(cur)+_unit + " (NN %)" + pcie + " [idx: name]"`, `Foreground = Theme.White`; `UpdateCrosshair` (L510-560, text at L549): same additions to the red readout.
+  4. `src/NvidiaMonitor/Theme.cs` — add `WhiteColor = Hex("#ffffff")` + `White = Frozen(WhiteColor)`.
+- **Chart order / ceilings**: index 0..6 = util%, memUtil%, temp, power, clock, memUsed(MiB), pcieBw(log); `_runningMax = {100,100,100,400,2100,16384,32}`; `c<2` are the fixed-100 % charts.
+- **`GpuSnapshot` props used**: `Name`, `MemoryTotalBytes` (bytes), `EnforcedPowerLimitMw` (mW; **negative = N/A** → maps to 0 → no % shown), `PowerMw` (current draw).
+- **Git flow (hector rules)**: identity via env vars only (`GIT_AUTHOR_NAME=AI_bot; GIT_COMMITTER_NAME=AI_bot`; never touch email/config); only `ai/AI_TASKLOG.md` may be committed/pushed on `main` (dedicated `docs(ai): [ai]` commits); the index refresh goes **on the AI branch**; branch `feat/ai-chart-readout-pct-gpu-name` created from `main`; commits `feat(chart): [ai] …` then `docs(ai): [ai] refresh project index (T11)`; **final** log (status done + real hashes) only after the user **merges**, then `git merge --ff-only origin/main` + `git push --force-with-lease` the branch.
+- **Build/verify**: `dotnet build nvidia_app.sln -c Release` (0/0 expected); publish `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL). Headless session: a successful build + launch is the automated proxy for the manual WPF checks (see User Confirmations).
+- **Pre-flight**: index freshness `git_head` re-pointed 5ffcf3b → 05822a5 before code work (docs-only delta; content verified unchanged); the index is re-indexed again at the end of the branch work.
+
+---
+
 ## Task T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only
+
+
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
