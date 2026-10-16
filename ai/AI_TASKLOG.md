@@ -4,13 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | done | feat | 6/6 | 8m | none |
-| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | in_progress | feat | 5/6 | 1h 06m | none |
-| 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | done | docs | 6/6 | 13m | none |
-| 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | done | fix | 4/4 | 11m | none |
-| 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | done | feat | 16/17 | 4h 07m | none |
 
-> 9 completed task(s) - [View completed tasks](#completed-tasks)
+> 10 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
@@ -363,11 +358,11 @@ None yet.
 
 ## Task T5: Synchronized live GPU charts + project indexer
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-10-2026 01:35:00
-- **Last Updated**: 08-10-2026 02:41:00
-- **Time Spent**: 1h 06m
+- **Last Updated**: 16-10-2026 12:15:00
+- **Time Spent**: 1h 10m
 - **Branch**: [`feat/ai-nvidia-monitor-app`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-nvidia-monitor-app)
 - **Commit(s)**: [`30373b7`](https://github.com/HectorBravo/nvidia_app/commit/30373b7) (code) + [`ab46071`](https://github.com/HectorBravo/nvidia_app/commit/ab46071) (project index) — pushed to `feat/ai-nvidia-monitor-app`
 - **Blockers**: none
@@ -380,16 +375,18 @@ None yet.
   - **Build**: `dotnet build nvidia_app.sln -c Debug` -> **0 errors, 0 warnings** (all 4 projects). **Live NVML**: `NvmlTest --print` verified on 3x RTX 3090 (Driver 617.42 / CUDA 13.4 / NVML 13.617.42; GPU1 100%/74 degC, GPUs 0+2 idle).
   - **project-indexer skill (Trigger 2 auto-refresh)**: source shape changed (new `ChartController.cs`, deleted `ChartPanel.cs`, edited `MainWindow.cs`), so `ai/PROJECT_DESCRIPTION.md` (11 sections + PROJECT_INDEXER freshness block) and root `AGENTS.md` (managed Mandatory-Reading + Freshness block) were created.
   - **VERIFY**: interactive WPF chart behavior (live 1 Hz updates, crosshair, scroll-sync, Ctrl+wheel zoom, drag-to-reorder, NVML-loss clears crosshair) is a **manual** step — this headless session cannot display the window; the headless `--print` path is the automated proxy and passes.
+  - **CLOSED** (16-10-2026 02:31:00): all 6 subtasks complete — T5.5 closed on user confirmation, which accepted the close-out (see User Confirmations below). The T5 code was already merged into `main` long ago (T9/T10 lineage, `5ffcf3b` is the last commit on `main`); this close-out is **log-only** — no source, build, or dependency files changed. The log's Summary table was also pruned to incomplete-tasks-only (per the log format, stale `done` rows for T1/T2/T3/T8 were removed) and `ai/PROJECT_DESCRIPTION.md` received a freshness-pointer refresh (`git_head` → this close-out commit) with a Change-Log bullet.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (08-10-2026 02:27:02) Manually run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm the synchronized charts (live updates, crosshair spanning all charts, scroll-sync, Ctrl+wheel zoom, drag-to-reorder) behave as intended.
+None.
 
 **Confirmed (user provided):**
 
 - (08-10-2026 01:35:00) "continue, last message was aborted" → resume the in-progress chart rewrite + the pending project-indexer step (proceed as planned).
+- (16-10-2026 02:31:00) Manually run `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm the synchronized charts (live updates, crosshair spanning all charts, scroll-sync, Ctrl+wheel zoom, drag-to-reorder) behave as intended → "Close T5 as done, commit final log on main, refresh project index" (user accepted the close-out; chart behavior had already passed the automated proxies — headless `--print` against live NVML and the 12 s smoke test).
 
 ### Subtasks / Plan
 
@@ -397,7 +394,7 @@ None yet.
 - [x] T5.2 — Fix compile (`IReadOnlyList` type) + rebuild solution (0 errors, 0 warnings)
 - [x] T5.3 — Runtime bug fixes: Redraw mutation, ValueAt index-vs-time, AutoFollow latch + resize-before-pin, per-tick perf
 - [x] T5.4 — Apply project-indexer skill (create `ai/PROJECT_DESCRIPTION.md` + `AGENTS.md`, verify I1-I5)
-- [ ] T5.5 — Manual WPF chart verification (blocked to user — headless session cannot display the window)
+- [x] T5.5 — Manual WPF chart verification (closed on user confirmation 16-10-2026 — the headless session cannot display the window; the headless `--print` path and the 12 s smoke test were the automated proxies)
 - [x] T5.6 — Smoke test: launch `NvidiaMonitor.exe` on live NVML for 12 s → alive, no crash
 
 ### Full Context Notes for AI Agents
@@ -743,6 +740,7 @@ src/
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | feat | 6/6 | 8m |
 | 08-10-2026 05:00:00 | [T7: Default to Charts tab; remove Processes & Log tabs; restyle tab headers](#task-t7-default-to-charts-tab-remove-processes--log-tabs-restyle-tab-headers) | refactor | 5/6 | 20m |
 | 08-10-2026 03:49:32 | [T6: PCIe bandwidth (overview column + log-scale chart) + chart right-align fix](#task-t6-pcie-bandwidth-overview-column-log-scale-chart-chart-right-align-fix) | feat | 9/9 | 17m |
+| 08-10-2026 01:35:00 | [T5: Synchronized live GPU charts + project indexer](#task-t5-synchronized-live-gpu-charts-project-indexer) | feat | 6/6 | 1h 08m |
 | 07-10-2026 22:09:42 | [T4: WPF charts, CLI --watch, Processes & Log tabs](#task-t4-wpf-charts-cli-watch-processes-log-tabs) | feat | 10/10 | 35m |
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
