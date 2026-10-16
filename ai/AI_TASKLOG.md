@@ -4,9 +4,63 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/7 | 1h 43m | none |
+| 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/4 | 0m | none |
+| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 10 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T12: Calculated window size (not maximized) + green "slide" scrollbars
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 16-10-2026 16:28:52
+- **Last Updated**: 16-10-2026 16:28:52
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-calculated-window-size-green-scrollbars`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-calculated-window-size-green-scrollbars)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (16-10-2026, after running T11's published build): (1) the window **must not** open **maximized** — open it at a **calculated** width/height that **accommodates all the graphs and the visible data** so the user doesn't have to resize at startup; (2) the **horizontal scrollbars** are white on the black app background — make them a stylish **"sliding green"** look per a reference gradient image (aqua/emerald on black).
+  - Reference gradient sampled (641×360 JPG, System.Drawing pixel reads): `#000000` edges, bright **aqua `#18FFCC`** (~15%), **emerald `#048D5F`** (~50%) → thumb gradient = aqua leading edge → emerald → deep green; track = slim dark rounded pill.
+  - The white bars are: one horizontal `ScrollViewer` **per chart card** (7 total, `_plotScroll`, H=Auto) + the outer charts-stack `ScrollViewer` (V=Auto) + the Overview `DataGrid` — all stock light WPF scrollbars. The app is code-only (no XAML files), so the styles are built from a XAML string via `XamlReader` and applied with a visual-tree walk (`Theme.ApplyScrollStyles`).
+  - Auto-sizing: on first render, each tab's content is measured at an infinite constraint (unwrapping any `ScrollViewer` to its true content, e.g. the charts stack), the max wins, measured chrome (frame + caption, tab strip, header block, status row) is added, the result is clamped to the work area (−16 px) and the window re-centred. When the content doesn't fit (small screens) the (now green) scrollbars take over; the "no NVML" fallback screen keeps the default 1040×640.
+  - Branching: this task builds on [T11](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start)'s branch (T11's code is the base the maximized start is being corrected on); merging this branch into `main` brings T11 along as well.
+  - T11 bookkeeping fixed in the same log commit: subtasks 7/7, commits `b774e9c`/`952cf07`, real time 13:04:01 → 15:24:25 = 2h 20m; item (e) confirmed/rejected by the user → carried on by T12.
+  - (Findings continue in the full context notes below.)
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (16-10-2026 16:28:52) Visual check of the new build: (1) window opens at the calculated size that fits all charts/data (not maximized, re-centred), (2) the horizontal (and vertical) scrollbars are the green "slide" style.
+
+**Confirmed (user provided):**
+
+- (16-10-2026 16:28:52) T11 (e) "window opens maximized / full graph height" → "I don't want the window to open maximized, I want it to open with a calculated width/height that can accommodate all the graphs and visible data, so the user doesn't need to resize it every time at startup. I also want you to change the horizontal scrollbars to another type more stylish, as now they are white and the background of the app is black. Make it in a sliding color in green, something like this [aqua/emerald-on-black reference image]" → implemented as this task (T12).
+
+### Subtasks / Plan
+
+- [ ] T12.1 — `MainWindow`: stop opening maximized; compute the initial size that fits both tabs' content (clamped to the work area, re-centred); the fallback screen keeps the default 1040×640.
+- [ ] T12.2 — `Theme`: green "slide" scrollbar style (H + V): dark rounded track, aqua→emerald→deep-green gradient thumb with hover/drag states; applied to every `ScrollBar` in the visual tree.
+- [ ] T12.3 — Release build + publish both executables into `bin/`; live `--print` smoke test (expect exit 0).
+- [ ] T12.4 — Refresh `ai/PROJECT_DESCRIPTION.md` (content + re-point to the code commit); commit + push the branch.
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained knowledge base so an AI agent can fully resume this task WITHOUT any other context.
+
+- **Where**: `D:\Repos\nvidia_app`. New branch `feat/ai-calculated-window-size-green-scrollbars`, created from `feat/ai-chart-readout-pct-gpu-name` @ `952cf07c0eb4cac408fe60b56efdee4e264c3471` (which contains T11 code `b774e9cc3821926f31d452a09fdfb5ae549906fa` + index `952cf07`). Local `main` = `origin/main` = `009bc8af39ce001a0837a63b7aa666e322c7617e` (T11 **not merged yet** — stays `in_progress` until the user merges; the T12 branch is a superset of T11).
+- **Files to change (exact)**:
+  1. `src/NvidiaMonitor/Theme.cs` — add `using System.Windows.Controls;` + a "green slide scrollbars" section: a `const string` XAML `ResourceDictionary` (horizontal/vertical gradient brushes; thumb `ControlTemplate` with `IsMouseOver`/`IsDragging` triggers; invisible `RepeatButton` template; H & V `ScrollBar` templates containing `Track x:Name="PART_Track"`, a slim dark rounded track pill, `LineLeft/Right` (H) & `LineUp/Down` (V) repeat buttons) parsed once with `System.Windows.Markup.XamlReader.Parse` and cached; `public static void ApplyScrollStyles(DependencyObject root)` walks the visual tree and assigns the per-orientation style only where `bar.Style` isn't already it.
+  2. `src/NvidiaMonitor/MainWindow.cs` — ctor: remove `WindowState = WindowState.Maximized;` (keep `Width=1040/Height=640` as fallback); keep the root border in field `_rootBorder`; keep the header grid in field `_header`; subscribe `ContentRendered += OnContentRendered`. New `OnContentRendered`: (a) always `Theme.ApplyScrollStyles(this)` (idempotent — catches lazily realized tab/DataGrid scrollbars); (b) once (guard `_autoSized`; skip when `Content != _rootBorder` = fallback screen): for each `TabItem`, unwrap `Content` (if it is a `ScrollViewer`, use its `Content`) and `Measure(new Size(inf, inf))`; `contentW/H = max` over tabs; `chrome = SystemParameters.WindowResizeBorderThickness.Top + …Bottom + SystemParameters.WindowCaptionHeight + tab-strip height (TabItem container's ActualHeight, fallback 34) + _header.ActualHeight + _statusText.ActualHeight + 12`; `Width = Math.Clamp(Math.Max(contentW, 900), 720, work.Width - 16)`; `Height = Math.Clamp(contentH + chrome, 420, work.Height - 16)`; then re-centre `Left/Top` in `SystemParameters.WorkArea`.
+  3. `ai/PROJECT_DESCRIPTION.md` — at the end: §3 NvidiaMonitor bullet (Theme: + green scrollbar style), §4 WPF line (window opens at the calculated fit size, never maximized), re-point the freshness block to the code commit.
+- **Layout math facts**: 7 chart cards (`MetricChart : Border`, padding 8, margin bottom 10, border 1) = header row (~20 px: 12 pt mono title + legend/max/readout) + body row = `_plotScroll` (H=Auto; canvas `PlotH 128 + AxisH 16` = 144 px; the H scrollbar row appears when the canvas outgrows the viewport) + 62 px axis column. The 7-chart stack is ≈ 1400–1550 px tall → it fits whole only on very tall screens; on 1080p it clamps to the work area and the (green) V scrollbar takes over — by design. Card natural width is small pre-data (`Canvas` natural width is 0; headers ≈ 200–900 px) → width floor 900; the Overview `DataGrid`'s natural width (≈ sum of its ~11 auto columns, 1000–1200 px) normally dominates.
+- **Gradient palette** (sampled from the user's reference JPG): aqua `#18FFCC` (peak), emerald `#048D5F`, near-black edges. Normal: `#0A3D2B → #18FFCC (0.12) → #0FBE8C (0.38) → #048D5F (0.70) → #052318 (1)`. Over: `#0F5A3C → #5FFFD9 → #23E3A8 → #0BB57E → #0A3D2B`. Drag: `#083322 → #10D6A6 → #0FA87E → #037550 → #041F14`. Vertical = same stops top→bottom. Track `#0A0E13` @ 0.78, CornerRadius 5 (H: 9 px tall centred; V: 9 px wide centred). Thumb 7 px, CornerRadius 4, 1 px border `#04140D`. Bar thickness 13 (centred — the stock ScrollViewer template allocates 17 px rows: set `VerticalAlignment=Center` on the H style, `HorizontalAlignment=Center` on the V one).
+- **Verification (headless session — cannot show the window)**: `& 'C:\Program Files\dotnet\dotnet.exe' build nvidia_app.sln -c Release --nologo` (expect 0 errors/0 warnings); publish `src\NvidiaMonitor` → `bin\NvidiaMonitor` and `src\NvmlTest` → `bin\NvmlTest` (clear the target dirs first; framework-dependent, **not** single-file — the csprojs have no special publish properties); then `bin\NvidiaMonitor\NvidiaMonitor.exe --print` (expect exit 0: `driver=… cuda=… nvml=… gpus=2` + one line per GPU). The user visually verifies the windowed behaviour (run the exe, no args).
+- **Git protocol (state at this log commit)**: log-before committed on the user's current branch `feat/ai-chart-readout-pct-gpu-name` and pushed; new branch created; next: code commit `feat(monitor): [ai] window opens at a calculated fit-to-content size (not maximized) + green "slide" gradient scrollbars (T12)`, then the index-refresh commit, then push the branch. The **final `done` update happens only after the user merges** — that merge also closes T11: close **both** in one log commit on `main` (real merge hash, final Time Spent), then ff + re-push **both** AI branches (`--ff-only` + `--force-with-lease`) unless the user squash-merges (exception: leave as-is).
+- **Gotchas**: (1) do **not** use `SizeToContent` — chart inner content is a `Canvas` (natural size 0) and a `ScrollViewer` reports its viewport, not the data; (2) `ContentRendered` fires repeatedly (every render) — the style walk must stay idempotent and the sizing step single-shot; (3) XAML string: C# verbatim string with doubled `"`; the `Track` **must** be `x:Name="PART_Track"` or the `ScrollBar` can't find it; (4) the `DataGrid`'s internal scrollbars live in its template — the walk only sees them after the Overview tab is first realized, hence re-running on every `ContentRendered`; (5) `SystemParameters.WorkArea` is in WPF DIUs already — no DPI conversion needed.
 
 ---
 
@@ -15,10 +69,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-10-2026 13:04:01
-- **Last Updated**: 16-10-2026 14:47:27
-- **Time Spent**: 1h 43m
+- **Last Updated**: 16-10-2026 16:28:52
+- **Time Spent**: 2h 20m
 - **Branch**: [`feat/ai-chart-readout-pct-gpu-name`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-readout-pct-gpu-name)
-- **Commit(s)**: pending
+- **Commit(s)**: [b774e9c](https://github.com/HectorBravo/nvidia_app/commit/b774e9cc3821926f31d452a09fdfb5ae549906fa) (code) + [952cf07](https://github.com/HectorBravo/nvidia_app/commit/952cf07c0eb4cac408fe60b56efdee4e264c3471) (index)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (16-10-2026, "adjust the charts"): (a) show a **percentage** on the **Memory Used** and **Power** charts (persistent value + mouse-over value); (b) **temperature** axis should top out at **~100 °C, not the current 110**; (c) the app should **start with the full height of all graphs** (user can still resize as before); (d) the **right-side legend text** looks grayish → make it **white**; (e) show the **CUDA device index and the GPU card name** in brackets in the current-value and hover readouts.
@@ -27,23 +81,28 @@
   - (c) ctor had fixed `Width = 1040 / Height = 640`; now also sets `WindowState = WindowState.Maximized` (Width/Height kept as the restored size, so normal resize behavior is unchanged; charts adapt via existing `SetViewportWidth`).
   - (d) legend entries used `Theme.Fg` (#e6e9ef off-white → "grayish"); now a new pure-white `Theme.White` (#ffffff).
   - (e) per-GPU identity ` [idx: name]` (e.g. `[0: NVIDIA GeForce RTX 3090]`) appended to **every** chart's legend entry and red hover readout, from the sample's new `GpuName` (copied from `GpuSnapshot.Name`).
-  - Session note: session started 13:04, compacted ~14:40; Time Spent from real timestamps (13:04 → 14:47 = 1h 43m).
+  - 16-10-2026: the user ran the published build and **rejected (e)**: the maximized start is not wanted — replaced by [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) (calculated fit size instead). No comment on (a)–(d) yet (still pending explicit confirmation).
+  - Session: 13:04:01 → 15:24:25 (the "after push" log commit) = 2h 20m from real commit timestamps.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (16-10-2026 14:47:27) Manual run of `bin\NvidiaMonitor\NvidiaMonitor.exe` to verify: (a) memory/power charts show `(NN %)` in legend + hover, (b) `[idx: name]` shown on all charts, (c) legend text is white, (d) temperature axis tops at 100 °C, (e) window opens maximized / full graph height (headless session cannot display the window).
+- [ ] (16-10-2026 14:47:27) Manual run of `bin\NvidiaMonitor\NvidiaMonitor.exe` to verify: (a) memory/power charts show `(NN %)` in legend + hover, (b) `[idx: name]` shown on all charts, (c) legend text is white, (d) temperature axis tops at 100 °C. ((e) was resolved 16-10-2026 — see Confirmed below.)
+
+**Confirmed (user provided):**
+
+- (16-10-2026 16:28:52) (e) "window opens maximized / full graph height" → "I don't want the window to open maximized, I want it to open with a calculated width/height that can accommodate all the graphs and visible data, so the user doesn't need to resize it every time at startup" → implemented as [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars).
 
 ### Subtasks / Plan
 
-- [ ] T11.1 — Memory Used chart: append `(NN %)` of total memory to legend + hover readout.
-- [ ] T11.2 — Power chart: append `(NN %)` of the enforced power cap to legend + hover readout.
-- [ ] T11.3 — All charts: append `[idx: GPU name]` (CUDA ordinal + card name) to legend + hover readout.
-- [ ] T11.4 — Temperature chart: Y-axis ceiling fixed at 100 °C (auto-expands only if exceeded).
-- [ ] T11.5 — Right-side legend text → pure white (#FFFFFF).
-- [ ] T11.6 — Window starts maximized so all graphs open at full height (resize preserved).
-- [ ] T11.7 — Refresh `ai/PROJECT_DESCRIPTION.md`; `dotnet build` Release (expect 0/0); commit on `feat/ai-chart-readout-pct-gpu-name` + push.
+- [x] T11.1 — Memory Used chart: append `(NN %)` of total memory to legend + hover readout.
+- [x] T11.2 — Power chart: append `(NN %)` of the enforced power cap to legend + hover readout.
+- [x] T11.3 — All charts: append `[idx: GPU name]` (CUDA ordinal + card name) to legend + hover readout.
+- [x] T11.4 — Temperature chart: Y-axis ceiling fixed at 100 °C (auto-expands only if exceeded).
+- [x] T11.5 — Right-side legend text → pure white (#FFFFFF).
+- [x] T11.6 — Window starts maximized so all graphs open at full height (resize preserved). (Superseded by T12: the user then asked for a calculated fit size instead of maximized.)
+- [x] T11.7 — Refresh `ai/PROJECT_DESCRIPTION.md`; `dotnet build` Release (expect 0/0); commit on `feat/ai-chart-readout-pct-gpu-name` + push.
 
 ### Full Context Notes for AI Agents
 
