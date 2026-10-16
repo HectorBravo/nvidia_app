@@ -50,6 +50,7 @@ public class MainWindow : Window
         Title = "NVIDIA GPU Monitor";
         Width = 1040;
         Height = 640;
+        WindowState = WindowState.Maximized;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = Theme.Bg;
 
@@ -249,6 +250,9 @@ public class MainWindow : Window
                 PcieMaxBandwidthGbps = g.PcieMaxBandwidthGbps,
                 PcieLinkGen = g.PcieLinkGen,
                 PcieLinkWidth = g.PcieLinkWidth,
+                GpuName = g.Name,
+                MemoryTotalBytes = g.MemoryTotalBytes,
+                PowerCapWatts = g.EnforcedPowerLimitMw > 0 ? g.EnforcedPowerLimitMw / 1000.0 : 0.0,
                 Timestamp = snap.Timestamp,
             });
         }
@@ -324,6 +328,22 @@ public class MainWindow : Window
             var pcieWidthMap = new List<KeyValuePair<int, int[]>>();
             double max = _runningMax[c];
 
+            // Per-GPU identity ("[idx: name]") and, for percentage charts, the current
+            // denominator (total memory in MiB / enforced power cap in W) taken from each
+            // GPU's newest sample.
+            var pctBase = new List<KeyValuePair<int, double>>();
+            var gpuNames = new List<KeyValuePair<int, string>>();
+            foreach (var kv in samplesByGpu)
+            {
+                var last = kv.Value[^1];
+                gpuNames.Add(new KeyValuePair<int, string>(kv.Key, last.GpuName));
+                if (spec.Pct && spec.PctBase != null)
+                {
+                    double denom = spec.PctBase(last);
+                    if (denom > 0) pctBase.Add(new KeyValuePair<int, double>(kv.Key, denom));
+                }
+            }
+
             foreach (var kv in samplesByGpu)
             {
                 var src = spec.Selector(kv.Value);
@@ -387,11 +407,12 @@ public class MainWindow : Window
             }
             else
             {
-                ceiling = c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1);
+                ceiling = Math.Max(spec.MinCeiling, c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));
             }
 
             _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals,
-                spec.Pcie ? pcieGenMap : null, spec.Pcie ? pcieWidthMap : null);
+                spec.Pcie ? pcieGenMap : null, spec.Pcie ? pcieWidthMap : null,
+                spec.Pct ? pctBase : null, gpuNames);
         }
 
         // All charts share the timeline (same samples), so one combined tick resizes + follows +
@@ -490,7 +511,10 @@ public class MainWindow : Window
         int Decimals,
         Func<IReadOnlyList<HectorBravo.Nvidia.Contracts.GpuMetricSample>, List<double>> Selector,
         bool LogScale = false,
-        bool Pcie = false);
+        bool Pcie = false,
+        bool Pct = false,
+        double MinCeiling = 0,
+        Func<HectorBravo.Nvidia.Contracts.GpuMetricSample, double>? PctBase = null);
 
     /// <summary>Builds the 2-tab control (Overview / Charts); Charts is the default tab.</summary>
     private TabControl BuildTabs()
@@ -514,13 +538,18 @@ public class MainWindow : Window
         _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList()));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
-            s => s.Select(x => (double)x.TemperatureGpu).ToList()));
+            s => s.Select(x => (double)x.TemperatureGpu).ToList(),
+            MinCeiling: 100));
         _specs.Add(new ChartSpec("Power (W)", " W", 1,
-            s => s.Select(x => x.PowerWatts).ToList()));
+            s => s.Select(x => x.PowerWatts).ToList(),
+            Pct: true,
+            PctBase: s => s.PowerCapWatts));
         _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
             s => s.Select(x => (double)x.GpuClockMhz).ToList()));
         _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
-            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList()));
+            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
+            Pct: true,
+            PctBase: s => s.MemoryTotalBytes / 1048576.0));
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
             LogScale: true,

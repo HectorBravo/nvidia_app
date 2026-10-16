@@ -21,4 +21,12 @@ public sealed record GpuMetricSample
     // link config ("4.0 x16") in the legend and in the hover readout, not just GB/s.
     public int PcieLinkGen { get; init; }
     public int PcieLinkWidth { get; init; }
+    // GPU card name (from the snapshot) so the legend / hover readout can show the
+    // per-GPU identity "[index: name]" next to the plotted values.
+    public string GpuName { get; init; } = string.Empty;
+    // Per-sample denominators for percentage readouts (0 = N/A, percentage is omitted):
+    // total device memory in bytes (memory chart) and the enforced power cap in watts
+    // (power chart).
+    public long MemoryTotalBytes { get; init; }
+    public double PowerCapWatts { get; init; }
 }

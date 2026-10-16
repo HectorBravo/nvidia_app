@@ -16,6 +16,7 @@ public static class Theme
     public static readonly Color BorderColor  = Hex("#232838");
     public static readonly Color GridColor    = Hex("#1c2130");
     public static readonly Color FgColor      = Hex("#e6e9ef");
+    public static readonly Color WhiteColor   = Hex("#ffffff");
     public static readonly Color MutedColor   = Hex("#8a93a6");
     public static readonly Color AccentColor  = Hex("#76b900"); // NVIDIA green
     public static readonly Color WarnColor    = Hex("#e0a030");
@@ -28,6 +29,7 @@ public static class Theme
     public static readonly Brush Border  = Frozen(BorderColor);
     public static readonly Brush Grid    = Frozen(GridColor);
     public static readonly Brush Fg      = Frozen(FgColor);
+    public static readonly Brush White   = Frozen(WhiteColor);
     public static readonly Brush Muted   = Frozen(MutedColor);
     public static readonly Brush Accent  = Frozen(AccentColor);
     public static readonly Brush Warn    = Frozen(WarnColor);

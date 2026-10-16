@@ -150,6 +150,10 @@ public class MetricChart : Border
     // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
     private Dictionary<int, int[]> _pcieGen = new();
     private Dictionary<int, int[]> _pcieWidth = new();
+    // Per-GPU card name for the "[idx: name]" identity shown in the legend and hover readout.
+    private Dictionary<int, string> _gpuNames = new();
+    // Per-GPU percentage denominator (total memory in MiB / enforced power cap in W); 0 = N/A.
+    private Dictionary<int, double> _pctBase = new();
 
     public MetricChart(string title)
     {
@@ -242,7 +246,9 @@ public class MetricChart : Border
         string unit,
         int decimals,
         IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null,
-        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null)
+        IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null,
+        IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null,
+        IReadOnlyCollection<KeyValuePair<int, string>>? gpuNames = null)
     {
         _tl = timelineSec ?? Array.Empty<double>();
         _ser = values ?? new List<KeyValuePair<int, double[]>>();
@@ -254,6 +260,10 @@ public class MetricChart : Border
         _pcieWidth = new Dictionary<int, int[]>();
         if (pcieGen != null) foreach (var kv in pcieGen) _pcieGen[kv.Key] = kv.Value;
         if (pcieWidth != null) foreach (var kv in pcieWidth) _pcieWidth[kv.Key] = kv.Value;
+        _pctBase = new Dictionary<int, double>();
+        _gpuNames = new Dictionary<int, string>();
+        if (pctBase != null) foreach (var kv in pctBase) _pctBase[kv.Key] = kv.Value;
+        if (gpuNames != null) foreach (var kv in gpuNames) _gpuNames[kv.Key] = kv.Value;
     }
 
     public ScrollViewer PlotScroll => _plotScroll;
@@ -547,9 +557,13 @@ public class MetricChart : Border
                 VerticalAlignment = VerticalAlignment.Center,
             });
             string text = Fmt(v) + _unit;
+            if (_pctBase.TryGetValue(kvp.Key, out double pdenom) && pdenom > 0)
+                text += $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
                 text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
+            if (_gpuNames.TryGetValue(kvp.Key, out string? gname) && !string.IsNullOrWhiteSpace(gname))
+                text += $"  [{kvp.Key}: {gname}]";
             _readout.Children.Add(new TextBlock
             {
                 Text = text,
@@ -705,12 +719,16 @@ public class MetricChart : Border
             int n = s.Length;
             PcieAt(kvp.Key, n > 0 ? n - 1 : 0, out int pgen, out int pwidth);
             string legendText = Fmt(cur) + _unit;
+            if (_pctBase.TryGetValue(kvp.Key, out double denom) && denom > 0)
+                legendText += $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
                 legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
+            if (_gpuNames.TryGetValue(kvp.Key, out string? name) && !string.IsNullOrWhiteSpace(name))
+                legendText += $"  [{kvp.Key}: {name}]";
             _legend.Children.Add(new TextBlock
             {
                 Text = legendText,
-                Foreground = Theme.Fg,
+                Foreground = Theme.White,
                 FontFamily = Theme.Mono,
                 FontSize = 12,
                 Margin = new Thickness(0, 0, 8, 0),

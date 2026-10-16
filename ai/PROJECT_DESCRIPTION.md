@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-16 12:17:24
-git_head: 5ffcf3bdf13a912202056e0228498a74a9b1e1b6
+last_indexed: 2026-10-16 15:19:55
+git_head: b774e9cc3821926f31d452a09fdfb5ae549906fa
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -119,7 +119,9 @@ implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
   GpuSnapshot`, `ShutdownAsync()`, `IsAvailable`, `StatusMessage`, plus a
   status-change event and an `AppLog` hook.
 - `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics).
-- `GpuMetricSample` — one timestamped sample of every metric (feeds history).
+- `GpuMetricSample` — one timestamped sample of every metric (feeds history); it also
+  carries the per-GPU `GpuName`, `MemoryTotalBytes`, and `PowerCapWatts` (the
+  denominators behind the charts' percentage readouts).
 - `GpuHistory` — per-GPU **ring buffer** (`new GpuHistory(capacity)`; the dashboard
   uses 720 ≈ 12 min @ 1 Hz). `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>`
   (oldest→newest), `GetSampleTimestamps(gpu)`, `GpuIndices`. The charts plot over the
@@ -180,7 +182,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   user gesture and permanently killed following); `OnDataTick()` forces
   `UpdateLayout()` before re-pinning (so `ScrollableWidth` is current) and re-pins
   when the content range grows while following (fixes the "left-aligned at 10 min"
-  scroll race).
+  scroll race). Every chart's **legend and hover readout** end with the per-GPU
+  identity **`[index: name]`** (e.g. `[0: NVIDIA GeForce RTX 3090]`); the
+  **Memory Used** and **Power** charts additionally show **`(NN %)`** of the
+  per-GPU total memory / enforced power cap (omitted when the denominator is N/A);
+  the **legend text is pure white** (`Theme.White`), the **temperature Y-axis is
+  capped at 100 °C** (auto-expanding only if a card runs hotter), and the **window
+  opens maximized** (its `Width`/`Height` now act as the restored size).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -188,6 +196,19 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-16 — **T11 chart readouts** (`GpuMetricSample` + `NvidiaMonitor`): the
+  **Memory Used** and **Power** charts now show **(NN %)** of the per-GPU total
+  memory / enforced power cap in the legend and hover readout; every chart shows
+  the per-GPU **[index: name]** (CUDA ordinal + card name); the **legend text is
+  pure white** (`Theme.White`); the **temperature Y-axis tops at 100 °C**
+  (previously `max * 1.1` → 110); the **window opens maximized** (resize preserved).
+  `MetricChart.SetSeries` gained optional `pctBase` / `gpuNames` parameters.
+- 2026-10-16 — **Index freshness re-point (T11 pre-flight)**: `git_head`
+  `5ffcf3b` → `05822a5` and `last_indexed` bumped. The delta between those
+  commits is **docs/log metadata only** (task-log/index commits), so every
+  section below remains accurate as-is. A full re-index (content + new
+  `git_head`/`last_indexed`) lands in the T11 branch's index commit.
+
 - 2026-10-16 — **T5 log follow-up** (log/index metadata only): T5's **Time Spent** corrected
   1h 08m → 1h 10m (the 12:15 close-out session) so the task section and the Completed-Tasks
   row agree; `last_indexed` bumped. Content is still current at `5ffcf3b` (no source, build,
