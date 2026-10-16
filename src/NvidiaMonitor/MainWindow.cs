@@ -45,14 +45,23 @@ public class MainWindow : Window
     // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed, pcieBw.
     private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384, 32 };
 
+    // One-shot fit-to-content startup sizing (see OnContentRendered).
+    private readonly StackPanel _header;
+    private readonly Border _rootBorder;
+    private bool _autoSized;
+    private bool _dataReceived;
+
     public MainWindow()
     {
         Title = "NVIDIA GPU Monitor";
+        // Default (restored) size. OnLayoutUpdated() resizes the window one time,
+        // after the first data frame, so that all charts and the visible data fit
+        // without the user having to resize it at startup (clamped to the work area).
         Width = 1040;
         Height = 640;
-        WindowState = WindowState.Maximized;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = Theme.Bg;
+        LayoutUpdated += OnLayoutUpdated;
 
         var title = new TextBlock
         {
@@ -70,7 +79,7 @@ public class MainWindow : Window
             FontFamily = Theme.Mono,
             FontSize = 12,
         };
-        var header = new StackPanel
+        _header = new StackPanel
         {
             Children = { title, _driverText },
             Margin = new Thickness(16, 12, 16, 8),
@@ -92,14 +101,14 @@ public class MainWindow : Window
         _root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         _root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetRow(header, 0);
+        Grid.SetRow(_header, 0);
         Grid.SetRow(_tabs, 1);
         Grid.SetRow(_statusText, 2);
-        _root.Children.Add(header);
+        _root.Children.Add(_header);
         _root.Children.Add(_tabs);
         _root.Children.Add(_statusText);
 
-        Content = new Border { Background = Theme.Bg, Child = _root };
+        Content = _rootBorder = new Border { Background = Theme.Bg, Child = _root };
 
         Loaded += OnLoaded;
         Closed += OnClosed;
@@ -232,6 +241,7 @@ public class MainWindow : Window
     /// <summary>Called on the UI thread with the latest snapshot.</summary>
     private void ApplySnapshot(SystemSnapshot snap)
     {
+        _dataReceived = true;
         _driverText.Text = BuildVersionLine(snap);
 
         // Feed the bounded time-series history (used by future charts).
@@ -613,5 +623,67 @@ public class MainWindow : Window
         headerStyle.Triggers.Add(selected);
 
         tabs.ItemContainerStyle = headerStyle;
+    }
+
+    // ── one-shot fit-to-content startup sizing ─────────────────────
+    private void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        // Keep the green "slide" scrollbar style on every realized scrollbar.
+        // Re-running on every render is deliberate: the Overview DataGrid's own
+        // scrollbars only exist in the visual tree after that tab has been
+        // shown at least once.
+        Theme.ApplyScrollStyles(this);
+
+        // One-time sizing (skipped on the "no NVML" fallback screen, which keeps
+        // the default 1040×640): measure each tab's content at an infinite
+        // constraint, size the window to the bigger of the two + the fixed
+        // chrome, clamp to the work area, and re-centre.
+        if (_autoSized) return;
+        if (Content is not Border b || !ReferenceEquals(b, _rootBorder)) return;
+        if (!_dataReceived) return;
+        _autoSized = true;
+
+        double contentW = 0, contentH = 0;
+        MeasureFit(_grid, ref contentW, ref contentH);
+        if (_chartsScroll.Content is FrameworkElement chartsStack)
+            MeasureFit(chartsStack, ref contentW, ref contentH);
+
+        var work = SystemParameters.WorkArea;
+        double strip = 34; // fallback tab-strip height
+        if (_tabs.Items.Count > 0)
+        {
+            var gen = _tabs.ItemContainerGenerator;
+            if (gen is not null && gen.ContainerFromIndex(0) is FrameworkElement fc)
+                strip = Math.Max(fc.ActualHeight, 20);
+        }
+
+        // Fixed chrome: window border/frame + title bar + tab strip + header + status row.
+        double chrome = SystemParameters.WindowResizeBorderThickness.Top
+            + SystemParameters.WindowResizeBorderThickness.Bottom
+            + SystemParameters.WindowCaptionHeight
+            + strip
+            + _header.ActualHeight
+            + _statusText.ActualHeight
+            + 12;
+
+        double w = Math.Clamp(Math.Max(contentW, 900), 720, work.Width - 16);
+        double h = Math.Clamp(contentH + chrome, 420, work.Height - 16);
+        Width = w;
+        Height = h;
+
+        // The window opened at its default size; re-centre it in the work area
+        // at the new size so it stays where the user expects.
+        Left = work.Left + Math.Max(0, (work.Width - w) / 2);
+        Top = work.Top + Math.Max(0, (work.Height - h) / 2);
+
+        static void MeasureFit(FrameworkElement el, ref double w, ref double h)
+        {
+            el.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            if (el.DesiredSize.Height > 0)
+            {
+                w = Math.Max(w, el.DesiredSize.Width);
+                h = Math.Max(h, el.DesiredSize.Height);
+            }
+        }
     }
 }

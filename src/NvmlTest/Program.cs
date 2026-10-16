@@ -2,11 +2,12 @@
 //
 // Usage:
 //   NvmlTest --print
-//   NvmlTest --print [--watch <seconds>]
+//   NvmlTest --print [--watch [<seconds>]]
 // --print prints an nvidia-smi-style table once and exits 0 on success, or 1
 // when NVML / a GPU is unavailable (reason on stdout). With --watch it keeps
-// clearing and re-printing every <seconds>, like `watch nvidia-smi`; Ctrl-C
-// stops cleanly (exit 0). Missing / bad args exit 2.
+// clearing and re-printing every <seconds> (default 1 s when the value is
+// omitted), like `watch nvidia-smi`; Ctrl-C stops cleanly (exit 0).
+// Missing / bad args exit 2.
 using System.Globalization;
 using HectorBravo.Nvidia.Core;
 using HectorBravo.Nvidia.Test;
@@ -25,15 +26,25 @@ for (var i = 0; i < args.Length; i++)
     }
     else if (a.Equals("--watch", StringComparison.OrdinalIgnoreCase))
     {
-        // --watch implies --print, and requires a numeric value right after it.
-        if (i + 1 >= args.Length ||
-            !double.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var secs))
+        // --watch implies --print. The seconds value is optional:
+        //   --watch 5      → 5 s interval
+        //   --watch        → 1 s (default when no value is supplied)
+        //   --watch abc    → error (an explicit non-numeric value is a mistake)
+        if (i + 1 >= args.Length)
         {
-            Console.Error.WriteLine("Error: --watch requires a numeric seconds value");
+            print = true; // watch implies print
+            interval = 1; // default live-feed interval
+        }
+        else if (double.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var secs))
+        {
+            print = true; // watch implies print
+            interval = Math.Max(secs, 0.1); // clamp to avoid a busy loop
+        }
+        else
+        {
+            Console.Error.WriteLine("Error: --watch requires a numeric seconds value (or omit it for the 1s default)");
             return 2;
         }
-        print = true; // watch implies print
-        interval = Math.Max(secs, 0.1); // clamp to avoid a busy loop
     }
     else
     {
@@ -44,7 +55,7 @@ for (var i = 0; i < args.Length; i++)
 // No recognized mode, or anything we don't understand → usage on stderr.
 if (!print || unknown.Count > 0)
 {
-    Console.Error.WriteLine("Usage: NvmlTest --print [--watch <seconds>]");
+    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]]  (no seconds value → 1 s)");
     return 2;
 }
 
@@ -78,7 +89,15 @@ try
 {
     while (!cts.IsCancellationRequested)
     {
-        Console.Clear(); // wipe so the re-render feels "live", like `watch`
+        try
+        {
+            Console.Clear(); // wipe so the re-render feels "live", like `watch`
+        }
+        catch (Exception)
+        {
+            // Cosmetic only: skip the wipe when stdout has no console buffer
+            // (e.g. the output is redirected to a file) and carry on.
+        }
         Console.WriteLine($"NvmlTest --watch (every {interval.Value.ToString("0.##", CultureInfo.InvariantCulture)}s) — Ctrl-C to stop");
         try
         {
