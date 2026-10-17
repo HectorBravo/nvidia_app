@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-16 17:27:57
-git_head: ed0e4f198c72bc5402c0194d43c00e06def391a2
+last_indexed: 2026-10-17 22:14:00
+git_head: f212f7a2045c3fc34d4c1abf49daf5945df6cb2e
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -15,7 +15,10 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 `nvidia-smi`. Two front-ends share one NVML engine:
 - **`NvidiaMonitor`** — a WPF live dashboard (overview grid, synchronized line
   charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
-  fit-to-content window size** (never maximized); the **Processes** and
+  fit-to-content window size** (never maximized; sized so no scrollbar is needed at
+  first launch); a **per-device list** (CUDA ordinal + card name, with a colour
+  swatch matching each GPU's chart series) sits at the **top-right of the header
+  row**; the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab).
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
@@ -130,8 +133,8 @@ implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
   status-change event and an `AppLog` hook.
 - `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics).
 - `GpuMetricSample` — one timestamped sample of every metric (feeds history); it also
-  carries the per-GPU `GpuName`, `MemoryTotalBytes`, and `PowerCapWatts` (the
-  denominators behind the charts' percentage readouts).
+  carries the per-GPU `MemoryTotalBytes` and `PowerCapWatts` (the denominators behind
+  the charts' percentage readouts).
 - `GpuHistory` — per-GPU **ring buffer** (`new GpuHistory(capacity)`; the dashboard
   uses 720 ≈ 12 min @ 1 Hz). `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>`
   (oldest→newest), `GetSampleTimestamps(gpu)`, `GpuIndices`. The charts plot over the
@@ -192,13 +195,16 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   user gesture and permanently killed following); `OnDataTick()` forces
   `UpdateLayout()` before re-pinning (so `ScrollableWidth` is current) and re-pins
   when the content range grows while following (fixes the "left-aligned at 10 min"
-  scroll race). Every chart's **legend and hover readout** end with the per-GPU
-  identity **`[index: name]`** (e.g. `[0: NVIDIA GeForce RTX 3090]`); the
+  scroll race). The **legend and hover readout** show the per-GPU value (the
   **Memory Used** and **Power** charts additionally show **`(NN %)`** of the
-  per-GPU total memory / enforced power cap (omitted when the denominator is N/A);
-  the **legend text is pure white** (`Theme.White`), the **temperature Y-axis is
-  capped at 100 °C** (auto-expanding only if a card runs hotter), and the **window opens at a calculated fit-to-content size** (T12 superseded the
-  "opens maximized" behaviour — see the T12 change-log entry below).
+  per-GPU total memory / enforced power cap, omitted when the denominator is N/A);
+  the **legend text is pure white** (`Theme.White`) and the **temperature Y-axis is
+  capped at 100 °C** (auto-expanding only if a card runs hotter). The per-GPU
+  identity (`[index: name]`) that T11 appended to every legend/readout was
+  **removed again in T13** — device identity now lives in the **top-right device
+  list** (see the T13 change-log entry below). The **window opens at a calculated
+  fit-to-content size** (T12 superseded "opens maximized"; T13 fixed the height so
+  no scrollbar appears at first launch).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -206,6 +212,22 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
+  (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
+  **[index: name]** text is **removed again** from the chart legends and the
+  red hover readouts (the T11 `gpuNames` plumbing is gone: `GpuMetricSample.GpuName`
+  deleted, `SetSeries` back to its 9-arg form with `pctBase` as the last parameter);
+  the **(NN %)** denominators and the pure-white legend text **stay**. (2) A new
+  **per-device list** sits at the **top-right of the window** (right column of the
+  header row): one row per GPU with a colour swatch in that GPU's chart-series colour
+  (`MetricChart.Palette`, now `public`) + muted `cuda:N` + card name, rebuilt on
+  every snapshot (`MainWindow.UpdateDevicesPanel`). (3) The startup **fit-height** in
+  `OnLayoutUpdated` is fixed: the tab-strip height is read from the `TabControl`
+  template part `PART_HeaderPanel` (the unselected item container under-reported it),
+  the chart content is **re-measured at the realised width** (infinite-width
+  measuring under-counted wrapped header rows), the header row uses
+  `max(header, devices)` and the slack grew 12→20 px — so no vertical scrollbar
+  appears at first launch.
 - 2026-10-16 — **T12: fit-to-content window + green "slide" scrollbars** (`MainWindow`
   + `Theme`) and **NvmlTest `--watch` default**: (1) the WPF window **no longer opens
   maximized** — a one-shot `LayoutUpdated` pass measures each tab's content at
