@@ -1,3 +1,34 @@
+// ── HectorBravo.Nvidia — WPF charts + shared crosshair controller ───────────
+//
+// This file is a single cohesive unit:
+//   * MetricChart          – one time-series plot per metric (custom Canvas
+//                             rendering, no third-party charting lib).
+//   * ChartController      – the cross-chart controller. It owns the *shared*
+//                            horizontal scale (pixels-per-second, CTRL+wheel),
+//                            the scroll-follow mode, and the red crosshair.
+//
+// Shared scale: all charts receive the SAME timeline, so they all derive the
+// same pixels-per-second. A single controller redraws them all, which is what
+// makes the red crosshair line up vertically across every chart (the feature
+// that was broken before this controller existed).
+//
+// Crosshair interaction model (red line + red value readouts):
+//   * Each chart hosts a red *dotted* vertical line that is shown only while
+//     the pointer is over one of the charts (it moves as the pointer moves,
+//     rather than persisting after the pointer leaves — per spec).
+//   * While hovering, each chart paints a small red "value readout" at the top
+//     of the crosshair: one readout per GPU showing its current value (plus
+//     PCIe gen/width on the PCIe chart). The readouts are staggered downward
+//     (one per GPU, in the same left-to-right order as the legend) so they
+//     never overlap, and each sits above its own legend entry, so you can
+//     always tell which series a value belongs to.
+//   * The crosshair + readouts only appear over the PLOT area (the time axis
+//     strip below is excluded), and the pointer is captured while hovering so
+//     the crosshair tracks the pointer even as it scrolls the charts.
+//
+// All values are drawn with GDI-style manual Canvas primitives (Lines +
+// TextBlocks). There is no XAML / resource dictionary for the charts — the
+// styling lives in Theme.cs and inline in this file.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -33,7 +64,7 @@ namespace HectorBravo.Nvidia.Monitor;
 public class MetricChart : Border
 {
     // GPU 0 is always the NVIDIA green; extra GPUs cycle through distinguishable hues.
-    private static readonly Brush[] Palette =
+    public static readonly Brush[] Palette =
     {
         Frozen("#76b900"), // NVIDIA green
         Frozen("#3ba55c"),
@@ -150,8 +181,6 @@ public class MetricChart : Border
     // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
     private Dictionary<int, int[]> _pcieGen = new();
     private Dictionary<int, int[]> _pcieWidth = new();
-    // Per-GPU card name for the "[idx: name]" identity shown in the legend and hover readout.
-    private Dictionary<int, string> _gpuNames = new();
     // Per-GPU percentage denominator (total memory in MiB / enforced power cap in W); 0 = N/A.
     private Dictionary<int, double> _pctBase = new();
 
@@ -247,8 +276,7 @@ public class MetricChart : Border
         int decimals,
         IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null,
         IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null,
-        IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null,
-        IReadOnlyCollection<KeyValuePair<int, string>>? gpuNames = null)
+        IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null)
     {
         _tl = timelineSec ?? Array.Empty<double>();
         _ser = values ?? new List<KeyValuePair<int, double[]>>();
@@ -261,9 +289,7 @@ public class MetricChart : Border
         if (pcieGen != null) foreach (var kv in pcieGen) _pcieGen[kv.Key] = kv.Value;
         if (pcieWidth != null) foreach (var kv in pcieWidth) _pcieWidth[kv.Key] = kv.Value;
         _pctBase = new Dictionary<int, double>();
-        _gpuNames = new Dictionary<int, string>();
         if (pctBase != null) foreach (var kv in pctBase) _pctBase[kv.Key] = kv.Value;
-        if (gpuNames != null) foreach (var kv in gpuNames) _gpuNames[kv.Key] = kv.Value;
     }
 
     public ScrollViewer PlotScroll => _plotScroll;
@@ -562,8 +588,6 @@ public class MetricChart : Border
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
                 text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
-            if (_gpuNames.TryGetValue(kvp.Key, out string? gname) && !string.IsNullOrWhiteSpace(gname))
-                text += $"  [{kvp.Key}: {gname}]";
             _readout.Children.Add(new TextBlock
             {
                 Text = text,
@@ -723,8 +747,6 @@ public class MetricChart : Border
                 legendText += $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
                 legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
-            if (_gpuNames.TryGetValue(kvp.Key, out string? name) && !string.IsNullOrWhiteSpace(name))
-                legendText += $"  [{kvp.Key}: {name}]";
             _legend.Children.Add(new TextBlock
             {
                 Text = legendText,
