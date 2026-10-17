@@ -4,10 +4,70 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 12 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T13: Compact legend, GPU device list (top-right), fit-height fix
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 17-10-2026 21:44:41
+- **Last Updated**: 17-10-2026 22:05:00
+- **Time Spent**: 20m
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (17-10-2026, after running the T12 build): (1) the per-GPU ` [idx: name]` text in the chart **legends** (white) and **hover readouts** (red) "takes up too much space" → remove it again (the % readouts and white legend stay); (2) add a **separate list of devices** at the **top-right of the window**; (3) the startup **height** is still miscalculated — the window opens too short, so a vertical scrollbar is visible until the user grows the window; (4) "the scroll bar looks great now" → green slide scrollbars stay as-is.
+  - **Half-finished revert found in the working tree**: on-disk uncommitted `ChartController.cs` had already dropped the `gpuNames` / `[idx: name]` code from `MetricChart` (plus a 31-line design header) — but `MainWindow.cs` (HEAD version) still built `gpuNames` and called `SetSeries` with a 10th arg → that was the `CS1501` build break. This task finishes the revert.
+  - `ChartController.cs` flip-flopped during the session between the 10-arg HEAD version and the 9-arg working-tree version (likely a stale editor buffer in the user's IDE) — re-verify the on-disk state right before build/commit (checklist in the context notes).
+  - Keep-vs-remove decision: `GpuMetricSample.GpuName` was only used by the legend text → **removed**; `MemoryTotalBytes` / `PowerCapWatts` (also added in T11) feed the **% denominators** via `ChartSpec.PctBase` → **kept**.
+  - **Device list**: new right column in the header row; one row per GPU: 10×10 rounded swatch in `MetricChart.Palette[i]` (made `public`) + muted `cuda:N` + card name; rebuilt on every snapshot (`ApplySnapshot` → `UpdateDevicesPanel`).
+  - **Fit-height fix** (`OnLayoutUpdated`): (a) tab strip now read from the `TabControl` template part `PART_HeaderPanel` (the first item container under-reported ~15 px while unselected); (b) chart content re-measured at the realised width (window − 48 px) in addition to the infinite-width pass, so wrapped chart-header rows count their true height; (c) header row = `max(header, devices)`; (d) slack 12 → 20 px.
+  - Branching: `main` is at `7133e7d` (T12 final log). The T13 branch is created from it; the user's uncommitted `ChartController.cs` is **adopted into** the T13 code commit.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (17-10-2026 21:57:00) Visually verify on the new build: (1) legend/hover show `value unit (NN %) [pcie]` with **no** `idx: name` text; (2) the top-right-of-window device list (colour swatch + `cuda:N  card name`); (3) **no** vertical scrollbar on first launch.
+
+**Confirmed (user provided):**
+
+- (17-10-2026 21:44:41) How to show per-device info on the charts? → "the legend text (white and red) takes up too much space, undo the change that displays the CUDA device ID and name, and instead make a separate list of devices at the top-right of the window" (17-10-2026)
+
+### Subtasks / Plan
+
+- [x] 1 — Diagnose on-disk state (identify the working-tree `ChartController.cs` variant; confirm the 10-arg call causes `CS1501`)
+- [x] 7 — `ChartController.cs`: expose `Palette` as `public` (swatch colour for the device list)
+- [x] 2 — `GpuMetricSample.cs`: remove the `GpuName` property (keep the % denominators)
+- [x] 3 — `MainWindow.UpdateCharts`: remove `gpuNames` list + the 10th `SetSeries` arg
+- [x] 4 — `MainWindow.ApplySnapshot`: drop `GpuName = g.Name` from the sample; call the device-list update
+- [x] 5 — `MainWindow`: add `_devices` panel at the window's top-right (header row) + `UpdateDevicesPanel`
+- [x] 6 — `MainWindow.OnLayoutUpdated`: fit-height fix (strip from template part, measure at realised width, `max(header, devices)`, slack)
+- [x] 8 — Build full solution Release (0 errors / 0 warnings) + publish + `--print` smoke test (exit 0, 3 GPUs, 17-10-2026 ~22:03)
+- [ ] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch
+- [ ] 10 — Push branch; final log commit on `main` after the user merges
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery source. All paths relative to `D:\Repos\nvidia_app`.
+
+- **Base**: `main` @ `7133e7d` (T12 final log commit; T12 merge `99cd71e` and T11 merge `727fb26` both already in main).
+- **Working-tree state at 21:5x (uncommitted)**: `ChartController.cs` = 9-arg `SetSeries` (no `gpuNames`; T11 `pctBase` + `Theme.White` legend retained; 31-line header comment; `Palette` now `public`); `MainWindow.cs` + `GpuMetricSample.cs` = HEAD (T12/T11) versions — this task rewrites the regions listed below.
+- **Anti-flip-flop check before build/commit** (`ChartController.cs`): `Select-String -Pattern 'pctBase = null\)'` must match **and** `gpuNames` count must be **0** **and** line count 969. If it flipped back to the 10-arg HEAD version, re-apply the revert (remove the `_gpuNames` field + param + the two `if (_gpuNames...)` blocks + both assignments; keep `pctBase` + `Theme.White` + the header comment).
+- **`SetSeries` (9-arg, final)**: `SetSeries(IReadOnlyList<double>? timelineSec, IReadOnlyList<KeyValuePair<int, double[]>>? values, double ceiling, string title, string unit, int decimals, IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null, IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null, IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null)`.
+- **MainWindow edit points** (line numbers = the on-disk 689-line file): L263 `GpuName = g.Name,` (removed); L341-355 `gpuNames` list (removed; `pctBase` kept — restructured so `kv.Value[^1]` is only read when `spec.Pct && spec.PctBase != null`); L423-425 `SetSeries` call (10th arg dropped); L99-111 root row 0 → two-column `Grid headerRow` (star + auto) holding `_header` (col 0) and the new `_devices` (col 1; vertical `StackPanel`, right-aligned, top, margin `0,12,16,8`); field `private readonly StackPanel _devices;` next to `_header` (L49); new method `UpdateDevicesPanel(SystemSnapshot snap)` (per GPU: `Border` 10×10 `CornerRadius(5)` background `MetricChart.Palette[i % len]` + `TextBlock` (12 px mono, `Theme.Fg`) with two `Run`s — muted `cuda:{i}` and fg `  {name}` (`name = g.Name` or `GPU {i}` if blank); row margin `0,0,0,2`); called from `ApplySnapshot` (L242-245) right after `_driverText.Text = BuildVersionLine(snap);`.
+- **`OnLayoutUpdated` (L629-689) final logic**: guards unchanged; measure `_grid` + charts stack at infinity → `w = Clamp(max(contentW, 900), 720, work.Width - 16)`; re-measure `_chartsScroll.Content` at `max(400, w - 48)` → `contentH2`; `strip` from `_tabs.Template.FindName("PART_HeaderPanel", _tabs).ActualHeight` (fallback 34); `chrome = resize-border top+bottom + WindowCaptionHeight + strip + max(_header.ActualHeight, _devices.ActualHeight) + _statusText.ActualHeight + 20`; `h = Clamp(max(contentH, contentH2) + chrome, 420, work.Height - 16)`; then `Width/Height/Left/Top` as before; the static local `MeasureFit` stays.
+- **Build/run**: `dotnet build nvidia_app.sln -c Release` (expect 0/0); `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL); smoke `bin\NvidiaMonitor\NvidiaMonitor.exe --print` → exit 0, 3 GPUs (2× RTX 3090 + RTX 4070; driver 617.42 / CUDA 13.4 / NVML 13.617.42).
+- **Git rules in force**: identity only via `GIT_AUTHOR_NAME=AI_bot` + `GIT_COMMITTER_NAME=AI_bot` env vars (PowerShell: `$env:GIT_AUTHOR_NAME="AI_bot"; $env:GIT_COMMITTER_NAME="AI_bot";`) — never `git config`; `[ai]` tag after the colon in every message; the ONLY file that may be committed/pushed directly on `main` is `ai/AI_TASKLOG.md` (dedicated `docs(ai): [ai] …` commits, before and after the push, final one after the user merges); code goes to branch `feat/ai-compact-legend-device-list-fit-height` created from `main` after the pre-push log commit and **must be pushed**; final log (done + real hashes + final time) after the user merges, then `git fetch; checkout branch; git merge --ff-only origin/main; git push --force-with-lease origin branch` (skip the ff if the user squash-merged).
+- **Index refresh at task end** (AGENTS.md rule): update `ai/PROJECT_DESCRIPTION.md` — `PROJECT_INDEXER` block (`last_indexed` + `git_head` → the new branch HEAD), the `GpuMetricSample` bullet (L132-134: drop the `GpuName` mention), the T11/T12 change-log bullets (L227-229: note the `gpuNames` param was removed again in T13, and the new device list + fit-height fix), plus a new T13 change-log bullet; commit on the branch as `docs(ai): [ai] refresh project index (T13)`.
+- **Known gotcha** (from T12, still true): .NET 8 WPF `LayoutUpdated`/`ContentRendered` handlers are plain `EventHandler` — `MainWindow.OnLayoutUpdated(object? sender, EventArgs e)`; a `RoutedEventArgs` signature won't compile.
 
 ---
 
