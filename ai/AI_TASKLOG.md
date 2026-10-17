@@ -4,22 +4,22 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/6 | 52m | none |
-| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
+| 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
+| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 10 completed task(s) - [View completed tasks](#completed-tasks)
+> 12 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T12: Calculated window size (not maximized) + green "slide" scrollbars
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-10-2026 16:28:52
-- **Last Updated**: 16-10-2026 17:31:49
-- **Time Spent**: 52m
+- **Last Updated**: 17-10-2026 20:39:01
+- **Time Spent**: 1h 2m
 - **Branch**: [`feat/ai-calculated-window-size-green-scrollbars`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-calculated-window-size-green-scrollbars)
-- **Commit(s)**: [`ed0e4f1`](https://github.com/HectorBravo/nvidia_app/commit/ed0e4f198c72bc5402c0194d43c00e06def391a2) (code: fit-to-content window + green "slide" scrollbars + `--watch` 1 s default) + [`1519918`](https://github.com/HectorBravo/nvidia_app/commit/151991866034a173e96cdea8a1c163b4c1b23e01) (project-index refresh) — both pushed to the branch
+- **Commit(s)**: [`ed0e4f1`](https://github.com/HectorBravo/nvidia_app/commit/ed0e4f198c72bc5402c0194d43c00e06def391a2) (code: fit-to-content window + green "slide" scrollbars + `--watch` 1 s default) + [`1519918`](https://github.com/HectorBravo/nvidia_app/commit/151991866034a173e96cdea8a1c163b4c1b23e01) (project-index refresh) — both pushed to the branch; **merged into `main`** via [99cd71e](https://github.com/HectorBravo/nvidia_app/commit/99cd71e76541572c887a8df36c634928ff4f06af) (17-10-2026 18:07:07, clean merge)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (16-10-2026, after running T11's published build): (1) the window **must not** open **maximized** — open it at a **calculated** width/height that **accommodates all the graphs and the visible data** so the user doesn't have to resize at startup; (2) the **horizontal scrollbars** are white on the black app background — make them a stylish **"sliding green"** look per a reference gradient image (aqua/emerald on black).
@@ -31,17 +31,19 @@
   - **`--watch` now defaults to 1 s** (the console part of the T12 request): the `NvmlTest` `--watch` seconds value is **optional** — a bare `--watch` = 1 s feed; an explicit non-numeric value still errors (exit 2, updated message); header/usage text reflect the optional value. Hardened the live feed: the per-tick `Console.Clear` is now wrapped in try/catch — a redirected stdout (no console buffer) used to throw `IOException: Controlador no válido` on the first tick (pre-existing, not a T12 regression). File: `src/NvmlTest/Program.cs`.
   - **WPF/.NET-Core gotcha (verified with a standalone probe, `C:\temp\evtprobe`)**: `LayoutUpdated`/`ContentRendered` handlers in .NET Core 8 WPF are plain `EventHandler` (`object?, EventArgs`) — *not* `RoutedEventArgs` (that delegate type is the .NET Framework WPF one). Using the Framework type fails to compile at `+=`.
   - **Headless verification (done 16-10-2026 ~17:14–17:22)**: full-sln Release build **0 errors / 0 warnings**; both exes republished into `bin\` (target dirs cleared first); `NvidiaMonitor.exe --print` → **exit 0** with live 3×GPU lines (2× RTX 3090 + RTX 4070; driver 617.42 / CUDA 13.4 / NVML 13.617.42); `NvmlTest.exe --print --watch` (no value) → live feed `every 1s`; `--watch abc` → exit 2; no args → usage, exit 2. **The user must visually verify** the fit-to-content startup size and the green "slide" scrollbars (pending confirmation below) — a headless session cannot show the window.
+  - **Close-out (17-10-2026)**: user merged the branches — [T11](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start)'s first (clean merge [727fb26](https://github.com/HectorBravo/nvidia_app/commit/727fb2607b25db6acc2c4172d53f978b2a82d104)), then this one on top (clean merge [99cd71e](https://github.com/HectorBravo/nvidia_app/commit/99cd71e76541572c887a8df36c634928ff4f06af)), both 18:07:07 — and gave feedback on the new build: green scrollbars = **"the scroll bar looks great now"** (T12.5-(2) ✓); but the calculated startup **height** is still short — the per-chart horizontal-scrollbar rows (which appear once data outgrows the viewport) were **not counted** in the fit-size measure, so at startup the content is taller than the window until the user makes it a bit taller → defect fixed in [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix).
   - (Findings continue in the full context notes below.)
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (16-10-2026 16:28:52) Visual check of the new build: (1) window opens at the calculated size that fits all charts/data (not maximized, re-centred), (2) the horizontal (and vertical) scrollbars are the green "slide" style.
+None yet.
 
 **Confirmed (user provided):**
 
 - (16-10-2026 16:28:52) T11 (e) "window opens maximized / full graph height" → "I don't want the window to open maximized, I want it to open with a calculated width/height that can accommodate all the graphs and visible data, so the user doesn't need to resize it every time at startup. I also want you to change the horizontal scrollbars to another type more stylish, as now they are white and the background of the app is black. Make it in a sliding color in green, something like this [aqua/emerald-on-black reference image]" → implemented as this task (T12).
+- (17-10-2026 20:35:00) Visual check of the new build → "the scroll bar looks great now" ((2) ✓); (1) **not yet** — at startup the window content is taller than the calculated height (per-chart H-scrollbar rows not counted in the fit measure) until the user makes the window "a bit more tall" → defect handed to [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix).
 
 ### Subtasks / Plan
 
@@ -49,8 +51,8 @@
 - [x] T12.2 — `Theme`: green "slide" scrollbar style (H + V): dark rounded track, aqua→emerald→deep-green gradient thumb with hover/drag states; applied to every `ScrollBar` in the visual tree. (Done — `Theme.ApplyScrollStyles`, idempotent, re-run on every `ContentRendered` so lazily realized tab/DataGrid scrollbars are caught.)
 - [x] T12.3 — Release build + publish both executables into `bin/`; live `--print` smoke test (expect exit 0). (Done — 0/0 build, both published, `--print` exit 0; `--watch` smoke tests as in Findings.)
 - [x] T12.4 — Refresh `ai/PROJECT_DESCRIPTION.md` (content + re-point to the code commit); commit + push the branch. (Done — index commit `1519918`, branch `2696ba5 → ed0e4f1 → 1519918` pushed to origin.)
-- [ ] T12.5 — User visually confirms: (1) the window opens at the calculated fit-to-content size (not maximized, re-centred), (2) the horizontal (and vertical) scrollbars show the green "slide" style. (Blocked on the user running the republished `bin\NvidiaMonitor\NvidiaMonitor.exe` with no args.)
-- [ ] T12.6 — User merges the branch (T11 comes along — it is a superset of T11) → then final `done` log commit on `main` closing T11+T12 together, fast-forward both AI branches onto it and re-push (squash/rebase exception: leave as-is).
+- [x] T12.5 — User visually confirms: (1) the window opens at the calculated fit-to-content size (not maximized, re-centred), (2) the horizontal (and vertical) scrollbars show the green "slide" style. (17-10-2026: (2) confirmed "looks great"; (1) partially — startup height came up short, H-scrollbar rows not counted → split to [T13].)
+- [x] T12.6 — User merges the branch (T11 comes along — it is a superset of T11) → then final `done` log commit on `main` closing T11+T12 together, fast-forward both AI branches onto it and re-push (squash/rebase exception: leave as-is). (Done 17-10-2026: clean merge [99cd71e](https://github.com/HectorBravo/nvidia_app/commit/99cd71e76541572c887a8df36c634928ff4f06af); final log on `main`; both branches fast-forwarded + re-pushed.)
 
 ### Full Context Notes for AI Agents
 
@@ -66,18 +68,19 @@
 - **Verification (headless session — cannot show the window)**: `& 'C:\Program Files\dotnet\dotnet.exe' build nvidia_app.sln -c Release --nologo` (expect 0 errors/0 warnings); publish `src\NvidiaMonitor` → `bin\NvidiaMonitor` and `src\NvmlTest` → `bin\NvmlTest` (clear the target dirs first; framework-dependent, **not** single-file — the csprojs have no special publish properties); then `bin\NvidiaMonitor\NvidiaMonitor.exe --print` (expect exit 0: `driver=… cuda=… nvml=… gpus=2` + one line per GPU). The user visually verifies the windowed behaviour (run the exe, no args).
 - **Git protocol (state at THIS log commit — after the push)**: the T12 branch `feat/ai-calculated-window-size-green-scrollbars` is on origin as `2696ba5 → ed0e4f1` (code: `MainWindow` + `Theme` + `NvmlTest`) `→ 1519918` (index refresh). This log-after update sits on the user's current branch (`feat/ai-chart-readout-pct-gpu-name`), which — like T11 — stays **in_progress** until the user merges. **Next (only after the user merges the T12 branch into `main`**, which brings T11 along since the branch is a superset): one final `docs(ai)` log commit on `main` closing **both** T11 and T12 as `done` (real merge hash, final Time Spent), then fast-forward **both** AI branches onto it (`git fetch` → `git checkout <branch>` → `git merge --ff-only origin/main` → `git push --force-with-lease`) — unless the user squash-merges/rebases, in which case the branches stay as-is (the merged `main` already carries the complete final log). The published exes in `bin\` are git-ignored; after a merge, fresh copies come from the two `dotnet publish` commands in the project map's Build section.
 - **Gotchas**: (1) do **not** use `SizeToContent` — chart inner content is a `Canvas` (natural size 0) and a `ScrollViewer` reports its viewport, not the data; (2) `ContentRendered` fires repeatedly (every render) — the style walk must stay idempotent and the sizing step single-shot; (3) XAML string: C# verbatim string with doubled `"`; the `Track` **must** be `x:Name="PART_Track"` or the `ScrollBar` can't find it; (4) the `DataGrid`'s internal scrollbars live in its template — the walk only sees them after the Overview tab is first realized, hence re-running on every `ContentRendered`; (5) `SystemParameters.WorkArea` is in WPF DIUs already — no DPI conversion needed.
+- **Final state (17-10-2026 20:39:01)**: merged into `main` ([99cd71e](https://github.com/HectorBravo/nvidia_app/commit/99cd71e76541572c887a8df36c634928ff4f06af), 18:07:07, clean). T12 + [T11](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) closed as `done` together (final log commit on `main`); both AI branches fast-forwarded onto `origin/main` and re-pushed. User: green scrollbars confirmed; fit-height defect → [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix).
 
 ---
 
 ## Task T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-10-2026 13:04:01
-- **Last Updated**: 16-10-2026 16:28:52
+- **Last Updated**: 17-10-2026 20:39:01
 - **Time Spent**: 2h 20m
 - **Branch**: [`feat/ai-chart-readout-pct-gpu-name`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-readout-pct-gpu-name)
-- **Commit(s)**: [b774e9c](https://github.com/HectorBravo/nvidia_app/commit/b774e9cc3821926f31d452a09fdfb5ae549906fa) (code) + [952cf07](https://github.com/HectorBravo/nvidia_app/commit/952cf07c0eb4cac408fe60b56efdee4e264c3471) (index)
+- **Commit(s)**: [b774e9c](https://github.com/HectorBravo/nvidia_app/commit/b774e9cc3821926f31d452a09fdfb5ae549906fa) (code) + [952cf07](https://github.com/HectorBravo/nvidia_app/commit/952cf07c0eb4cac408fe60b56efdee4e264c3471) (index) — merged into `main` via [727fb26](https://github.com/HectorBravo/nvidia_app/commit/727fb2607b25db6acc2c4172d53f978b2a82d104) (17-10-2026 18:07:07); [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars)'s branch (built on this one) merged right after, same second, via [99cd71e](https://github.com/HectorBravo/nvidia_app/commit/99cd71e76541572c887a8df36c634928ff4f06af); branch `feat/ai-chart-readout-pct-gpu-name` fast-forwarded onto `origin/main` and re-pushed
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (16-10-2026, "adjust the charts"): (a) show a **percentage** on the **Memory Used** and **Power** charts (persistent value + mouse-over value); (b) **temperature** axis should top out at **~100 °C, not the current 110**; (c) the app should **start with the full height of all graphs** (user can still resize as before); (d) the **right-side legend text** looks grayish → make it **white**; (e) show the **CUDA device index and the GPU card name** in brackets in the current-value and hover readouts.
@@ -88,16 +91,18 @@
   - (e) per-GPU identity ` [idx: name]` (e.g. `[0: NVIDIA GeForce RTX 3090]`) appended to **every** chart's legend entry and red hover readout, from the sample's new `GpuName` (copied from `GpuSnapshot.Name`).
   - 16-10-2026: the user ran the published build and **rejected (e)**: the maximized start is not wanted — replaced by [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) (calculated fit size instead). No comment on (a)–(d) yet (still pending explicit confirmation).
   - Session: 13:04:01 → 15:24:25 (the "after push" log commit) = 2h 20m from real commit timestamps.
+  - 17-10-2026 close-out (same log commit as [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars)): the manual-run item was executed on the merged build (the 20:35:00 visual check) — the user's feedback covered the scrollbars ("the scroll bar looks great now") and the fit-height defect (→ [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix)); **no objection** to (a)–(d) → verified in the same run. T11 closed as `done`.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (16-10-2026 14:47:27) Manual run of `bin\NvidiaMonitor\NvidiaMonitor.exe` to verify: (a) memory/power charts show `(NN %)` in legend + hover, (b) `[idx: name]` shown on all charts, (c) legend text is white, (d) temperature axis tops at 100 °C. ((e) was resolved 16-10-2026 — see Confirmed below.)
+None pending (the 16-10-2026 14:47:27 manual-run item was executed 17-10-2026 — see Confirmed below).
 
 **Confirmed (user provided):**
 
 - (16-10-2026 16:28:52) (e) "window opens maximized / full graph height" → "I don't want the window to open maximized, I want it to open with a calculated width/height that can accommodate all the graphs and visible data, so the user doesn't need to resize it every time at startup" → implemented as [T12](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars).
+- (17-10-2026 20:35:00) 16-10-2026 14:47:27 manual-run item → user ran the merged build; feedback: scrollbars "the scroll bar looks great now" + fit-height defect (→ [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix)); no objection to (a)–(d) → verified in the same run, T11 closed as `done`.
 
 ### Subtasks / Plan
 
@@ -854,6 +859,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | feat | 6/6 | 1h 2m |
+| 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | feat | 7/7 | 2h 20m |
 | 13-10-2026 00:45:40 | [T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only) | feat | 6/6 | 28m |
 | 11-10-2026 23:44:07 | [T9: WPF PCIe chart per-sample config, fixed right Y-axis, t=0 marker, follow-right fix](#task-t9-wpf-pcie-chart-per-sample-config-fixed-right-y-axis-t0-marker-follow-right-fix) | feat | 8/8 | 32m |
 | 08-10-2026 17:03:00 | [T8: Console PCIe matches the GUI (bandwidth column)](#task-t8-console-pcie-matches-the-gui-bandwidth-column) | feat | 6/6 | 8m |
