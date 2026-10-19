@@ -122,10 +122,13 @@ public class MetricChart : Border
 
     private readonly TextBlock _titleText;
 
+    // The horizontal bar is *always* reserved (Visible, not Auto): WPF Auto bars take 0 px
+    // until they appear, so the moment a timeline outgrows the viewport every plot would
+    // grow by the bar's 13 px and the startup fit-height would stop fitting the content (T14).
     private readonly ScrollViewer _plotScroll = new()
     {
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
         VerticalContentAlignment = VerticalAlignment.Top,
         MinWidth = 1,
         Background = Theme.Card,

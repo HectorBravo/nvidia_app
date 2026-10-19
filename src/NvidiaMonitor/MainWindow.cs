@@ -628,10 +628,14 @@ public class MainWindow : Window
         }
 
         // CTRL + mouse-wheel zoom: changes how many minutes fit the view, across all charts.
+        // The vertical bar is *always* reserved (Visible, not Auto): an Auto bar takes 0 px
+        // until it appears, so once the chart stack outgrows the window the bar would add its
+        // 13 px and the layout would shift. Reserving it from the first layout keeps the
+        // window stable (T14).
         _chartsScroll = new System.Windows.Controls.ScrollViewer
         {
             Content = stack,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -708,12 +712,13 @@ public class MainWindow : Window
             MeasureFit(chartsStack, ref contentW, ref contentH);
         double w = Math.Clamp(Math.Max(contentW, 900), 720, work.Width - 16);
 
-        // Re-measure at the realised content width (window width minus the tab
-        // margins) so wrapped header rows are counted at their true height.
+        // Re-measure at the realised content width (window width minus the tab margins and
+        // the charts viewer's always-reserved 13 px vertical bar) so wrapped header rows
+        // are counted at their true height.
         double contentH2 = 0;
         if (_chartsScroll.Content is FrameworkElement cs)
         {
-            cs.Measure(new Size(Math.Max(400, w - 48), double.PositiveInfinity));
+            cs.Measure(new Size(Math.Max(400, w - 61), double.PositiveInfinity));
             contentH2 = cs.DesiredSize.Height;
         }
 
