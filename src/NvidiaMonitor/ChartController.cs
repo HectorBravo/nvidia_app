@@ -95,15 +95,15 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
-    private const double TopPad = 26;        // headroom so the top (max) value isn't clipped
 
     private readonly Grid _inner = new();
 
+    // The "max N" readout at the header's right end — bright yellow, same size as the legend (T15).
     private readonly TextBlock _maxText = new()
     {
-        Foreground = Theme.Muted,
+        Foreground = Theme.Yellow,
         FontFamily = Theme.Mono,
-        FontSize = 10,
+        FontSize = 12,
         VerticalAlignment = VerticalAlignment.Center,
     };
 
@@ -300,23 +300,22 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling at
-    /// y=TopPad, bottom=0 at y=PlotH — both scales keep TopPad headroom so the max value
-    /// and its axis label are never clipped at the top edge).</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (ceiling at
+    /// y = 0, 0 at y = PlotH — the scale spans the whole plot height, so the max value
+    /// reaches the top edge; the topmost tick label is clamped in DrawAxisTick instead of
+    /// reserving headroom — T15).</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
+            return PlotH * (1.0 - value / ceiling);
 
-        // Log scale with top headroom: bottom = 0.01 * ceiling at y = PlotH,
-        // top = ceiling at y = TopPad, so the max value sits just below the top
-        // edge instead of being clipped right at it.
+        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = 0
+        // (full-height scale — T15).
         double minLog = Math.Log(ceiling * 0.01);
         double maxLog = Math.Log(ceiling);
         double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
         double frac = (vLog - minLog) / (maxLog - minLog);
-        double span = PlotH - TopPad;
-        return TopPad + span * (1 - Math.Clamp(frac, 0, 1));
+        return PlotH * (1 - Math.Clamp(frac, 0, 1));
     }
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
@@ -494,7 +493,8 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         });
 
-        double topY = TopPad; // y of the topmost tick (value = max) — both scales keep headroom
+        // T15: the scale spans the whole plot height — the topmost tick (value = max) sits
+        // at y = 0, i.e. on the plot's top edge (no headroom anymore).
         if (_logScale)
         {
             for (int p = 0; p <= 8; p++)
@@ -509,7 +509,7 @@ public class MetricChart : Border
             for (int i = 0; i <= 5; i++)
             {
                 double val = max * i / 5.0;
-                DrawAxisTick(Fmt(val), topY + (PlotH - topY) * (1 - i / 5.0));
+                DrawAxisTick(Fmt(val), PlotH * (1 - i / 5.0));
             }
         }
     }
@@ -526,13 +526,15 @@ public class MetricChart : Border
         var lbl = new TextBlock
         {
             Text = text,
-            Foreground = Theme.Muted,
+            Foreground = Theme.White, // T15: white (was muted gray)
             FontFamily = Theme.Mono,
             FontSize = 10,
             IsHitTestVisible = false,
         };
         Canvas.SetLeft(lbl, 8);
-        Canvas.SetTop(lbl, y - 7);
+        // T15: the topmost tick (value = max) sits at y = 0 — clamp so the label isn't
+        // clipped above the axis canvas (that case used to be covered by the TopPad headroom).
+        Canvas.SetTop(lbl, Math.Max(y - 7, 1));
         _axisCanvas.Children.Add(lbl);
     }
 
@@ -590,7 +592,7 @@ public class MetricChart : Border
                 text += $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
-                text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
+                text += $" [{GpuSnapshot.PcieLinkLabel(gen, width)}]"; // T15: one space (was two)
             _readout.Children.Add(new TextBlock
             {
                 Text = text,
@@ -749,7 +751,7 @@ public class MetricChart : Border
             if (_pctBase.TryGetValue(kvp.Key, out double denom) && denom > 0)
                 legendText += $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
-                legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
+                legendText += $" [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]"; // T15: one space (was two)
             _legend.Children.Add(new TextBlock
             {
                 Text = legendText,

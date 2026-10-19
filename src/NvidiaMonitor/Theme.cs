@@ -19,6 +19,7 @@ public static class Theme
     public static readonly Color FgColor      = Hex("#e6e9ef");
     public static readonly Color WhiteColor   = Hex("#ffffff");
     public static readonly Color MutedColor   = Hex("#8a93a6");
+    public static readonly Color YellowColor  = Hex("#ffe14d"); // bright yellow — the "max" readout (T15)
     public static readonly Color AccentColor  = Hex("#76b900"); // NVIDIA green
     public static readonly Color WarnColor    = Hex("#e0a030");
     public static readonly Color ErrorColor   = Hex("#e05a5a");
@@ -32,6 +33,7 @@ public static class Theme
     public static readonly Brush Fg      = Frozen(FgColor);
     public static readonly Brush White   = Frozen(WhiteColor);
     public static readonly Brush Muted   = Frozen(MutedColor);
+    public static readonly Brush Yellow  = Frozen(YellowColor);
     public static readonly Brush Accent  = Frozen(AccentColor);
     public static readonly Brush Warn    = Frozen(WarnColor);
     public static readonly Brush Error   = Frozen(ErrorColor);
