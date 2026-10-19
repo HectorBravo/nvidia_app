@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-19 11:20:00
-git_head: 4a864988fb6fef74fe917844a7ed0f26ac1fd615
+last_indexed: 2026-10-19 14:37:02
+git_head: 72c7a1d3948bc96b802a74ad4825d45ac84a7fc6
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -181,15 +181,17 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   polyline per GPU. `SetSeries` only stores data; the controller's `OnDataTick()`
   resizes then redraws all charts. Drag-and-drop reorder is handled per chart panel.
   Layout: a **fixed right-hand Y-axis** column (a non-scrolling `Canvas` beside the
-  plot) shows value labels + tick marks — linear charts: evenly spaced 0…max with the
-  same top headroom as the log chart (`TopPad = 26`, so the max value and the top
-  axis label are never clipped at `y = 0`); the log-scale PCIe chart: powers of two
-  (1G, 2G, 4G, 8G, 16G, 32G …). The **t = 0** marker is a normal `MinuteBlue`
+  plot) shows value labels + tick marks in **white** (`Theme.White`) — the scale spans
+  the **full plot height** (max value at `y = 0`, zero at `y = PlotH = 128`; the topmost
+  tick label is clamped to `y ≥ 1` so it is never clipped): linear charts = evenly
+  spaced 0…max; the log-scale PCIe chart = powers of two (1G, 2G, 4G, 8G, 16G,
+  32G …). The **t = 0** marker is a normal `MinuteBlue`
   (1 px) vertical line with a `MinuteLabel` "0m" — the same styling as the other
   per-minute gridlines (light blue). The PCIe chart carries **per-sample link
   gen/width** (`GpuMetricSample.PcieLinkGen/Width`) so the **legend and hover readout
   show the link config** (e.g. `4.0 x16`) for current and historical points, formatted
-  by `GpuSnapshot.PcieLinkLabel(gen,width)`. The **follow-right** pin keeps the view
+  by `GpuSnapshot.PcieLinkLabel(gen,width)` and appended after **one** space
+  (`4.0GB/s [1.0 x16]`). The **follow-right** pin keeps the view
   on the newest data until the user scrolls into history: programmatic pin targets
   are remembered per chart (`_progOffset`) and `OnPlotScroll` treats a
   `ScrollChanged` as programmatic only when it lands within 8 px of the queued target
@@ -201,8 +203,10 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   scroll race). The **legend and hover readout** show the per-GPU value (the
   **Memory Used** and **Power** charts additionally show **`(NN %)`** of the
   per-GPU total memory / enforced power cap, omitted when the denominator is N/A);
-  the **legend text is pure white** (`Theme.White`) and the **temperature Y-axis is
-  capped at 100 °C** (auto-expanding only if a card runs hotter). The per-GPU
+  the **legend text is pure white** (`Theme.White`) and the **"max N" readout** at the
+  legend's right is **bright yellow** (`Theme.Yellow`, `#ffe14d`) at the same 12 px
+  legend size; the **temperature Y-axis is capped at 100 °C** (auto-expanding only if a
+  card runs hotter). The per-GPU
   identity (`[index: name]`) that T11 appended to every legend/readout was
   **removed again in T13** — device identity now lives in the **top-right device
   list** (see the T13 change-log entry below). The **window opens at a calculated
@@ -224,6 +228,14 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   startup fit re-measure in `OnLayoutUpdated` subtracts the always-reserved outer bar
   (`w - 48` → `w - 61`). The bars keep the green "slide" styling; when nothing
   overflows they show as a slim, dark, disabled track.
+- 2026-10-19 — **T15: chart readout polish** (`Theme.cs` + `ChartController.cs`): the
+  right-side Y-axis value labels are **white** (were muted gray `Theme.Muted`); the
+  **"max N"** readout at each legend's right is **bright yellow** (`Theme.Yellow`,
+  `#ffe14d`) at the legend's **12 px** size (was muted 10 px); the PCIe legend/hover
+  link config uses **one** space before the `[gen width]` bracket (was two); and the
+  T9.5 `TopPad = 26` headroom is **gone** — both linear and log scales now span the
+  full 128 px plot height (max value at the top edge, `y = 0`), with the topmost tick
+  label clamped (`Math.Max(y - 7, 1)`) so it never clips.
 - 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
   (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
   **[index: name]** text is **removed again** from the chart legends and the
