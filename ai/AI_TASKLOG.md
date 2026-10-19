@@ -4,11 +4,77 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/9 | 0m | none |
 | 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 12 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 19-10-2026 14:20:00
+- **Last Updated**: 19-10-2026 14:20:00
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (19-10-2026, after running the T12/T13/T14 build): (1) the **numbers on the right of the graphs** (right-side Y-axis value labels) look **gray** → make them **white**; (2) the **max value** text at the right of the legend → **bright yellow** and the **same font size as the legend** (12 px); (3) PCIe bandwidth chart legend: **extra space** between the speed and the PCI config (`4.0GB/s  [1.0 x16]`) → one space; (4) the graphs are **~25 % taller than the max value** ("wasting space") → the scale should accommodate the value up to the maximum (max at the top edge).
+  - All four live in `src/NvidiaMonitor/ChartController.cs` (+ one new `Theme.Yellow` brush, `#ffe14d`, in `src/NvidiaMonitor/Theme.cs`).
+  - (1) `DrawAxisTick` label `Theme.Muted` (#8a93a6) → `Theme.White` (#ffffff).
+  - (2) `_maxText` ("max N") `Theme.Muted` / 10 px → `Theme.Yellow` / 12 px (the legend's font size).
+  - (3) `"  ["` → `" ["` in both the legend and the red hover readout (the readout mirrors the legend format, so both stay identical).
+  - (4) removed the T9.5 `TopPad = 26` headroom: `ValueToY` (linear and log) now maps max → `y = 0` (full `PlotH = 128` plot height); the topmost tick label is clamped to `Math.Max(y - 7, 1)` so it is never clipped (the T9.5 clipping case, re-solved without wasting height). The polyline peak at y = 0 loses only ~0.8 px of its round cap to the canvas clip.
+  - Kept on the **same, still-unmerged** T13/T14 branch — one merge for the user; T13 subtask 10 (final log on `main`) stays pending until that merge.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (19-10-2026 14:20:00) Visually verify on the new build: (1) right-side axis numbers are white; (2) the "max N" text is bright yellow at the legend's font size; (3) PCIe legend/hover reads `value unit [gen width]` with a single space; (4) the max value sits at the top edge (no ~25 % empty band) with the topmost label still fully visible.
+
+**Confirmed (user provided):**
+
+- (19-10-2026 14:20:00) The four chart-polish requests quoted in Findings (verbatim user message, 19-10-2026).
+
+### Subtasks / Plan
+
+- [ ] 1 — Log first: T15 entry + dedicated `docs(ai):` commit before the code push
+- [ ] 2 — `Theme.cs`: add `Yellow` brush (`#ffe14d`)
+- [ ] 3 — `ChartController._maxText`: yellow + font size 10 → 12
+- [ ] 4 — `ChartController.DrawAxisTick`: label → `Theme.White`
+- [ ] 5 — `ChartController` legend + hover readout: single space before the `[gen width]` config
+- [ ] 6 — `ChartController`: remove `TopPad` (full-height scale) + clamp the topmost tick label + comments
+- [ ] 7 — Build the sln (Debug) 0/0 + publish `bin/NvidiaMonitor`
+- [ ] 8 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer) + commit on the branch
+- [ ] 9 — Push the branch; final log commit on `main` after the user merges (T13/T14/T15)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery source for this task. All paths relative to `D:\Repos\nvidia_app`.
+
+- **State when written** (19-10-2026 14:2x): branch `feat/ai-compact-legend-device-list-fit-height`, HEAD `368ddda` (T14 index refresh), tree clean; `main` @ `7133e7d`. T13 at 8/10 (subtask 10 = final log on `main` after the user merges; T14 landed as `4a86498` + `368ddda`). This task adds T15 **on top of the same unmerged branch** (one user merge for T13+T14+T15).
+- **T15 edit map** (pre-edit line numbers; `ChartController.cs` = 969 lines, `Theme.cs` = 274 lines):
+  - `src/NvidiaMonitor/Theme.cs` L21: after the `MutedColor` line add `public static readonly Color YellowColor  = Hex("#ffe14d"); // bright yellow — the "max" readout (T15)`; L34: after the `Muted` brush add `public static readonly Brush Yellow  = Frozen(YellowColor);` (keep the surrounding column alignment).
+  - `src/NvidiaMonitor/ChartController.cs` L98: delete the `TopPad = 26` const (headroom gone).
+  - L102-108 `_maxText`: `Foreground = Theme.Muted` → `Theme.Yellow`; `FontSize = 10` → `12`; one-line comment (bright yellow, same size as the legend — T15).
+  - L303-320 `ValueToY`: linear → `return PlotH * (1.0 - value / ceiling);`; log → drop `span`/`TopPad`: `return PlotH * (1 - Math.Clamp(frac, 0, 1));`; doc comment rewritten (max at y = 0, full height).
+  - L497-514 `DrawAxis`: drop the `topY` local; linear tick y becomes `PlotH * (1 - i / 5.0)` (topmost tick i = 5 → y = 0); log branch unchanged (`ValueToY` does the scaling).
+  - L526-536 `DrawAxisTick` label: `Foreground = Theme.Muted` → `Theme.White`; `Canvas.SetTop(lbl, y - 7)` → `Canvas.SetTop(lbl, Math.Max(y - 7, 1))` (+ comment).
+  - L591-593 hover readout: `text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";` → single space.
+  - L747-752 `UpdateLegend`: `legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";` → single space.
+- **Why the label clamp (and not just TopPad=0)**: `_axisCanvas` is top-aligned in `_axisScroll` and the ScrollViewer's content presenter clips, so a label placed at y = -7 (max tick at y = 0) would draw with its top ~7 px cut off. Clamp to y ≥ 1; the polyline peak at y = 0 loses only ~0.8 px of its 1.6 px round cap (negligible, and exactly what "reaches the top edge" means).
+- **Do NOT regress**: minute lines / t = 0 marker still span y 0..PlotH (unchanged); only the log/PCIe chart draws horizontal gridlines (so only the PCIe chart shows a hairline gridline on the very top edge); the `Math.Clamp(yv, 0, PlotH)` in `Redraw` stays; do **not** reintroduce any top headroom — the user explicitly rejected the 26 px band (T9.5's original reason for `TopPad` was clipping, which the clamp now solves).
+- **Encodings**: all four files are `i/lf w/crlf` (autocrlf=true) — on-disk copies are CRLF; multi-line exact-match edits must carry `\r\n`. `AI_TASKLOG.md` has a UTF-8 BOM (never touch line 1). Single-line anchors without trailing-newline matching are safest.
+- **Build/verify**: `dotnet build nvidia_app.sln -c Debug` (expect 0/0). For the user's running copy: `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL).
+- **Commit sequence on the branch**: (a) this log as `docs(ai): [ai] update task log before push (T15)`; (b) code as `feat(ui): [ai] white axis labels, yellow max readout, tight PCIe legend, full-height y-scale (T15)`; (c) `docs(ai): [ai] refresh project index (T15)`; (d) final log as `docs(ai): [ai] update task log (T15 done)`; then `git push origin feat/ai-compact-legend-device-list-fit-height`.
+- **Index refresh (subtask 8)**: use the `hector-project_indexer` skill; body spots to verify in its output: right-axis paragraph (~L183-187, drop the `TopPad = 26` wording → full-height scale, max at y = 0, top label clamped, labels white); legend paragraph (~L202-207, add bright-yellow 12 px `max N` readout); PCIe-legend paragraph (~L190-192, single-space note); a new change-log bullet above the T13 one (~L227); the `PROJECT_INDEXER` block (`git_head` → T15 code commit, `last_indexed` → now).
+- **After the user merges to `main`**: final log commit on `main` (T13 → 10/10 done with real hashes; close T13/T14/T15 pending confirmations; T15 done), push `main`, then `git fetch origin; git checkout feat/ai-compact-legend-device-list-fit-height; git merge --ff-only origin/main; git push --force-with-lease origin feat/ai-compact-legend-device-list-fit-height` (squash-merge/rebase exception: skip the ff, leave the branch as-is, tell the user).
 
 ---
 
@@ -51,7 +117,7 @@
 - [x] 5 — `MainWindow`: add `_devices` panel at the window's top-right (header row) + `UpdateDevicesPanel`
 - [x] 6 — `MainWindow.OnLayoutUpdated`: fit-height fix (strip from template part, measure at realised width, `max(header, devices)`, slack)
 - [x] 8 — Build full solution Release (0 errors / 0 warnings) + publish + `--print` smoke test (exit 0, 3 GPUs, 17-10-2026 ~22:03)
-- [ ] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch
+- [x] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch (done: `c56dd22` for T13, `368ddda` for T14)
 - [ ] 10 — Push branch; final log commit on `main` after the user merges
 
 ### Full Context Notes for AI Agents
