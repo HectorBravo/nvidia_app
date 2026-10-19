@@ -4,11 +4,67 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
+| 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/6 | 14m | none |
+| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 8/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 12 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T14: Reserve scrollbar space from first layout (window must not grow when data arrives)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 19-10-2026 10:53:30
+- **Last Updated**: 19-10-2026 11:08:00
+- **Time Spent**: 14m (up to the before-push log commit; final value set after the merge)
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height) — stacked on the same **unmerged** T13 branch
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (19-10-2026, after running the T13 build): "reserve the space for all scrollbars since start, because right now when there's more graphed data than space, the scrollbars are added and the window gets taller".
+  - **Root cause**: WPF `ScrollBarVisibility.Auto` bars reserve **0 px** until they appear. Each plot's `_plotScroll` (H=Auto) is a `ScrollViewer` around a 144 px-tall canvas; once the timeline outgrows the viewport the 13 px green "slide" H-bar appears *inside* it, growing every chart card by 13 px (7 charts → up to +91 px). The content then exceeds the height the startup fit-calc reserved, and the outer `_chartsScroll` V-bar (another 13 px of width) appears too — the window effectively grows / the layout shifts.
+  - **Fix**: (1) `_plotScroll.HorizontalScrollBarVisibility` Auto → `Visible` (13 px H track always reserved at each plot's bottom); (2) `_chartsScroll.VerticalScrollBarVisibility` Auto → `Visible` (13 px V track always reserved at the right of the Charts tab); (3) `OnLayoutUpdated` realised-width re-measure `w - 48` → `w - 61` (outer bar now always present). The infinite-width measure pass and the chrome sum pick up the reserved 13 px per plot automatically, because with `Visible` the bar is part of the `ScrollViewer`'s desired size.
+  - The always-shown bars receive the green "slide" styling from the idempotent `Theme.ApplyScrollStyles` visual-tree walk (no change needed there).
+  - Branching: same unmerged branch as [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) (tip `c56dd22`; code `f212f7a`); the merge into `main` brings T13 + T14 together.
+  - **Tooling gotchas**: the `search_codebase` index misses these `.cs` files (only `.md` hits) — use `Select-String` via the shell; `read_files` intermittently returned `[outdated - see the latest file content]` for `ChartController.cs` — verify exact line content with PowerShell `Get-Content` before/after edits.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (19-10-2026 10:53:30) Run the rebuilt `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm: (1) no vertical scrollbar at first launch; (2) after ~1–2 min, once the timeline outgrows the plots, **no** scrollbars appear and the window **does not** grow/shift; (3) the permanently-reserved slim dark track (13 px) at each plot's bottom and at the Charts tab's right edge looks fine.
+
+**Confirmed (user provided):**
+
+- (19-10-2026 10:53:30) How to stop the window growing when scrollbars appear? → "reserve the space for all scrollbars since start"
+
+### Subtasks / Plan
+
+- [ ] 1 — `ChartController.cs` (~L128): `_plotScroll.HorizontalScrollBarVisibility` `Auto` → `Visible`
+- [ ] 2 — `MainWindow.cs` (~L634): `_chartsScroll.VerticalScrollBarVisibility` `Auto` → `Visible`
+- [ ] 3 — `MainWindow.OnLayoutUpdated` (~L716): re-measure width `w - 48` → `w - 61`
+- [ ] 4 — Release build (0/0) + `dotnet publish` + `--print` smoke test
+- [ ] 5 — Refresh `ai/PROJECT_DESCRIPTION.md` (new T14 change-log entry; window-sizing bullets; `git_head` → T14 code commit) + dedicated `docs(ai)` commit on the branch
+- [ ] 6 — Push branch; user visual verification (pending)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes to resume this task without any other context.
+
+- **Exact edit points** (line numbers on the branch as of `c56dd22`):
+  - `src/NvidiaMonitor/ChartController.cs` L125-132: `private readonly ScrollViewer _plotScroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalContentAlignment = VerticalAlignment.Top, MinWidth = 1, Background = Theme.Card };` → set L128 to `ScrollBarVisibility.Visible` + a comment explaining the reservation.
+  - `src/NvidiaMonitor/MainWindow.cs` L631-637: `_chartsScroll = new System.Windows.Controls.ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalAlignment = HorizontalAlignment.Stretch };` → change L634 to `Visible` + comment.
+  - `MainWindow.cs` `OnLayoutUpdated` L711-718: `cs.Measure(new Size(Math.Max(400, w - 48), double.PositiveInfinity));` → `w - 61` (48 = root border 16×2 + tab margins 8×2; +13 = the outer V bar now always reserved); update the L711-712 comment.
+  - `_axisScroll` (ChartController L137-144) is both-`Disabled` — leave as is.
+- **Bar thickness = 13 px** from `Theme.cs` `ScrollXamlPart2`: `ScrollH` style sets `Height=13`, `ScrollV` sets `Width=13` (9 px track pill inside the 13 px bar). That 13 px is exactly what each Auto bar adds when it appears — the amount of growth eliminated.
+- **Why the fit math needs no other change**: `MeasureFit` (infinite) over the charts stack measures each `MetricChart` (Border: header row + body grid with `_plotScroll` + `_axisScroll`); with `Visible`, the `ScrollViewer` template counts its bar in the desired size, so `contentH`/`contentH2` include the reserved 13 px per chart. The re-measure pass measures the **bare stack** (`_chartsScroll.Content`) — the outer bar is not part of it — hence the explicit +13 in the *width* expression (the outer bar is vertical, so it only affects width, never height). The `+ 20` slack (L737) stays.
+- **Scroll sync unaffected**: `OnPlotScroll`/`PinFollow`/`AutoFollow` work on `ScrollableWidth`/`HorizontalOffset`; with no overflow the (shown) bar is disabled and both are 0 → the `> 0.5` px guards prevent spurious programmatic scrolls. `_chartCtl.SetViewportWidth(_chartsScroll.ViewportWidth)` automatically accounts for the always-reserved outer bar (viewport = real width − 13).
+- **Commands**: `dotnet build nvidia_app.sln -c Release` (expect 0/0); `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL); smoke `bin\NvidiaMonitor\NvidiaMonitor.exe --print` → exit 0; 3 GPUs (2× RTX 3090 + RTX 4070; driver 617.42 / CUDA 13.4 / NVML 13.617.42).
+- **Git flow** (rules: identity via `GIT_AUTHOR_NAME`/`GIT_COMMITTER_NAME` = `AI_bot` env vars only, email stays the user's; `[ai]` after the colon in every message; the log is the only file that may be committed/pushed on `main`): this commit = before-push log on `main` (T14 added, subtasks unchecked, Time Spent up to now). Next: `git checkout feat/ai-compact-legend-device-list-fit-height` → the three code edits → build/publish/smoke → code commit `fix(monitor): [ai] reserve scrollbar space from first layout (T14)` → refresh `ai/PROJECT_DESCRIPTION.md` (set `git_head` to that code commit's hash, `last_indexed` to now; new change-log bullet; the window-sizing bullets note the reserved bar) → commit `docs(ai): [ai] refresh project index (T14)` → push the branch. **After the user merges** (final log on `main` as the next commit after the merge): T14 → `done` + real commits + final Time Spent; T13 → `done` + real commits (code `f212f7a`, index `c56dd22`) + close its pending confirmation + final Time Spent; then `git fetch origin; git checkout feat/ai-compact-legend-device-list-fit-height; git merge --ff-only origin/main; git push --force-with-lease origin feat/ai-compact-legend-device-list-fit-height` (skip if squash-merged — tell the user).
+- **Tool gotchas**: `read_files` on `ChartController.cs` intermittently returns `[outdated - see the latest file content]` (stale reader cache) — dump exact lines with PowerShell `(Get-Content <file>)[a..b]` before/after editing; `search_codebase` does not index these `.cs` files — use `Select-String` through `run_commands`.
 
 ---
 
@@ -20,7 +76,7 @@
 - **Last Updated**: 17-10-2026 22:05:00
 - **Time Spent**: 20m
 - **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
-- **Commit(s)**: pending
+- **Commit(s)**: [`f212f7a`](https://github.com/HectorBravo/nvidia_app/commit/f212f7a2045c3fc34d4c1abf49daf5945df6cb2e) (code) + [`c56dd22`](https://github.com/HectorBravo/nvidia_app/commit/c56dd22752535577db4c82d79b7743e0ebc09290) (index) — on the branch, not merged yet (T14 is stacked on it)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (17-10-2026, after running the T12 build): (1) the per-GPU ` [idx: name]` text in the chart **legends** (white) and **hover readouts** (red) "takes up too much space" → remove it again (the % readouts and white legend stay); (2) add a **separate list of devices** at the **top-right of the window**; (3) the startup **height** is still miscalculated — the window opens too short, so a vertical scrollbar is visible until the user grows the window; (4) "the scroll bar looks great now" → green slide scrollbars stay as-is.
@@ -51,7 +107,7 @@
 - [x] 5 — `MainWindow`: add `_devices` panel at the window's top-right (header row) + `UpdateDevicesPanel`
 - [x] 6 — `MainWindow.OnLayoutUpdated`: fit-height fix (strip from template part, measure at realised width, `max(header, devices)`, slack)
 - [x] 8 — Build full solution Release (0 errors / 0 warnings) + publish + `--print` smoke test (exit 0, 3 GPUs, 17-10-2026 ~22:03)
-- [ ] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch
+- [x] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → `f212f7a`) + commit index on the branch (done as `c56dd22`)
 - [ ] 10 — Push branch; final log commit on `main` after the user merges
 
 ### Full Context Notes for AI Agents
