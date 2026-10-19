@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-19 14:37:02
-git_head: 72c7a1d3948bc96b802a74ad4825d45ac84a7fc6
+last_indexed: 2026-10-19 17:39:28
+git_head: 99ae2d0110da1fba6c171c7ce1a3f0fb5b2cfd69
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -220,6 +220,11 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-19 — **Index re-point (T16 pre-flight)**: `git_head` `72c7a1d` → `99ae2d0` and
+  `last_indexed` bumped. The delta is **task-log metadata only** (T15's final log commit), so
+  every section below remains accurate as-is; the next refresh lands on the T16 branch and
+  covers T16 itself (SM-utilization metric clamped at 100, new Memory-Clock chart, 9-chart
+  reorder, `sm=` in the `--print` line).
 - 2026-10-19 — **T14: scrollbar space reserved from the first layout** (`MainWindow` +
   `ChartController`): the window **no longer grows/shifts when data arrives** — the two
   `Auto` scrollbar visibilities (0 px until shown) became `Visible`, so each bar's 13 px
