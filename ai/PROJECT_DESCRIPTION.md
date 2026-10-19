@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-17 22:14:00
-git_head: f212f7a2045c3fc34d4c1abf49daf5945df6cb2e
+last_indexed: 2026-10-19 11:20:00
+git_head: 4a864988fb6fef74fe917844a7ed0f26ac1fd615
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -16,7 +16,8 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 - **`NvidiaMonitor`** — a WPF live dashboard (overview grid, synchronized line
   charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
   fit-to-content window size** (never maximized; sized so no scrollbar is needed at
-  first launch); a **per-device list** (CUDA ordinal + card name, with a colour
+  first launch — and every scrollbar's 13 px is reserved from the first layout, so the
+  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name, with a colour
   swatch matching each GPU's chart series) sits at the **top-right of the header
   row**; the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
@@ -77,7 +78,9 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
 ## 4. Entry Points
 - **WPF dashboard:** `NvidiaMonitor` → `App.Main` (`[STAThread]`). No args = launches
   `MainWindow` at a **calculated fit-to-content size** (never maximized; the no-NVML
-  fallback screen keeps the 1040×640 default) with the green "slide" scrollbars;
+  fallback screen keeps the 1040×640 default) with the green "slide" scrollbars
+  (**always visible** — T14 reserved each bar's 13 px from the first layout, so the
+  window never grows when the chart timelines outgrow the view);
   `--print` = headless single refresh printing a one-line summary per
   GPU (never opens a window), exit 0 on success / 1 when NVML unavailable.
 - **CLI:** `NvmlTest` → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
@@ -204,7 +207,8 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   **removed again in T13** — device identity now lives in the **top-right device
   list** (see the T13 change-log entry below). The **window opens at a calculated
   fit-to-content size** (T12 superseded "opens maximized"; T13 fixed the height so
-  no scrollbar appears at first launch).
+  no scrollbar appears at first launch; T14 reserved every scrollbar's 13 px from the
+  first layout — `Visible`, not `Auto` — so the window never grows when data arrives).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -212,6 +216,14 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-19 — **T14: scrollbar space reserved from the first layout** (`MainWindow` +
+  `ChartController`): the window **no longer grows/shifts when data arrives** — the two
+  `Auto` scrollbar visibilities (0 px until shown) became `Visible`, so each bar's 13 px
+  "slide" track is reserved from the start: each chart's `_plotScroll` H-bar at the
+  plot's bottom and the outer charts-tab `_chartsScroll` V-bar at the right edge; the
+  startup fit re-measure in `OnLayoutUpdated` subtracts the always-reserved outer bar
+  (`w - 48` → `w - 61`). The bars keep the green "slide" styling; when nothing
+  overflows they show as a slim, dark, disabled track.
 - 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
   (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
   **[index: name]** text is **removed again** from the chart legends and the
