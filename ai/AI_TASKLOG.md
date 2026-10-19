@@ -4,24 +4,24 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/9 | 0m | none |
+| 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
 | 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 12 completed task(s) - [View completed tasks](#completed-tasks)
+> 13 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 19-10-2026 14:20:00
-- **Last Updated**: 19-10-2026 14:20:00
-- **Time Spent**: 0m
+- **Last Updated**: 19-10-2026 14:38:00
+- **Time Spent**: 18m
 - **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
-- **Commit(s)**: pending
+- **Commit(s)**: [72c7a1d](https://github.com/HectorBravo/nvidia_app/commit/72c7a1d3948bc96b802a74ad4825d45ac84a7fc6)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (19-10-2026, after running the T12/T13/T14 build): (1) the **numbers on the right of the graphs** (right-side Y-axis value labels) look **gray** → make them **white**; (2) the **max value** text at the right of the legend → **bright yellow** and the **same font size as the legend** (12 px); (3) PCIe bandwidth chart legend: **extra space** between the speed and the PCI config (`4.0GB/s  [1.0 x16]`) → one space; (4) the graphs are **~25 % taller than the max value** ("wasting space") → the scale should accommodate the value up to the maximum (max at the top edge).
@@ -44,15 +44,15 @@
 
 ### Subtasks / Plan
 
-- [ ] 1 — Log first: T15 entry + dedicated `docs(ai):` commit before the code push
-- [ ] 2 — `Theme.cs`: add `Yellow` brush (`#ffe14d`)
-- [ ] 3 — `ChartController._maxText`: yellow + font size 10 → 12
-- [ ] 4 — `ChartController.DrawAxisTick`: label → `Theme.White`
-- [ ] 5 — `ChartController` legend + hover readout: single space before the `[gen width]` config
-- [ ] 6 — `ChartController`: remove `TopPad` (full-height scale) + clamp the topmost tick label + comments
-- [ ] 7 — Build the sln (Debug) 0/0 + publish `bin/NvidiaMonitor`
-- [ ] 8 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer) + commit on the branch
-- [ ] 9 — Push the branch; final log commit on `main` after the user merges (T13/T14/T15)
+- [x] 1 — Log first: T15 entry + dedicated `docs(ai):` commit before the code push (`b62b1a6`)
+- [x] 2 — `Theme.cs`: add `Yellow` brush (`#ffe14d`)
+- [x] 3 — `ChartController._maxText`: yellow + font size 10 → 12
+- [x] 4 — `ChartController.DrawAxisTick`: label → `Theme.White`
+- [x] 5 — `ChartController` legend + hover readout: single space before the `[gen width]` config
+- [x] 6 — `ChartController`: remove `TopPad` (full-height scale) + clamp the topmost tick label + comments
+- [x] 7 — Build the sln (Debug) 0/0 + publish `bin/NvidiaMonitor` (19-10-2026 ~14:33)
+- [x] 8 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer, `99afdfe`) + commit on the branch
+- [ ] 9 — Branch pushed with T15; final log commit on `main` after the user merges (T13/T14/T15) — pending
 
 ### Full Context Notes for AI Agents
 
