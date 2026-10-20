@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-19 17:39:28
-git_head: 99ae2d0110da1fba6c171c7ce1a3f0fb5b2cfd69
+last_indexed: 2026-10-20 10:15:00
+git_head: 389de9c96e4c1db1e22e8146ec529e2f9f59dc90
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -23,9 +23,11 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab).
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
-  table, or a live `--watch` feed (the interval defaults to 1 s when omitted).
+  table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
+  one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
+  batch API's version-constant sweep).
 
-Reads per-GPU telemetry: GPU/memory utilization, temperature, power (+limits), memory
+Reads per-GPU telemetry: GPU/memory utilization, **SM utilization** (per-process sum, clamped at 100), temperature, power (+limits), memory
 used/total/free, clocks, fan, P-state, **PCIe link (gen × width)** and derived
 theoretical **PCIe bandwidth (GB/s)**, ECC, NVLink count, throttle reasons, and a
 per-GPU process list (compute + graphics) with PID, kind and memory. When NVML/GPU is
@@ -71,7 +73,11 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`.
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
-  value is omitted), `SmiFormatter` (nvidia-smi-style table). Its "PCIe" column
+  value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic),
+  `NvmlProbe` (the `--probe` runner: NVML version, the legacy two-phase
+  `nvmlDeviceGetProcessUtilization`, the batched `nvmlDeviceGetProcessesUtilizationInfo`
+  with its version-constant sweep), `SmiFormatter` (nvidia-smi-style table, now
+  including an `SM` utilization column). Its "PCIe" column
   shows the link config plus the theoretical bandwidth
   (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the WPF GUI's PCIe values.
 
@@ -82,12 +88,12 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   (**always visible** — T14 reserved each bar's 13 px from the first layout, so the
   window never grows when the chart timelines outgrow the view);
   `--print` = headless single refresh printing a one-line summary per
-  GPU (never opens a window), exit 0 on success / 1 when NVML unavailable.
+  GPU (includes `sm=` — SM utilization; never opens a window), exit 0 on success / 1 when NVML unavailable.
 - **CLI:** `NvmlTest` → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
   `--print --watch [<seconds>]` = live feed that re-prints the table every N seconds
   until Ctrl-C (**N defaults to 1** when the value is omitted; an explicit
   non-numeric value exits 2). Exits 0 on success, 1 when NVML/GPU unavailable
-  (reason on stdout).
+  (reason on stdout). `--probe` = one-shot NVML diagnostic (versions + both SM-utilization APIs).
 
 ## 5. Build / Run / Test
 ```powershell
@@ -122,8 +128,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                                   driving 7 MetricChart cards (util, mem-util, temp,
-                                   power, clock, mem-used, PCIe-bandwidth [log Y]) — native WPF shapes
+                                   driving 9 MetricChart cards (GPU-util, mem-util, mem-used, temp, SM-util,
+                                   power, PCIe-bandwidth [log Y], GPU-clock, mem-clock) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -134,10 +140,11 @@ implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
 - `IGpuMonitorService` — the service surface: `InitializeAsync()`, `RefreshAsync() →
   GpuSnapshot`, `ShutdownAsync()`, `IsAvailable`, `StatusMessage`, plus a
   status-change event and an `AppLog` hook.
-- `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics).
+- `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics, incl. `SmUtilizationPct`).
 - `GpuMetricSample` — one timestamped sample of every metric (feeds history); it also
   carries the per-GPU `MemoryTotalBytes` and `PowerCapWatts` (the denominators behind
-  the charts' percentage readouts).
+  the charts' percentage readouts) — plus `SmUtilizationPct` and `MemoryClockMhz`
+  (the SM and memory-clock charts).
 - `GpuHistory` — per-GPU **ring buffer** (`new GpuHistory(capacity)`; the dashboard
   uses 720 ≈ 12 min @ 1 Hz). `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>`
   (oldest→newest), `GetSampleTimestamps(gpu)`, `GpuIndices`. The charts plot over the
@@ -168,6 +175,15 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - **Never shell out to `nvidia-smi`** — all reads go through the P/Invoke engine.
 - `ref/nvml.h` is the **authoritative** NVML reference; don't hand-edit P/Invoke
   signatures to diverge from it.
+- **NVML version constants:** *Info*-struct version fields encode
+  `struct-size | (1 << 24)` — the 24-byte v1
+  `nvmlDeviceProcessUtilizationInfo_t` is `24 | (1 << 24)` (= 16777240; the old
+  16777264 was 48-based and wrong). The batched
+  `nvmlDeviceGetProcessesUtilizationInfo` rejects any other encoding with
+  `NVML_ERROR_ARGUMENT_VERSION_MISMATCH` (rc 25). The engine therefore reads SM
+  utilization through the **legacy two-phase** `nvmlDeviceGetProcessUtilization`
+  (NULL-probe → filled read; the loop must count the samples the driver *wrote*,
+  which can be fewer than requested), with the batched API as fallback.
 - **`TreatWarningsAsErrors`** is on for `Contracts` and `NvmlCore` — their builds must
   stay warning-free (the dashboard/CLI projects are not).
 - **Threading:** `NvmlCoreService` is polled off the UI thread by `GpuPollingService`;
@@ -220,6 +236,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-20 — **T16: SM utilization (clamped at 100) + memory-clock chart + chart reorder** (`GpuSnapshot`/`GpuMetricSample`/`NvmlCoreService`/`MainWindow`/`App`/`NvmlProbe`/`SmiFormatter`): per-GPU **SM utilization** = `min(100, Σ per-process smUtil)` read from the two NVML process-utilization APIs — the legacy two-phase `nvmlDeviceGetProcessUtilization` is **primary** (the old batch-first order died on `rc=25` before ever reaching it); the batched `nvmlDeviceGetProcessesUtilizationInfo` (version `24 | (1 << 24)`) is the fallback; the read loop counts the driver-**written** records. The dashboard now drives **9 charts**: GPU-util, mem-util, mem-used, temp, **SM-util** (new; `ChartSpec.Percent` 0–100 axis), power, **PCIe** (moved down), GPU-clock, **mem-clock** (new); the headless `--print` line prints `sm=`. NvmlTest gained `NvmlProbe.cs` (`--probe`) and an `SM` column. `NvmlTypes.ProcessesUtilizationVersion` corrected 16777264 → 16777240. Verified: SM 73 % under load, 0–4 % idle.
 - 2026-10-19 — **Index re-point (T16 pre-flight)**: `git_head` `72c7a1d` → `99ae2d0` and
   `last_indexed` bumped. The delta is **task-log metadata only** (T15's final log commit), so
   every section below remains accurate as-is; the next refresh lands on the T16 branch and
