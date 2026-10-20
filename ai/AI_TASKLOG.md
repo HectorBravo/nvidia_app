@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/11 | 0m | none |
+| 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 2/11 | 9m | none |
 
 | 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
 | 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
@@ -20,8 +20,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 19-10-2026 17:39:28
-- **Last Updated**: 19-10-2026 17:39:28
-- **Time Spent**: 0m
+- **Last Updated**: 20-10-2026 10:10:00
+- **Time Spent**: 9m (this resumption only; the 19-10-2026 17:39–20:29 sessions' time was lost to context breaks and is not recorded)
 - **Branch**: [`feat/ai-add-sm-metric-and-memory-clock-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-add-sm-metric-and-memory-clock-chart)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -30,7 +30,10 @@
   - NVML has **no** device-level "SM utilization" call: the dmon number is the **sum of per-process `smUtil`** from the process-utilization APIs (the driver samples at ~1 Hz and only reports non-idle processes).
   - **User decision (19-10-2026 17:40)**: although dmon's `sm` can exceed 100 with concurrent processes, **the reported value is clamped to 100%** (`sm = min(100, Σ smUtil)`).
   - Memory clock was already collected (`GpuSnapshot.MemoryClockMhz` via `NVML_CLOCK_MEM`) — only the plumbing into `GpuMetricSample` + the new chart was needed.
-  - Two P/Invoke surfaces in `ref/nvml.h` (13.4.92): the newer **`nvmlDeviceGetProcessesUtilizationInfo`** (one call, batch array) and the older **`nvmlDeviceGetProcessUtilization`** (two-phase size probe). The engine prefers the newer one and falls back to the older.
+  - Two P/Invoke surfaces in `ref/nvml.h` (13.4.92): the newer **`nvmlDeviceGetProcessesUtilizationInfo`** (one call, batch array) and the older **`nvmlDeviceGetProcessUtilization`** (two-phase size probe). The engine calls the **per-process one first** (fixed 20-10-2026), with the batched API as fallback for a driver that lacks the symbol.
+  - **Root cause of the 0% SM reading (fixed 20-10-2026 10:01–10:10)**: the old order tried the batched API first; its probe returned `rc=25 = NVML_ERROR_ARGUMENT_VERSION_MISMATCH` because the container version constant was 48-based while the 24-byte v1 container encodes as `24 | (1 << 24)`, and the reader then **returned 0 before the legacy fallback could ever run**. Fix in `NvmlCoreService.ReadSmUtilization`: legacy path is now first (extracted into `ReadSmUtilizationLegacy`), batched is the fallback; the sample loop counts the driver's *written* records instead of the requested `n`. `NvmlTypes.ProcessesUtilizationVersion` corrected `16777264 → 16777240` (`24 | (1 << 24)`).
+  - **The batch API IS usable with the right version**: on driver 617.42 / NVML 13.617.42, `nvmlDeviceGetProcessesUtilizationInfo` accepts `version = 24 | (1 << 24) = 0x01000018` (probe: rc=7, count=72) and rejects every 16-bit-major encoding (`0x000103F8`, `0x000203F8`, `0x001803F8`, …) and the 32/48-byte variants (rc=25). The full sweep is in the probe's candidate list (`src/NvmlTest/NvmlProbe.cs`, `--probe`).
+  - **Verified end-to-end** (`NvmlTest --print` while `nvidia-smi dmon -s u -d 1` ran): the SM column reads **73 %** on the loaded GPU and **0–4 %** on idle GPUs (was stuck at 0 %). An `SM` column (`WSm = 5`) was added to `NvmlTest/SmiFormatter.cs` for this verification (header/dashes/value rows; 80-column budget still holds) — superseding the "deliberately not touched" note below; trivially removable if unwanted.
   - Final chart order (9): GPU Util, Mem Util, **Mem Used** (moved up), Temp, **SM Util** (new, before Power), Power, **PCIe** (moved down), GPU Clock, **Mem Clock** (new).
 
 ### User Confirmations
@@ -50,7 +53,7 @@
 - [ ] 3 — Create branch `feat/ai-add-sm-metric-and-memory-clock-chart` from the current branch tip
 - [ ] 4 — Contracts: `GpuSnapshot.SmUtilizationPct`; `GpuMetricSample.SmUtilizationPct` + `MemoryClockMhz`
 - [ ] 5 — NvmlCore: three process-utilization structs (`NvmlTypes`) + two delegates (`NvmlDelegates`)
-- [ ] 6 — NvmlCore: `ReadSmUtilization` (batched → fallback; clamped at 100; 0 on NOT_FOUND/NOT_SUPPORTED) wired into `GpuSnapshot`
+- [x] 6 — NvmlCore: `ReadSmUtilization` (per-process first, batched fallback; clamped at 100; 0 on NOT_FOUND/NOT_SUPPORTED; counts *written* samples) wired into `GpuSnapshot` — restructured 20-10-2026 after the `rc=25` diagnosis (batch-first never reached the legacy fallback)
 - [ ] 7 — `MainWindow`: feed the two new sample fields; 9-chart `_specs` reorder; SM + Mem-Clock specs; generalize the 0–100 percent axis (`ChartSpec.Percent`)
 - [ ] 8 — `App.cs`: `sm=` in the `--print` line
 - [ ] 9 — Build the sln (0/0) + verify `--print` against live `nvidia-smi dmon`
@@ -101,7 +104,7 @@
 - `RunHeadless` (lines 69–73): in the per-GPU `--print` line, insert `sm={FmtPct(g.SmUtilizationPct)} ` immediately after `util={FmtPct(g.GpuUtilizationPct)} `.
 
 **Deliberately NOT touched**
-- `NvmlTest` table (`SmiFormatter.cs`, 80-column budget) — "console output" in the request means the monitor's `--print` line, not the nvidia-smi-style table. If the user later wants an `sm` column there, it is a small follow-up (needs the column-width math in `SmiFormatter`).
+- ~~`NvmlTest` table (`SmiFormatter.cs`, 80-column budget)~~ — **superseded 20-10-2026**: an `SM` column (const `WSm = 5`) was added to `SmiFormatter.cs` (header row, dashes row, value row) to verify the fixed metric in `--print` output; the 80-column budget still holds. The monitor's `--print` line (subtask 8) remains the user-facing console output.
 - `GpuPollingService`, `Theme`, `IGpuPollingService`, `GpuProcessInfo`, `SystemSnapshot` — unchanged.
 
 **Verification**
