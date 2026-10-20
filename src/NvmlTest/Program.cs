@@ -3,10 +3,13 @@
 // Usage:
 //   NvmlTest --print
 //   NvmlTest --print [--watch [<seconds>]]
+//   NvmlTest --probe
 // --print prints an nvidia-smi-style table once and exits 0 on success, or 1
 // when NVML / a GPU is unavailable (reason on stdout). With --watch it keeps
 // clearing and re-printing every <seconds> (default 1 s when the value is
 // omitted), like `watch nvidia-smi`; Ctrl-C stops cleanly (exit 0).
+// --probe dumps the raw per-process-utilization API return codes (see
+// NvmlProbe) and exits.
 // Missing / bad args exit 2.
 using System.Globalization;
 using HectorBravo.Nvidia.Core;
@@ -14,6 +17,7 @@ using HectorBravo.Nvidia.Test;
 
 // ── arg parsing (flags are case-insensitive) ─────────────────────
 var print = false;
+var probe = false;
 double? interval = null;
 var unknown = new List<string>();
 
@@ -23,6 +27,10 @@ for (var i = 0; i < args.Length; i++)
     if (a.Equals("--print", StringComparison.OrdinalIgnoreCase))
     {
         print = true;
+    }
+    else if (a.Equals("--probe", StringComparison.OrdinalIgnoreCase))
+    {
+        probe = true;
     }
     else if (a.Equals("--watch", StringComparison.OrdinalIgnoreCase))
     {
@@ -53,10 +61,17 @@ for (var i = 0; i < args.Length; i++)
 }
 
 // No recognized mode, or anything we don't understand → usage on stderr.
-if (!print || unknown.Count > 0)
+if (!print && !probe || unknown.Count > 0)
 {
-    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]]  (no seconds value → 1 s)");
+    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]] | NvmlTest --probe  (no seconds value → 1 s)");
     return 2;
+}
+
+// --probe: raw NVML diagnostic, independent of the table printer.
+if (probe)
+{
+    NvmlProbe.Run();
+    return 0;
 }
 
 var svc = new NvmlCoreService(); // log: null (headless, no AppLog)

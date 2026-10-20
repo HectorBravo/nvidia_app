@@ -70,4 +70,12 @@ internal static class Nvml
     // bound to whichever symbol resolves. The first call with a null buffer
     // returns the element count via NVML_INSUFFICIENT_SIZE; the second fills it.
     public delegate int DeviceGetRunningProcesses(IntPtr device, IntPtr count, IntPtr infos);
+
+    // Per-process utilization for the last driver sample period. The batched API
+    // (newer drivers) fills a caller-allocated array of v1 info structs through a
+    // versioned container struct; the per-process variant is the primary path (both are
+    // two-phase: NULL probe → INSUFFICIENT_SIZE → allocate → fill). See
+    // NvmlCoreService.ReadSmUtilization. Not supported on MIG-enabled GPUs.
+    public delegate int DeviceGetProcessUtilization(IntPtr device, IntPtr samples, IntPtr count, ulong lastSeenTimestamp);
+    public delegate int DeviceGetProcessesUtilizationInfo(IntPtr device, ref NvmlTypes.ProcessesUtilizationInfo info);
 }

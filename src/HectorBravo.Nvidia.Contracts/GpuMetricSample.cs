@@ -11,10 +11,12 @@ public sealed record GpuMetricSample
     public int GpuIndex { get; init; }
     public int GpuUtilizationPct { get; init; }
     public int MemoryUtilizationPct { get; init; }
+    public int SmUtilizationPct { get; init; }
     public double PowerWatts { get; init; }
     public long MemoryUsedBytes { get; init; }
     public int TemperatureGpu { get; init; }
     public int GpuClockMhz { get; init; }
+    public int MemoryClockMhz { get; init; }
     public double PcieBandwidthGbps { get; init; }
     public double PcieMaxBandwidthGbps { get; init; }
     // Current link gen/width (0 = N/A) per sample, so the PCIe chart can show the full

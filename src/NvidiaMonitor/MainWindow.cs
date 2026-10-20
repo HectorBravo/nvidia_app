@@ -42,8 +42,9 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed, pcieBw.
-    private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384, 32 };
+    // Index order matches _charts/_specs: util, memUtil, memUsed, temp, smUtil,
+    // power, pcieBw, clock, memClock.
+    private readonly double[] _runningMax = { 100, 100, 16384, 100, 100, 400, 32, 2100, 1600 };
 
     // One-shot fit-to-content startup sizing (see OnContentRendered).
     private readonly StackPanel _header;
@@ -274,10 +275,12 @@ public class MainWindow : Window
                 GpuIndex = g.Index,
                 GpuUtilizationPct = g.GpuUtilizationPct,
                 MemoryUtilizationPct = g.MemoryUtilizationPct,
+                SmUtilizationPct = g.SmUtilizationPct,
                 PowerWatts = g.PowerMw / 1000.0,
                 MemoryUsedBytes = g.MemoryUsedBytes,
                 TemperatureGpu = g.TemperatureGpu,
                 GpuClockMhz = g.GpuClockMhz,
+                MemoryClockMhz = g.MemoryClockMhz,
                 PcieBandwidthGbps = g.PcieBandwidthGbps,
                 PcieMaxBandwidthGbps = g.PcieMaxBandwidthGbps,
                 PcieLinkGen = g.PcieLinkGen,
@@ -471,7 +474,7 @@ public class MainWindow : Window
             }
             else
             {
-                ceiling = Math.Max(spec.MinCeiling, c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));
+                ceiling = Math.Max(spec.MinCeiling, spec.Percent ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));
             }
 
             _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals,
@@ -577,6 +580,8 @@ public class MainWindow : Window
         bool LogScale = false,
         bool Pcie = false,
         bool Pct = false,
+        // Fixed 0–100 Y axis (percentage charts): the ceiling never auto-grows.
+        bool Percent = false,
         double MinCeiling = 0,
         Func<HectorBravo.Nvidia.Contracts.GpuMetricSample, double>? PctBase = null);
 
@@ -598,26 +603,34 @@ public class MainWindow : Window
         // ── Charts ──────────────────────────────────────────────
         var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
         _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.GpuUtilizationPct).ToList()));
+            s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
+            Percent: true));
         _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList()));
+            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
+            Percent: true));
+        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
+            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
+            Pct: true,
+            PctBase: s => s.MemoryTotalBytes / 1048576.0));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
+            MinCeiling: 100));
+        _specs.Add(new ChartSpec("SM Utilization (%)", "%", 0,
+            s => s.Select(x => (double)x.SmUtilizationPct).ToList(),
+            Percent: true,
             MinCeiling: 100));
         _specs.Add(new ChartSpec("Power (W)", " W", 1,
             s => s.Select(x => x.PowerWatts).ToList(),
             Pct: true,
             PctBase: s => s.PowerCapWatts));
-        _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
-            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
-        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
-            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
-            Pct: true,
-            PctBase: s => s.MemoryTotalBytes / 1048576.0));
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
             LogScale: true,
             Pcie: true));
+        _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
+            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
+        _specs.Add(new ChartSpec("Memory Clock (MHz)", " MHz", 0,
+            s => s.Select(x => (double)x.MemoryClockMhz).ToList()));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);

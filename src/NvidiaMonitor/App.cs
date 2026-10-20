@@ -68,7 +68,7 @@ public partial class App : Application
                 {
                     var name = string.IsNullOrWhiteSpace(g.Name) ? $"GPU {g.Index}" : g.Name;
                     Console.WriteLine(
-                        $"GPU[{g.Index}] {name}  util={FmtPct(g.GpuUtilizationPct)}  mem={FmtPct(g.MemoryUtilizationPct)}  " +
+                        $"GPU[{g.Index}] {name}  util={FmtPct(g.GpuUtilizationPct)}  sm={FmtPct(g.SmUtilizationPct)}  mem={FmtPct(g.MemoryUtilizationPct)}  " +
                         $"temp={FmtInt(g.TemperatureGpu)}C  power={FmtWatts(g.PowerMw)}  " +
                         $"mem={Theme.Mb(g.MemoryUsedBytes)}/{Theme.Mb(g.MemoryTotalBytes)} MB  fan={FmtPct(g.FanSpeedPct)}  perf={g.PerfStateLabel}");
                 }

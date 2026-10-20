@@ -375,6 +375,7 @@ public sealed class NvmlCoreService : IGpuMonitorService
     {
         // utilization (struct out)
         var util = ReadUtil(dev);
+        var sm = ReadSmUtilization(dev);
         var mem = ReadMem(dev);
         var (eccCorr, eccUncorr) = ReadEcc(dev);
         var eccModes = ReadEccModes(dev);
@@ -398,6 +399,7 @@ public sealed class NvmlCoreService : IGpuMonitorService
 
             GpuUtilizationPct = (int)(util?.Gpu ?? 0),
             MemoryUtilizationPct = (int)(util?.Memory ?? 0),
+            SmUtilizationPct = sm,
             EncoderUtilizationPct = GetU32Two(Resolve<Nvml.DeviceGetEncoderUtilization>("nvmlDeviceGetEncoderUtilization"), (f, p1, p2) => f(dev, p1, p2)),
             DecoderUtilizationPct = GetU32Two(Resolve<Nvml.DeviceGetDecoderUtilization>("nvmlDeviceGetDecoderUtilization"), (f, p1, p2) => f(dev, p1, p2)),
 
@@ -470,6 +472,134 @@ public sealed class NvmlCoreService : IGpuMonitorService
         var m = new NvmlTypes.Memory();
         var rc = Safe(fn, "nvmlDeviceGetMemoryInfo", () => fn(dev, ref m));
         return rc == NvmlErr.Success ? m : null;
+    }
+
+    // ── per-process SM utilization (the `sm` column of nvidia-smi dmon) ─────
+    // NVML has no device-level "SM utilization" metric: dmon's number is the SUM of
+    // the per-process SM-utilization values for the last driver sample period, and
+    // only processes that actually used the GPU during that period are reported.
+    // The per-process API (nvmlDeviceGetProcessUtilization) is the primary path:
+    // every driver that ships it honours the two-phase protocol, while the batched
+    // nvmlDeviceGetProcessesUtilizationInfo is kept only as the fallback for a
+    // driver that lacks that symbol (on several drivers the batched call also
+    // rejects the container version with ARGUMENT_VERSION_MISMATCH). Everything
+    // that cannot be read
+    // MIG — both APIs return NOT_SUPPORTED there, missing export) degrades to 0,
+    // matching this engine's "one bad read never aborts the snapshot" rule.
+    // The raw sum can exceed 100 with several concurrent processes, but the
+    // user-facing value is a percentage and must never: clamp at 100.
+    private int ReadSmUtilization(IntPtr dev)
+    {
+        var legacy = Resolve<Nvml.DeviceGetProcessUtilization>("nvmlDeviceGetProcessUtilization");
+        if (legacy != null)
+        {
+            return ReadSmUtilizationLegacy(legacy, dev);
+        }
+
+        var batched = Resolve<Nvml.DeviceGetProcessesUtilizationInfo>("nvmlDeviceGetProcessesUtilizationInfo");
+        if (batched != null)
+        {
+            var info = new NvmlTypes.ProcessesUtilizationInfo
+            {
+                Version = NvmlTypes.ProcessesUtilizationVersion,
+                ProcessSamplesCount = 0,
+                LastSeenTimeStamp = 0,
+                ProcUtilArray = IntPtr.Zero,
+            };
+
+            // Phase 1: NULL array — the driver answers with the element count.
+            var probe = Safe(batched, "nvmlDeviceGetProcessesUtilizationInfo", () => batched(dev, ref info));
+            if (probe == NvmlErr.Success)
+            {
+                return 0; // the driver handed back an empty list directly
+            }
+            if (probe != NvmlErr.InsufficientSize || info.ProcessSamplesCount == 0)
+            {
+                return 0; // NOT_FOUND (idle period) / NOT_SUPPORTED (MIG) / …
+            }
+
+            var n = Math.Min((int)info.ProcessSamplesCount, 256);
+            var arr = Marshal.AllocHGlobal(n * NvmlTypes.ProcessUtilizationInfoSize);
+            try
+            {
+                // Phase 2: caller-allocated array of v1 info structs.
+                info.ProcessSamplesCount = (uint)n;
+                info.ProcUtilArray = arr;
+                var rc = Safe(batched, "nvmlDeviceGetProcessesUtilizationInfo", () => batched(dev, ref info));
+                if (rc != NvmlErr.Success)
+                {
+                    return 0;
+                }
+
+                var total = 0;
+                for (var i = 0; i < Math.Min(n, (int)info.ProcessSamplesCount); i++)
+                {
+                    var s = Marshal.PtrToStructure<NvmlTypes.ProcessUtilizationInfo>(
+                        arr + i * NvmlTypes.ProcessUtilizationInfoSize);
+                    total += (int)s.SmUtil;
+                }
+
+                return Math.Min(100, total);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(arr);
+            }
+        }
+
+        return 0;
+    }
+
+    // The per-process two-phase read backing the SM column: NULL probe →
+    // INSUFFICIENT_SIZE with the required record count → caller-allocated array →
+    // the driver writes however many samples accumulated since the last call.
+    private int ReadSmUtilizationLegacy(Nvml.DeviceGetProcessUtilization legacy, IntPtr dev)
+    {
+        var countPtr = Marshal.AllocHGlobal(4);
+        IntPtr samples = IntPtr.Zero;
+        try
+        {
+            var probe = Safe(legacy, "nvmlDeviceGetProcessUtilization", () => legacy(dev, IntPtr.Zero, countPtr, 0));
+            if (probe == NvmlErr.InsufficientSize)
+            {
+                var n = Math.Min(Marshal.ReadInt32(countPtr), 256);
+                if (n > 0)
+                {
+                    samples = Marshal.AllocHGlobal(n * NvmlTypes.ProcessUtilizationSampleSize);
+                    Marshal.WriteInt32(countPtr, n);
+                    var rc = Safe(legacy, "nvmlDeviceGetProcessUtilization", () => legacy(dev, samples, countPtr, 0));
+                    if (rc == NvmlErr.Success)
+                    {
+                        // The driver may have written fewer records than n: count the real ones.
+                        var written = Math.Min(n, Math.Max(0, Marshal.ReadInt32(countPtr)));
+                        var total = 0;
+                        for (var i = 0; i < written; i++)
+                        {
+                            var s = Marshal.PtrToStructure<NvmlTypes.ProcessUtilizationSample>(
+                                samples + i * NvmlTypes.ProcessUtilizationSampleSize);
+                            total += (int)s.SmUtil;
+                        }
+
+                        return Math.Min(100, total);
+                    }
+
+                    return 0; // the probe promised data but the read failed (GPU lost mid-read, …)
+                }
+
+                return 0; // the probe reported no samples
+            }
+
+            return 0; // NOT_FOUND (no active process this period) / NOT_SUPPORTED (MIG) / …
+        }
+        finally
+        {
+            if (samples != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(samples);
+            }
+
+            Marshal.FreeHGlobal(countPtr);
+        }
     }
 
     private (long Corrected, long Uncorrected) ReadEcc(IntPtr dev)
