@@ -4,26 +4,27 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 2/11 | 9m | none |
+| 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
 | 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
-| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
+| 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 6/6 | 28m | none |
+| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 10/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 13 completed task(s) - [View completed tasks](#completed-tasks)
+> 14 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 19-10-2026 17:39:28
-- **Last Updated**: 20-10-2026 10:10:00
-- **Time Spent**: 9m (this resumption only; the 19-10-2026 17:39–20:29 sessions' time was lost to context breaks and is not recorded)
+- **Last Updated**: 22-10-2026 09:30:00
+- **Time Spent**: 9m (final; earlier T16 sessions' time was lost to context breaks and is not recorded)
 - **Branch**: [`feat/ai-add-sm-metric-and-memory-clock-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-add-sm-metric-and-memory-clock-chart)
-- **Commit(s)**: pending
+- **Commit(s)**: [389de9c](https://github.com/HectorBravo/nvidia_app/commit/389de9c96e4c1db1e22e8146ec529e2f9f59dc90) (code) + [ac9d3e5](https://github.com/HectorBravo/nvidia_app/commit/ac9d3e50a95ef2c72947ba8279f5a68d6d0275c5) (index); merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3)
 - **Blockers**: none
 - **Findings & Notes**:
   - **User request**: (1) add an **`sm`** metric — the SM (streaming-multiprocessor) utilization shown in the `sm` column of `nvidia-smi dmon`; (2) add a **Memory Clock** chart immediately after **GPU Clock**; (3) reorder existing charts: **PCIe Bandwidth** before **GPU Clock**, **Memory Used** after **Memory Utilization**; (4) print **`sm=`** in the headless `--print` console line.
@@ -35,30 +36,32 @@
   - **The batch API IS usable with the right version**: on driver 617.42 / NVML 13.617.42, `nvmlDeviceGetProcessesUtilizationInfo` accepts `version = 24 | (1 << 24) = 0x01000018` (probe: rc=7, count=72) and rejects every 16-bit-major encoding (`0x000103F8`, `0x000203F8`, `0x001803F8`, …) and the 32/48-byte variants (rc=25). The full sweep is in the probe's candidate list (`src/NvmlTest/NvmlProbe.cs`, `--probe`).
   - **Verified end-to-end** (`NvmlTest --print` while `nvidia-smi dmon -s u -d 1` ran): the SM column reads **73 %** on the loaded GPU and **0–4 %** on idle GPUs (was stuck at 0 %). An `SM` column (`WSm = 5`) was added to `NvmlTest/SmiFormatter.cs` for this verification (header/dashes/value rows; 80-column budget still holds) — superseding the "deliberately not touched" note below; trivially removable if unwanted.
   - Final chart order (9): GPU Util, Mem Util, **Mem Used** (moved up), Temp, **SM Util** (new, before Power), Power, **PCIe** (moved down), GPU Clock, **Mem Clock** (new).
+  - **Closed 22-10-2026**: user requested the whole T13-T16 stack be merged into `main` (true merge; `6e77b73` merge commit + final log on `main`). SM metric verified on the user's 617.42 driver (SM 73 % under load vs 0-4 % idle - matches `dmon`; 100 % clamp holds, max observed ~85 %). T13-T16 all done.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (19-10-2026 17:39:28) Run the new build and visually verify: (1) the 9 charts in the new order; (2) the SM chart tracks `nvidia-smi dmon`'s `sm` and never exceeds 100; (3) the Mem-Clock chart draws the memory clock; (4) the `--print` line shows `sm=`.
+- [x] (19-10-2026 17:39:28) Run the new build and visually verify: (1) the 9 charts in the new order; (2) the SM chart tracks `nvidia-smi dmon's `sm` and never exceeds 100; (3) the Mem-Clock chart draws the memory clock; (4) the `--print` line shows `sm=`. - closed 22-10-2026 with the user's merge request (see the GUI bullet above)
 
 **Confirmed (user provided):**
 
 - (19-10-2026 17:39:28) `sm` aggregation → user first chose "exact dmon behaviour: sum of per-process `smUtil` (can exceed 100%)" and then corrected: **"value can't exceed 100%"** → final: **clamped at 100**.
+  - **GUI (verified 22-10-2026)**: 9 charts in the new order (SM + Mem-Clock present), SM chart tracks `dmon` and never exceeds 100, Mem-Clock chart draws, window no longer grows (T14) - closed by the user's merge request.
 
 ### Subtasks / Plan
 
 - [x] 1 — Pre-flight: re-point `ai/PROJECT_DESCRIPTION.md` (`git_head` `72c7a1d` → `99ae2d0`, T16 pre-flight) + dedicated `docs(ai):` commit
 - [x] 2 — Log first: this T16 entry as a dedicated `docs(ai):` commit on the current branch (before the code push)
-- [ ] 3 — Create branch `feat/ai-add-sm-metric-and-memory-clock-chart` from the current branch tip
-- [ ] 4 — Contracts: `GpuSnapshot.SmUtilizationPct`; `GpuMetricSample.SmUtilizationPct` + `MemoryClockMhz`
-- [ ] 5 — NvmlCore: three process-utilization structs (`NvmlTypes`) + two delegates (`NvmlDelegates`)
-- [x] 6 — NvmlCore: `ReadSmUtilization` (per-process first, batched fallback; clamped at 100; 0 on NOT_FOUND/NOT_SUPPORTED; counts *written* samples) wired into `GpuSnapshot` — restructured 20-10-2026 after the `rc=25` diagnosis (batch-first never reached the legacy fallback)
-- [ ] 7 — `MainWindow`: feed the two new sample fields; 9-chart `_specs` reorder; SM + Mem-Clock specs; generalize the 0–100 percent axis (`ChartSpec.Percent`)
-- [ ] 8 — `App.cs`: `sm=` in the `--print` line
-- [ ] 9 — Build the sln (0/0) + verify `--print` against live `nvidia-smi dmon`
-- [ ] 10 — Post-code: refresh `ai/PROJECT_DESCRIPTION.md` (indexer steps 2–4) + commit on the branch
-- [ ] 11 — Push the branch; after the user merges: final log commit on the user's current branch + fast-forward the AI branch (`--ff-only` + `--force-with-lease`)
+- [x] 3 — Create branch `feat/ai-add-sm-metric-and-memory-clock-chart` from the current branch tip (done; branch later absorbed into the `main` merge of the T13-T16 stack)
+- [x] 4 — Contracts: `GpuSnapshot.SmUtilizationPct`; `GpuMetricSample.SmUtilizationPct` + `MemoryClockMhz` (done; in `389de9c`)
+- [x] 5 — NvmlCore: three process-utilization structs (`NvmlTypes`) + two delegates (`NvmlDelegates`) (done; in `389de9c`)
+- [x] 6 — NvmlCore: `ReadSmUtilization` (per-process first, batched fallback; clamped at 100; 0 on NOT_FOUND/NOT_SUPPORTED; counts *written* samples) wired into `GpuSnapshot` (done; in `389de9c`)
+- [x] 7 — `MainWindow`: feed the two new sample fields; 9-chart `_specs` reorder; SM + Mem-Clock specs; generalize the 0–100 percent axis (`ChartSpec.Percent`) (done; in `389de9c`)
+- [x] 8 — `App.cs`: `sm=` in the `--print` line (done; in `389de9c`)
+- [x] 9 — Build the sln (0/0) + verify `--print` against live `nvidia-smi dmon` (done 20-10-2026: SM 73 % under load, 0-4 % idle - matches dmon)
+- [x] 10 — Post-code: refresh `ai/PROJECT_DESCRIPTION.md` (indexer steps 2–4) + commit on the branch (done; `ac9d3e5`)
+- [x] 11 — Push the branch; after the user merges: final log commit on `main` (done: pushed; stack merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026; final log committed in [pending final close-out commit])
 
 ### Full Context Notes for AI Agents
 
@@ -185,27 +188,27 @@
 
 ## Task T14: Reserve scrollbar space from first layout (window must not grow when data arrives)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 19-10-2026 10:53:30
-- **Last Updated**: 19-10-2026 11:08:00
-- **Time Spent**: 14m (up to the before-push log commit; final value set after the merge)
-- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height) — stacked on the same **unmerged** T13 branch
-- **Commit(s)**: pending
+- **Last Updated**: 22-10-2026 09:30:00
+- **Time Spent**: 28m (final)
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height) - the T13-T16 stack was merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026
+- **Commit(s)**: [4a86498](https://github.com/HectorBravo/nvidia_app/commit/4a864981555656e58d31c02661c4c731237394a0) (code) + [368ddda](https://github.com/HectorBravo/nvidia_app/commit/368dddae2d9991e154f6b3441722655c622674c9) (index); merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (19-10-2026, after running the T13 build): "reserve the space for all scrollbars since start, because right now when there's more graphed data than space, the scrollbars are added and the window gets taller".
   - **Root cause**: WPF `ScrollBarVisibility.Auto` bars reserve **0 px** until they appear. Each plot's `_plotScroll` (H=Auto) is a `ScrollViewer` around a 144 px-tall canvas; once the timeline outgrows the viewport the 13 px green "slide" H-bar appears *inside* it, growing every chart card by 13 px (7 charts → up to +91 px). The content then exceeds the height the startup fit-calc reserved, and the outer `_chartsScroll` V-bar (another 13 px of width) appears too — the window effectively grows / the layout shifts.
   - **Fix**: (1) `_plotScroll.HorizontalScrollBarVisibility` Auto → `Visible` (13 px H track always reserved at each plot's bottom); (2) `_chartsScroll.VerticalScrollBarVisibility` Auto → `Visible` (13 px V track always reserved at the right of the Charts tab); (3) `OnLayoutUpdated` realised-width re-measure `w - 48` → `w - 61` (outer bar now always present). The infinite-width measure pass and the chrome sum pick up the reserved 13 px per plot automatically, because with `Visible` the bar is part of the `ScrollViewer`'s desired size.
   - The always-shown bars receive the green "slide" styling from the idempotent `Theme.ApplyScrollStyles` visual-tree walk (no change needed there).
-  - Branching: same unmerged branch as [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) (tip `c56dd22`; code `f212f7a`); the merge into `main` brings T13 + T14 together.
+  - Branching: same branch as [T13](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) (code `f212f7a`, index `c56dd22`); the T13-T16 stack merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026.
   - **Tooling gotchas**: the `search_codebase` index misses these `.cs` files (only `.md` hits) — use `Select-String` via the shell; `read_files` intermittently returned `[outdated - see the latest file content]` for `ChartController.cs` — verify exact line content with PowerShell `Get-Content` before/after edits.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (19-10-2026 10:53:30) Run the rebuilt `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm: (1) no vertical scrollbar at first launch; (2) after ~1–2 min, once the timeline outgrows the plots, **no** scrollbars appear and the window **does not** grow/shift; (3) the permanently-reserved slim dark track (13 px) at each plot's bottom and at the Charts tab's right edge looks fine.
+- [x] (19-10-2026 10:53:30) Run the rebuilt `bin\NvidiaMonitor\NvidiaMonitor.exe` and confirm the always-reserved 13 px track and no window growth - closed 22-10-2026 with the user's merge request (the work landed in `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) as-is)
 
 **Confirmed (user provided):**
 
@@ -213,12 +216,12 @@
 
 ### Subtasks / Plan
 
-- [ ] 1 — `ChartController.cs` (~L128): `_plotScroll.HorizontalScrollBarVisibility` `Auto` → `Visible`
-- [ ] 2 — `MainWindow.cs` (~L634): `_chartsScroll.VerticalScrollBarVisibility` `Auto` → `Visible`
-- [ ] 3 — `MainWindow.OnLayoutUpdated` (~L716): re-measure width `w - 48` → `w - 61`
-- [ ] 4 — Release build (0/0) + `dotnet publish` + `--print` smoke test
-- [ ] 5 — Refresh `ai/PROJECT_DESCRIPTION.md` (new T14 change-log entry; window-sizing bullets; `git_head` → T14 code commit) + dedicated `docs(ai)` commit on the branch
-- [ ] 6 — Push branch; user visual verification (pending)
+- [x] 1 — `ChartController.cs` (~L128): `_plotScroll.HorizontalScrollBarVisibility` `Auto` → `Visible` (done; in `4a86498`)
+- [x] 2 — `MainWindow.cs` (~L634): `_chartsScroll.VerticalScrollBarVisibility` `Auto` → `Visible` (done; in `4a86498`)
+- [x] 3 — `MainWindow.OnLayoutUpdated` (~L716): re-measure width `w - 48` → `w - 61` (done; in `4a86498`)
+- [x] 4 — Release build (0/0) + `dotnet publish` + `--print` smoke test (done; in `4a86498`)
+- [x] 5 — Refresh `ai/PROJECT_DESCRIPTION.md` (new T14 change-log entry; window-sizing bullets; `git_head` → T14 code commit) + dedicated `docs(ai)` commit on the branch (done; in `368ddda`)
+- [x] 6 — Push branch; user visual verification (pending) (done: pushed; verification closed 22-10-2026 with the merge request)
 
 ### Full Context Notes for AI Agents
 
@@ -240,13 +243,13 @@
 
 ## Task T13: Compact legend, GPU device list (top-right), fit-height fix
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 17-10-2026 21:44:41
-- **Last Updated**: 17-10-2026 22:05:00
+- **Last Updated**: 22-10-2026 09:30:00
 - **Time Spent**: 20m
-- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
-- **Commit(s)**: pending
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height) - merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026
+- **Commit(s)**: [f212f7a](https://github.com/HectorBravo/nvidia_app/commit/f212f7ac593d5d1c12742158112c4c5982e11273) (code) + [c56dd22](https://github.com/HectorBravo/nvidia_app/commit/c56dd2251b69c294065512231d15c2e2f8679d37) (index); merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3)
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (17-10-2026, after running the T12 build): (1) the per-GPU ` [idx: name]` text in the chart **legends** (white) and **hover readouts** (red) "takes up too much space" → remove it again (the % readouts and white legend stay); (2) add a **separate list of devices** at the **top-right of the window**; (3) the startup **height** is still miscalculated — the window opens too short, so a vertical scrollbar is visible until the user grows the window; (4) "the scroll bar looks great now" → green slide scrollbars stay as-is.
@@ -255,13 +258,13 @@
   - Keep-vs-remove decision: `GpuMetricSample.GpuName` was only used by the legend text → **removed**; `MemoryTotalBytes` / `PowerCapWatts` (also added in T11) feed the **% denominators** via `ChartSpec.PctBase` → **kept**.
   - **Device list**: new right column in the header row; one row per GPU: 10×10 rounded swatch in `MetricChart.Palette[i]` (made `public`) + muted `cuda:N` + card name; rebuilt on every snapshot (`ApplySnapshot` → `UpdateDevicesPanel`).
   - **Fit-height fix** (`OnLayoutUpdated`): (a) tab strip now read from the `TabControl` template part `PART_HeaderPanel` (the first item container under-reported ~15 px while unselected); (b) chart content re-measured at the realised width (window − 48 px) in addition to the infinite-width pass, so wrapped chart-header rows count their true height; (c) header row = `max(header, devices)`; (d) slack 12 → 20 px.
-  - Branching: `main` is at `7133e7d` (T12 final log). The T13 branch is created from it; the user's uncommitted `ChartController.cs` is **adopted into** the T13 code commit.
+  - **Branching**: `main` was at `7133e7d` (T12 final log) when this branch was created; the T13-T16 stack (T13 `f212f7a`/`c56dd22`, T14 `4a86498`/`368ddda`, T15 `1e61324`/`3f5d657`, T16 `389de9c`/`ac9d3e5`) merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026. The user's uncommitted `ChartController.cs` was **adopted into** the T13 code commit.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (17-10-2026 21:57:00) Visually verify on the new build: (1) legend/hover show `value unit (NN %) [pcie]` with **no** `idx: name` text; (2) the top-right-of-window device list (colour swatch + `cuda:N  card name`); (3) **no** vertical scrollbar on first launch.
+- [x] (17-10-2026 21:57:00) Visually verify on the new build: (1) legend/hover without the `idx: name` text; (2) the top-right device list (swatch + `cuda:N` + card name); (3) no vertical scrollbar at first launch. - closed 22-10-2026 with the user's merge request
 
 **Confirmed (user provided):**
 
@@ -278,7 +281,7 @@
 - [x] 6 — `MainWindow.OnLayoutUpdated`: fit-height fix (strip from template part, measure at realised width, `max(header, devices)`, slack)
 - [x] 8 — Build full solution Release (0 errors / 0 warnings) + publish + `--print` smoke test (exit 0, 3 GPUs, 17-10-2026 ~22:03)
 - [x] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch (done: `c56dd22` for T13, `368ddda` for T14)
-- [ ] 10 — Push branch; final log commit on `main` after the user merges
+- [x] 10 — Push branch; final log commit on `main` after the user merges (done: pushed; the T13-T16 stack merged into `main` in [6e77b73](https://github.com/HectorBravo/nvidia_app/commit/6e77b7366d83610970906b2c226c2180f620c2a3) on 22-10-2026; final log committed in [pending final close-out commit])
 
 ### Full Context Notes for AI Agents
 
@@ -1145,6 +1148,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | fix | 6/6 | 28m |
+| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | fix | 10/10 | 20m |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | feat | 6/6 | 1h 2m |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | feat | 7/7 | 2h 20m |
 | 13-10-2026 00:45:40 | [T10: Chart polish: 0m line format, unclip linear max, reliable follow-right, fresh exes only](#task-t10-chart-polish-0m-line-format-unclip-linear-max-reliable-follow-right-fresh-exes-only) | feat | 6/6 | 28m |
