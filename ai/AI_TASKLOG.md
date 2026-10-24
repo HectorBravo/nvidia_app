@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 0/8 | 0m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
 | 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
@@ -15,6 +16,68 @@
 > 14 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+
+## Task T17: Add build .bat: compile + publish executables to bin/
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
+- **Created**: 24-10-2026 21:08:57
+- **Last Updated**: 24-10-2026 21:10:00
+- **Time Spent**: 0m
+- **Branch**: [`chore/ai-add-build-bat`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-add-build-bat)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - User request: a Windows `.bat` (one double-click) that compiles the solution and produces the runnable executables in `bin\` — i.e. the README "Build" + "Produce the runnable executables" steps in a single script.
+  - New root file `build_executables.bat` (sibling of `build_release.ps1`), pure ASCII + CRLF: (1) `dotnet build nvidia_app.sln -c Release`; (2) abort (`exit /b 1`) if `NvidiaMonitor.exe` is still running — it locks `bin\NvidiaMonitor\NvidiaMonitor.dll`; (3–4) `dotnet publish` both apps into `bin\NvmlTest` / `bin\NvidiaMonitor` (framework-dependent, .NET 8 runtime required on the run machine).
+  - `ai/PROJECT_DESCRIPTION.md` was STALE at task start (`git_head` 389de9c vs `main` HEAD 25fbbc2) → re-pointed in the pre-flight commit (T16 close-out pattern); the full refresh (adding the .bat to the map) lands on the branch as the post-code commit.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (24-10-2026 21:10:00) Pushing `chore/ai-add-build-bat` to origin is still blocked by the broken git credentials (same blocker as the T13–T16 close-out). Once fixed: confirm, and I will push; after you merge the branch into `main` I will do the final log + `--ff-only` fast-forward + re-push of the branch.
+
+**Confirmed (user provided):**
+
+None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Pre-flight: re-point project index on `main` (dedicated `docs(ai):` commit)
+- [ ] Subtask 2 — Update `ai/AI_TASKLOG.md` with this entry; commit on `main`
+- [ ] Subtask 3 — Create branch `chore/ai-add-build-bat` from `main`
+- [ ] Subtask 4 — Write `build_executables.bat` (pure ASCII, CRLF)
+- [ ] Subtask 5 — Verify: run the .bat (build 0/0; both exes published; `--print` smoke)
+- [ ] Subtask 6 — Commit the .bat on the branch
+- [ ] Subtask 7 — Post-code project-index refresh (add the .bat to the map) + dedicated commit on the branch
+- [ ] Subtask 8 — Push branch (blocked: credentials) → user merges → final log + fast-forward + re-push
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh agent session can finish T17 without any other context.
+
+**Environment**
+- Windows, PowerShell 5.1 (26100.9711), non-admin (default). Repo root: `D:\Repos\nvidia_app`; remote: `https://github.com/HectorBravo/nvidia_app.git`.
+- Git identity per house rules: before each commit set `$env:GIT_AUTHOR_NAME="AI_bot"` and `$env:GIT_COMMITTER_NAME="AI_bot"` (PowerShell); never set `GIT_*_EMAIL` (the user's `git config user.email` applies) and never touch `git config` itself. Every commit message carries `[ai]` after the colon.
+
+**Repo / code state**
+- At task start: `main` @ `25fbbc2f912a6f9d9912178281c883abbacff207` (final log closing T13–T16; their code merged as `6e77b73`), working tree clean.
+- .NET 8; `nvidia_app.sln` = 4 projects: `HectorBravo.Nvidia.Contracts` (net8.0 lib), `NvmlCore` (net8.0 lib, P/Invoke `nvml.dll`), `NvidiaMonitor` (net8.0-windows, UseWPF, WinExe), `NvmlTest` (net8.0 Exe). `TreatWarningsAsErrors=true` on Contracts + NvmlCore; zero NuGet packages; `bin/` is git-ignored and only produced by `dotnet publish`.
+- The new file `build_executables.bat` (repo root, CRLF, pure ASCII — never add non-ASCII to it; cmd.exe codepage problems). Flow: `cd /d "%~dp0"` → `dotnet build nvidia_app.sln -c Release --nologo` (fail → `exit /b 1`) → guard `tasklist /fi "imagename eq NvidiaMonitor.exe" | findstr /i "NvidiaMonitor"` (if the dashboard is running, print a warning that it locks `bin\NvidiaMonitor\NvidiaMonitor.dll` and `exit /b 1`) → `dotnet publish src\NvmlTest -c Release -o bin\NvmlTest --nologo` → `dotnet publish src\NvidiaMonitor -c Release -o bin\NvidiaMonitor --nologo` (fail → `exit /b 1`) → summary of the produced exes.
+
+**Git flow (what happened / what is pending)**
+- On `main`, in order: (1) `docs(ai): [ai] refresh project index (T17 pre-flight)` — only the `PROJECT_INDEXER` block re-pointed (`git_head` → `25fbbc2…`, `last_indexed` → 24-10-2026); (2) `docs(ai): [ai] update task log before push (T17)`.
+- On branch `chore/ai-add-build-bat` (cut from `main`): (3) `chore(build): [ai] add build_executables.bat … (T17)`; (4) `docs(ai): [ai] refresh project index (T17)` — full refresh via the `hector-project_indexer` skill (`git_head` → commit (3); body: add the .bat to the §3 repo-root listing + change-log bullet).
+- **Pending (user action first)**: the user's git credentials for origin are broken (same blocker as the T13–T16 close-out; no push from this machine has succeeded this session). When the user confirms they are fixed: `git push origin chore/ai-add-build-bat`. After the user merges into `main`: final log update on `main` as the commit immediately after the merge (`docs(ai): [ai] update task log after push (T17)` — status done, real hashes of (3)+(4), final Time Spent), then `git fetch origin; git checkout chore/ai-add-build-bat; git merge --ff-only origin/main; git push --force-with-lease origin chore/ai-add-build-bat`. If they squash- or rebase-merge: fast-forward is impossible — leave the branch as-is, tell the user, nothing is lost.
+
+**Verification (performed before commit (3))**
+- The .bat runs end-to-end: build → 0 warnings / 0 errors; both exes published into `bin\`; smoke `bin\NvmlTest\NvmlTest.exe --print` and `bin\NvidiaMonitor\NvidiaMonitor.exe --print` exit 0 (dev box: 3 GPUs — 2× RTX 3090 + RTX 4070, driver 617.42).
+- Re-verifying is cheap: just run the .bat again — but if a dashboard instance is open it aborts with `exit /b 1` by design; close it first.
+
+**Encoding gotchas (they bit the previous session — do not repeat)**
+- `ai/AI_TASKLOG.md`: UTF-8 **with BOM** (line 1 = BOM + "AI Tasks Log" — never modify it), CRLF on disk (`i/lf w/crlf`, autocrlf=true). Edit only with the `editor` tool (UTF-8 safe); PowerShell 5.1 reads BOM-less UTF-8 as cp1252 and corrupts em-dashes/arrows — never drive this file through a PS 5.1 script. Keep `\r\n` when inserting lines.
+- After any edit of the log file, verify the first 3 bytes are still the BOM (`EF BB BF`) before committing.
 
 ## Task T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder
 
