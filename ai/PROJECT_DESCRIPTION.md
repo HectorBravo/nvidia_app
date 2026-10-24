@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-24 21:10:00
-git_head: 25fbbc2f912a6f9d9912178281c883abbacff207
+last_indexed: 2026-10-24 21:18:00
+git_head: 079eb3f2ad0cc012a1a5bceadc32a0ab3c27f653
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -47,7 +47,10 @@ unavailable it degrades to a friendly message (UI) or a non-zero exit code (CLI)
 
 ## 3. Solution & Directory Map
 Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
-`build_release.ps1`, `.gitignore`, and the git-ignored `bin/` (publish output).
+`build_executables.bat` (one-click: `dotnet build` the solution, then `dotnet publish`
+both apps into the git-ignored `bin\`; aborts if the dashboard is still running,
+because it locks its own DLLs), `build_release.ps1`, `.gitignore`, and the
+git-ignored `bin/` (publish output).
 
 | Path | TFM | Output | Namespace | Project refs |
 |------|-----|--------|-----------|--------------|
@@ -97,10 +100,11 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
 
 ## 5. Build / Run / Test
 ```powershell
-# Build the whole solution (or: powershell -File build_release.ps1 → %TEMP%\full_build.log)
+# Build the whole solution (or: build_executables.bat, or powershell -File build_release.ps1 → %TEMP%\full_build.log)
 dotnet build nvidia_app.sln -c Release
 
-# Publish runnable executables into the git-ignored repo-local bin/ (framework-dependent)
+# Publish runnable executables into the git-ignored repo-local bin/ (framework-dependent;
+# build_executables.bat = the build above + these two publishes in one double-click)
 dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # → bin\NvmlTest\NvmlTest.exe
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # → bin\NvidiaMonitor\NvidiaMonitor.exe
 
@@ -237,6 +241,11 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 
 ## 11. Change Log
 - 2026-10-20 — **T16: SM utilization (clamped at 100) + memory-clock chart + chart reorder** (`GpuSnapshot`/`GpuMetricSample`/`NvmlCoreService`/`MainWindow`/`App`/`NvmlProbe`/`SmiFormatter`): per-GPU **SM utilization** = `min(100, Σ per-process smUtil)` read from the two NVML process-utilization APIs — the legacy two-phase `nvmlDeviceGetProcessUtilization` is **primary** (the old batch-first order died on `rc=25` before ever reaching it); the batched `nvmlDeviceGetProcessesUtilizationInfo` (version `24 | (1 << 24)`) is the fallback; the read loop counts the driver-**written** records. The dashboard now drives **9 charts**: GPU-util, mem-util, mem-used, temp, **SM-util** (new; `ChartSpec.Percent` 0–100 axis), power, **PCIe** (moved down), GPU-clock, **mem-clock** (new); the headless `--print` line prints `sm=`. NvmlTest gained `NvmlProbe.cs` (`--probe`) and an `SM` column. `NvmlTypes.ProcessesUtilizationVersion` corrected 16777264 → 16777240. Verified: SM 73 % under load, 0–4 % idle.
+- 2026-10-24 — **Build .bat (T17)**: new root script `build_executables.bat` — one-click
+  `dotnet build` of the whole solution (Release) followed by `dotnet publish` of
+  `NvmlTest` and `NvidiaMonitor` into the git-ignored `bin\`; by design it aborts with an
+  explanatory message while `NvidiaMonitor.exe` is running (the live app locks its DLLs).
+  Pure ASCII + CRLF. The README's manual build/publish commands remain the source of truth.
 - 2026-10-19 — **Index re-point (T16 pre-flight)**: `git_head` `72c7a1d` → `99ae2d0` and
   `last_indexed` bumped. The delta is **task-log metadata only** (T15's final log commit), so
   every section below remains accurate as-is; the next refresh lands on the T16 branch and
