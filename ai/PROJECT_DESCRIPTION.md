@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-20 10:15:00
-git_head: 389de9c96e4c1db1e22e8146ec529e2f9f59dc90
+last_indexed: 2026-10-24 21:10:00
+git_head: 25fbbc2f912a6f9d9912178281c883abbacff207
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
