@@ -1,15 +1,185 @@
-﻿# AI Tasks Log
+﻿ AI Tasks Log
 
 ## Summary
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/6 | 14m | none |
-| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 8/10 | 20m | none |
+| 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 2/11 | 9m | none |
+
+| 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
+| 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 7/10 | 20m | none |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 12 completed task(s) - [View completed tasks](#completed-tasks)
+> 13 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 19-10-2026 17:39:28
+- **Last Updated**: 20-10-2026 10:10:00
+- **Time Spent**: 9m (this resumption only; the 19-10-2026 17:39–20:29 sessions' time was lost to context breaks and is not recorded)
+- **Branch**: [`feat/ai-add-sm-metric-and-memory-clock-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-add-sm-metric-and-memory-clock-chart)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **User request**: (1) add an **`sm`** metric — the SM (streaming-multiprocessor) utilization shown in the `sm` column of `nvidia-smi dmon`; (2) add a **Memory Clock** chart immediately after **GPU Clock**; (3) reorder existing charts: **PCIe Bandwidth** before **GPU Clock**, **Memory Used** after **Memory Utilization**; (4) print **`sm=`** in the headless `--print` console line.
+  - NVML has **no** device-level "SM utilization" call: the dmon number is the **sum of per-process `smUtil`** from the process-utilization APIs (the driver samples at ~1 Hz and only reports non-idle processes).
+  - **User decision (19-10-2026 17:40)**: although dmon's `sm` can exceed 100 with concurrent processes, **the reported value is clamped to 100%** (`sm = min(100, Σ smUtil)`).
+  - Memory clock was already collected (`GpuSnapshot.MemoryClockMhz` via `NVML_CLOCK_MEM`) — only the plumbing into `GpuMetricSample` + the new chart was needed.
+  - Two P/Invoke surfaces in `ref/nvml.h` (13.4.92): the newer **`nvmlDeviceGetProcessesUtilizationInfo`** (one call, batch array) and the older **`nvmlDeviceGetProcessUtilization`** (two-phase size probe). The engine calls the **per-process one first** (fixed 20-10-2026), with the batched API as fallback for a driver that lacks the symbol.
+  - **Root cause of the 0% SM reading (fixed 20-10-2026 10:01–10:10)**: the old order tried the batched API first; its probe returned `rc=25 = NVML_ERROR_ARGUMENT_VERSION_MISMATCH` because the container version constant was 48-based while the 24-byte v1 container encodes as `24 | (1 << 24)`, and the reader then **returned 0 before the legacy fallback could ever run**. Fix in `NvmlCoreService.ReadSmUtilization`: legacy path is now first (extracted into `ReadSmUtilizationLegacy`), batched is the fallback; the sample loop counts the driver's *written* records instead of the requested `n`. `NvmlTypes.ProcessesUtilizationVersion` corrected `16777264 → 16777240` (`24 | (1 << 24)`).
+  - **The batch API IS usable with the right version**: on driver 617.42 / NVML 13.617.42, `nvmlDeviceGetProcessesUtilizationInfo` accepts `version = 24 | (1 << 24) = 0x01000018` (probe: rc=7, count=72) and rejects every 16-bit-major encoding (`0x000103F8`, `0x000203F8`, `0x001803F8`, …) and the 32/48-byte variants (rc=25). The full sweep is in the probe's candidate list (`src/NvmlTest/NvmlProbe.cs`, `--probe`).
+  - **Verified end-to-end** (`NvmlTest --print` while `nvidia-smi dmon -s u -d 1` ran): the SM column reads **73 %** on the loaded GPU and **0–4 %** on idle GPUs (was stuck at 0 %). An `SM` column (`WSm = 5`) was added to `NvmlTest/SmiFormatter.cs` for this verification (header/dashes/value rows; 80-column budget still holds) — superseding the "deliberately not touched" note below; trivially removable if unwanted.
+  - Final chart order (9): GPU Util, Mem Util, **Mem Used** (moved up), Temp, **SM Util** (new, before Power), Power, **PCIe** (moved down), GPU Clock, **Mem Clock** (new).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (19-10-2026 17:39:28) Run the new build and visually verify: (1) the 9 charts in the new order; (2) the SM chart tracks `nvidia-smi dmon`'s `sm` and never exceeds 100; (3) the Mem-Clock chart draws the memory clock; (4) the `--print` line shows `sm=`.
+
+**Confirmed (user provided):**
+
+- (19-10-2026 17:39:28) `sm` aggregation → user first chose "exact dmon behaviour: sum of per-process `smUtil` (can exceed 100%)" and then corrected: **"value can't exceed 100%"** → final: **clamped at 100**.
+
+### Subtasks / Plan
+
+- [x] 1 — Pre-flight: re-point `ai/PROJECT_DESCRIPTION.md` (`git_head` `72c7a1d` → `99ae2d0`, T16 pre-flight) + dedicated `docs(ai):` commit
+- [x] 2 — Log first: this T16 entry as a dedicated `docs(ai):` commit on the current branch (before the code push)
+- [ ] 3 — Create branch `feat/ai-add-sm-metric-and-memory-clock-chart` from the current branch tip
+- [ ] 4 — Contracts: `GpuSnapshot.SmUtilizationPct`; `GpuMetricSample.SmUtilizationPct` + `MemoryClockMhz`
+- [ ] 5 — NvmlCore: three process-utilization structs (`NvmlTypes`) + two delegates (`NvmlDelegates`)
+- [x] 6 — NvmlCore: `ReadSmUtilization` (per-process first, batched fallback; clamped at 100; 0 on NOT_FOUND/NOT_SUPPORTED; counts *written* samples) wired into `GpuSnapshot` — restructured 20-10-2026 after the `rc=25` diagnosis (batch-first never reached the legacy fallback)
+- [ ] 7 — `MainWindow`: feed the two new sample fields; 9-chart `_specs` reorder; SM + Mem-Clock specs; generalize the 0–100 percent axis (`ChartSpec.Percent`)
+- [ ] 8 — `App.cs`: `sm=` in the `--print` line
+- [ ] 9 — Build the sln (0/0) + verify `--print` against live `nvidia-smi dmon`
+- [ ] 10 — Post-code: refresh `ai/PROJECT_DESCRIPTION.md` (indexer steps 2–4) + commit on the branch
+- [ ] 11 — Push the branch; after the user merges: final log commit on the user's current branch + fast-forward the AI branch (`--ff-only` + `--force-with-lease`)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery source for **T16** (SM-utilization metric + memory-clock chart + chart reorder). All paths relative to `D:\Repos\nvidia_app`.
+
+**Repo / branch state (19-10-2026 17:39)**
+- The user's **current branch** is `feat/ai-compact-legend-device-list-fit-height` (a long-lived AI branch; HEAD `99ae2d0`, clean tree). T13, T14, T15 are stacked on it, **not yet merged into `main`**; **T13 is still `in_progress` (7/10)** — its last subtask (final log on `main`) awaits the user's merge. This task must **not** merge into `main` itself.
+- T16 code goes on a **new** branch `feat/ai-add-sm-metric-and-memory-clock-chart` created from that tip (user approved in the plan message, then said "go").
+- Only `ai/AI_TASKLOG.md` may be committed/pushed directly to the user's current branch. All other commits land on the AI branch.
+- Git identity for every AI commit: `GIT_AUTHOR_NAME=AI_bot` + `GIT_COMMITTER_NAME=AI_bot` env vars (PowerShell: `$env:GIT_AUTHOR_NAME="AI_bot"; $env:GIT_COMMITTER_NAME="AI_bot"`); **never** set `*_EMAIL` (user's `git config user.email` governs) and **never** modify `git config`. Commit messages carry `[ai]` after the colon, e.g. `docs(ai): [ai] …`, `feat(monitor): [ai] …`.
+
+**Contracts (exact insertion points)**
+- `src/HectorBravo.Nvidia.Contracts/GpuSnapshot.cs` (record, ~69 lines): Utilization section = `GpuUtilizationPct` / `MemoryUtilizationPct` (lines 18–20) → add `public int SmUtilizationPct { get; init; }` after `MemoryUtilizationPct`. (`MemoryClockMhz` already exists, line 48 — unchanged.)
+- `src/HectorBravo.Nvidia.Contracts/GpuMetricSample.cs`: charted metrics at lines 17–34 → add `SmUtilizationPct` and `MemoryClockMhz` after `MemoryUtilizationPct`.
+- `GpuHistory` is a ring buffer (capacity 720 ≈ 12 min @ 1 Hz); no change.
+
+**NvmlCore (the only new P/Invoke in this task)**
+- `NvmlTypes.cs` (append; all `[StructLayout(LayoutKind.Sequential)]`; C# default padding verified to match the C x64 layouts — no explicit padding fields needed):
+  - `ProcessUtilizationSample` { `uint Pid; ulong TimeStamp; uint SmUtil; uint MemUtil; uint EncUtil; uint DecUtil; }` — 32 B; the **old** `nvmlProcessUtilizationSample_t` (pid, ts, sm, mem, enc, dec).
+  - `ProcessUtilizationInfo` { `ulong TimeStamp; uint Pid; uint SmUtil; uint MemUtil; uint EncUtil; uint DecUtil; uint JpgUtil; uint OfaUtil; }` — 40 B; `nvmlProcessUtilizationInfo_v1_t` (old layout + jpg/ofa).
+  - `ProcessesUtilizationInfo` { `uint Version; uint ProcessSamplesCount; ulong LastSeenTimeStamp; IntPtr ProcUtilArray; }` — 32 B; `nvmlProcessesUtilizationInfo_v1_t`. **Version = 16777248** (`= 32 | (1 << 24)`, per the `NVML_STRUCT_VERSION` macro at nvml.h:141–142, which is `sizeof | (ver << 24U)`).
+- `NvmlDelegates.cs` (static class; delegates at lines 16–100) — add:
+  - `public delegate int DeviceGetProcessUtilization(IntPtr device, IntPtr samples, IntPtr count, ulong lastSeenTimestamp);`
+  - `public delegate int DeviceGetProcessesUtilizationInfo(IntPtr device, ref NvmlTypes.ProcessesUtilizationInfo info);`
+- `NvmlCoreService.cs` (804 lines): new private `ReadSmUtilization(IntPtr dev)` near the other per-device readers:
+  1. Resolve `nvmlDeviceGetProcessesUtilizationInfo` via `Resolve<…>` (returns null when the export is missing). Call with `Version = 16777248, ProcessSamplesCount = 0, ProcUtilArray = IntPtr.Zero` → on `InsufficientSize` (7) read `info.ProcessSamplesCount` (cap it, e.g. 256), `Marshal.AllocHGlobal(40 * n)`, re-call with the pointer → on `Success` (0) walk the buffer at stride 40 (`Marshal.PtrToStructure<ProcessUtilizationInfo>`) and sum `SmUtil`; free in `finally`. `Success` with count 0 → 0.
+  2. If the new function is unresolved, fall back to `nvmlDeviceGetProcessUtilization`: first call `(dev, IntPtr.Zero, countPtr, 0)` → `InsufficientSize` gives the required count (or `NotFound` (6) when no process was active in the last sample period → 0); allocate `32 * n`, second call with the count → sum `SmUtil` at stride 32.
+  3. Any other error (`NotSupported` (3) — e.g. MIG, `FunctionNotFound` (13)) → return 0 (N/A-style degradation — one bad read must never abort the whole snapshot).
+  4. **Clamp the sum at 100** (user decision) in both paths.
+  - Wire into the `GpuSnapshot` initializer (lines 385–450): `SmUtilizationPct = ReadSmUtilization(dev),` next to `GpuUtilizationPct` (line 400).
+  - `Resolve<T>(string)` returns the function or null; `Safe(fn, name, action)` wraps a call (existing pattern: `rc = Safe(fn, "name", () => fn(…))` then `if (rc == NvmlErr.X)`).
+  - **`TreatWarningsAsErrors=true`** in `Contracts` and `NvmlCore` — new code must compile warning-free.
+
+**MainWindow (`src/NvidiaMonitor/MainWindow.cs`, ~950 lines)**
+- `GpuMetricSample` init (lines 271–293): add `SmUtilizationPct = g.SmUtilizationPct,` and `MemoryClockMhz = g.MemoryClockMhz,` (one argument per line, matching the style).
+- `ChartSpec` record (lines 468–475: `Title, Unit, Decimals, Selector, LogScale=false, Pcie=false, Pct=false, MinCeiling=0, PctBase=null`): add `bool Percent = false` (fixed 0–100 axis).
+- `_specs` block (lines 596–625; currently GPU Util, Mem Util, Temp, Power, GPU Clock, Mem Used, PCIe) → **9 specs in this order**: GPU Util (`Percent: true`), Mem Util (`Percent: true`), Mem Used (moved up; keep `Pct: true, PctBase: s.MemoryTotalBytes`), Temp (`MinCeiling: 100`), **SM Util** (new: `"SM Utilization (%)"`, unit `"%"`, decimals 0, `i => _samples[i]?.SmUtilizationPct ?? 0`, `Percent: true`, `MinCeiling: 100`), Power, **PCIe** (moved down; keep `LogScale: true, Pcie: true`), GPU Clock, **Mem Clock** (new: `"Memory Clock (MHz)"`, unit `" MHz"`, `i => _samples[i]?.MemoryClockMhz ?? 0`).
+- `_runningMax` (line 548; currently `{ 100, 100, 100, 400, 2100, 16384, 32 }`): remap to the new order → `{ 100, 100, 16384, 100, 100, 400, 32, 2100, 1600 }` (Mem Used 16384; SM 100; PCIe 32; GPU Clock 2100; Mem Clock 1600 — covers HBM3/GDDR6X; `UpdateCharts` still auto-grows ceilings above these seeds).
+- `UpdateCharts()` (lines 469–480): replace the positional hack `c < 2 ? 100 : …` (line 474) with `spec.Percent ? 100 : …` (keep the `spec.LogScale` branch for PCIe). The comment at line 46 says index order matches `_charts`/`_specs` — keep it true.
+- The per-chart `SetSeries` call site in the `UpdateCharts` loop passes the spec's fields; thread the new `Percent` flag through if `SetSeries` consumes it (check how `Pct`/`PctBase` flow — same mechanism).
+
+**Console line (`src/NvidiaMonitor/App.cs`)**
+- `RunHeadless` (lines 69–73): in the per-GPU `--print` line, insert `sm={FmtPct(g.SmUtilizationPct)} ` immediately after `util={FmtPct(g.GpuUtilizationPct)} `.
+
+**Deliberately NOT touched**
+- ~~`NvmlTest` table (`SmiFormatter.cs`, 80-column budget)~~ — **superseded 20-10-2026**: an `SM` column (const `WSm = 5`) was added to `SmiFormatter.cs` (header row, dashes row, value row) to verify the fixed metric in `--print` output; the 80-column budget still holds. The monitor's `--print` line (subtask 8) remains the user-facing console output.
+- `GpuPollingService`, `Theme`, `IGpuPollingService`, `GpuProcessInfo`, `SystemSnapshot` — unchanged.
+
+**Verification**
+- `dotnet build nvidia_app.sln` (Contracts/NvmlCore must be warning-free; both target `net8.0`).
+- `dotnet run --project src/NvidiaMonitor -c Release -- --print` → expect `sm=NN` in the GPU line; compare with `nvidia-smi dmon -c 3` (our value must equal `min(100, dmon's sm)`; with a single busy process they match exactly).
+- Launch the dashboard and confirm: 9 charts in the new order; the SM chart tracks dmon; the Mem-Clock chart draws (usually a flat line at the card's memory clock); legend/max readouts behave like the existing 0–100 charts.
+
+**Close-out flow (git rules)**
+- On the current branch, before the code: (1) index re-point commit `docs(ai): [ai] refresh project index (T16 pre-flight)`; (2) task-log commit `docs(ai): [ai] update task log before push (T16)`.
+- On the new branch: one code commit `feat(monitor): [ai] add SM-utilization metric (clamped), memory-clock chart, chart reorder (T16)` + a post-code index-refresh commit `docs(ai): [ai] refresh project index (T16)`; **push** `origin feat/ai-add-sm-metric-and-memory-clock-chart` (the push is part of the deliverable).
+- **After the user merges the branch** (they merge T13–T16 together into `main`): final log update (status done, real commit hash, real Time Spent) as the **next commit on the user's then-current branch** (`docs(ai): [ai] update task log after push (T16)`), then `git fetch origin`, `git checkout feat/ai-add-sm-metric-and-memory-clock-chart`, `git merge --ff-only origin/<current-branch>`, `git push --force-with-lease origin feat/ai-add-sm-metric-and-memory-clock-chart`. If the user **squash-merges or rebases**, the fast-forward is impossible — leave the branch as-is and tell them (nothing is lost; their branch carries the final log).
+- T15's own final-log subtask (9) and T13's subtask (10) remain pending on that same merge — handle them in the same close-out pass if requested.
+
+## Task T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 19-10-2026 14:20:00
+- **Last Updated**: 19-10-2026 14:38:00
+- **Time Spent**: 18m
+- **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
+- **Commit(s)**: [72c7a1d](https://github.com/HectorBravo/nvidia_app/commit/72c7a1d3948bc96b802a74ad4825d45ac84a7fc6)
+- **Blockers**: none
+- **Findings & Notes**:
+  - **USER REQUEST** (19-10-2026, after running the T12/T13/T14 build): (1) the **numbers on the right of the graphs** (right-side Y-axis value labels) look **gray** → make them **white**; (2) the **max value** text at the right of the legend → **bright yellow** and the **same font size as the legend** (12 px); (3) PCIe bandwidth chart legend: **extra space** between the speed and the PCI config (`4.0GB/s  [1.0 x16]`) → one space; (4) the graphs are **~25 % taller than the max value** ("wasting space") → the scale should accommodate the value up to the maximum (max at the top edge).
+  - All four live in `src/NvidiaMonitor/ChartController.cs` (+ one new `Theme.Yellow` brush, `#ffe14d`, in `src/NvidiaMonitor/Theme.cs`).
+  - (1) `DrawAxisTick` label `Theme.Muted` (#8a93a6) → `Theme.White` (#ffffff).
+  - (2) `_maxText` ("max N") `Theme.Muted` / 10 px → `Theme.Yellow` / 12 px (the legend's font size).
+  - (3) `"  ["` → `" ["` in both the legend and the red hover readout (the readout mirrors the legend format, so both stay identical).
+  - (4) removed the T9.5 `TopPad = 26` headroom: `ValueToY` (linear and log) now maps max → `y = 0` (full `PlotH = 128` plot height); the topmost tick label is clamped to `Math.Max(y - 7, 1)` so it is never clipped (the T9.5 clipping case, re-solved without wasting height). The polyline peak at y = 0 loses only ~0.8 px of its round cap to the canvas clip.
+  - Kept on the **same, still-unmerged** T13/T14 branch — one merge for the user; T13 subtask 10 (final log on `main`) stays pending until that merge.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (19-10-2026 14:20:00) Visually verify on the new build: (1) right-side axis numbers are white; (2) the "max N" text is bright yellow at the legend's font size; (3) PCIe legend/hover reads `value unit [gen width]` with a single space; (4) the max value sits at the top edge (no ~25 % empty band) with the topmost label still fully visible.
+
+**Confirmed (user provided):**
+
+- (19-10-2026 14:20:00) The four chart-polish requests quoted in Findings (verbatim user message, 19-10-2026).
+
+### Subtasks / Plan
+
+- [x] 1 — Log first: T15 entry + dedicated `docs(ai):` commit before the code push (`b62b1a6`)
+- [x] 2 — `Theme.cs`: add `Yellow` brush (`#ffe14d`)
+- [x] 3 — `ChartController._maxText`: yellow + font size 10 → 12
+- [x] 4 — `ChartController.DrawAxisTick`: label → `Theme.White`
+- [x] 5 — `ChartController` legend + hover readout: single space before the `[gen width]` config
+- [x] 6 — `ChartController`: remove `TopPad` (full-height scale) + clamp the topmost tick label + comments
+- [x] 7 — Build the sln (Debug) 0/0 + publish `bin/NvidiaMonitor` (19-10-2026 ~14:33)
+- [x] 8 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer, `99afdfe`) + commit on the branch
+- [ ] 9 — Branch pushed with T15; final log commit on `main` after the user merges (T13/T14/T15) — pending
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery source for this task. All paths relative to `D:\Repos\nvidia_app`.
+
+- **State when written** (19-10-2026 14:2x): branch `feat/ai-compact-legend-device-list-fit-height`, HEAD `368ddda` (T14 index refresh), tree clean; `main` @ `7133e7d`. T13 at 8/10 (subtask 10 = final log on `main` after the user merges; T14 landed as `4a86498` + `368ddda`). This task adds T15 **on top of the same unmerged branch** (one user merge for T13+T14+T15).
+- **T15 edit map** (pre-edit line numbers; `ChartController.cs` = 969 lines, `Theme.cs` = 274 lines):
+  - `src/NvidiaMonitor/Theme.cs` L21: after the `MutedColor` line add `public static readonly Color YellowColor  = Hex("#ffe14d"); // bright yellow — the "max" readout (T15)`; L34: after the `Muted` brush add `public static readonly Brush Yellow  = Frozen(YellowColor);` (keep the surrounding column alignment).
+  - `src/NvidiaMonitor/ChartController.cs` L98: delete the `TopPad = 26` const (headroom gone).
+  - L102-108 `_maxText`: `Foreground = Theme.Muted` → `Theme.Yellow`; `FontSize = 10` → `12`; one-line comment (bright yellow, same size as the legend — T15).
+  - L303-320 `ValueToY`: linear → `return PlotH * (1.0 - value / ceiling);`; log → drop `span`/`TopPad`: `return PlotH * (1 - Math.Clamp(frac, 0, 1));`; doc comment rewritten (max at y = 0, full height).
+  - L497-514 `DrawAxis`: drop the `topY` local; linear tick y becomes `PlotH * (1 - i / 5.0)` (topmost tick i = 5 → y = 0); log branch unchanged (`ValueToY` does the scaling).
+  - L526-536 `DrawAxisTick` label: `Foreground = Theme.Muted` → `Theme.White`; `Canvas.SetTop(lbl, y - 7)` → `Canvas.SetTop(lbl, Math.Max(y - 7, 1))` (+ comment).
+  - L591-593 hover readout: `text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";` → single space.
+  - L747-752 `UpdateLegend`: `legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";` → single space.
+- **Why the label clamp (and not just TopPad=0)**: `_axisCanvas` is top-aligned in `_axisScroll` and the ScrollViewer's content presenter clips, so a label placed at y = -7 (max tick at y = 0) would draw with its top ~7 px cut off. Clamp to y ≥ 1; the polyline peak at y = 0 loses only ~0.8 px of its 1.6 px round cap (negligible, and exactly what "reaches the top edge" means).
+- **Do NOT regress**: minute lines / t = 0 marker still span y 0..PlotH (unchanged); only the log/PCIe chart draws horizontal gridlines (so only the PCIe chart shows a hairline gridline on the very top edge); the `Math.Clamp(yv, 0, PlotH)` in `Redraw` stays; do **not** reintroduce any top headroom — the user explicitly rejected the 26 px band (T9.5's original reason for `TopPad` was clipping, which the clamp now solves).
+- **Encodings**: all four files are `i/lf w/crlf` (autocrlf=true) — on-disk copies are CRLF; multi-line exact-match edits must carry `\r\n`. `AI_TASKLOG.md` has a UTF-8 BOM (never touch line 1). Single-line anchors without trailing-newline matching are safest.
+- **Build/verify**: `dotnet build nvidia_app.sln -c Debug` (expect 0/0). For the user's running copy: `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` (stop a running `NvidiaMonitor.exe` first — it locks the DLL).
+- **Commit sequence on the branch**: (a) this log as `docs(ai): [ai] update task log before push (T15)`; (b) code as `feat(ui): [ai] white axis labels, yellow max readout, tight PCIe legend, full-height y-scale (T15)`; (c) `docs(ai): [ai] refresh project index (T15)`; (d) final log as `docs(ai): [ai] update task log (T15 done)`; then `git push origin feat/ai-compact-legend-device-list-fit-height`.
+- **Index refresh (subtask 8)**: use the `hector-project_indexer` skill; body spots to verify in its output: right-axis paragraph (~L183-187, drop the `TopPad = 26` wording → full-height scale, max at y = 0, top label clamped, labels white); legend paragraph (~L202-207, add bright-yellow 12 px `max N` readout); PCIe-legend paragraph (~L190-192, single-space note); a new change-log bullet above the T13 one (~L227); the `PROJECT_INDEXER` block (`git_head` → T15 code commit, `last_indexed` → now).
+- **After the user merges to `main`**: final log commit on `main` (T13 → 10/10 done with real hashes; close T13/T14/T15 pending confirmations; T15 done), push `main`, then `git fetch origin; git checkout feat/ai-compact-legend-device-list-fit-height; git merge --ff-only origin/main; git push --force-with-lease origin feat/ai-compact-legend-device-list-fit-height` (squash-merge/rebase exception: skip the ff, leave the branch as-is, tell the user).
 
 ---
 
@@ -76,7 +246,7 @@
 - **Last Updated**: 17-10-2026 22:05:00
 - **Time Spent**: 20m
 - **Branch**: [`feat/ai-compact-legend-device-list-fit-height`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-compact-legend-device-list-fit-height)
-- **Commit(s)**: [`f212f7a`](https://github.com/HectorBravo/nvidia_app/commit/f212f7a2045c3fc34d4c1abf49daf5945df6cb2e) (code) + [`c56dd22`](https://github.com/HectorBravo/nvidia_app/commit/c56dd22752535577db4c82d79b7743e0ebc09290) (index) — on the branch, not merged yet (T14 is stacked on it)
+- **Commit(s)**: pending
 - **Blockers**: none
 - **Findings & Notes**:
   - **USER REQUEST** (17-10-2026, after running the T12 build): (1) the per-GPU ` [idx: name]` text in the chart **legends** (white) and **hover readouts** (red) "takes up too much space" → remove it again (the % readouts and white legend stay); (2) add a **separate list of devices** at the **top-right of the window**; (3) the startup **height** is still miscalculated — the window opens too short, so a vertical scrollbar is visible until the user grows the window; (4) "the scroll bar looks great now" → green slide scrollbars stay as-is.
@@ -107,7 +277,7 @@
 - [x] 5 — `MainWindow`: add `_devices` panel at the window's top-right (header row) + `UpdateDevicesPanel`
 - [x] 6 — `MainWindow.OnLayoutUpdated`: fit-height fix (strip from template part, measure at realised width, `max(header, devices)`, slack)
 - [x] 8 — Build full solution Release (0 errors / 0 warnings) + publish + `--print` smoke test (exit 0, 3 GPUs, 17-10-2026 ~22:03)
-- [x] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → `f212f7a`) + commit index on the branch (done as `c56dd22`)
+- [x] 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (git_head → new HEAD) + commit index on the branch (done: `c56dd22` for T13, `368ddda` for T14)
 - [ ] 10 — Push branch; final log commit on `main` after the user merges
 
 ### Full Context Notes for AI Agents
@@ -987,3 +1157,4 @@ src/
 | 07-10-2026 16:59:24 | [T1: NVIDIA GPU Monitor (WPF/.NET 8, NVML P/Invoke)](#task-t1-nvidia-gpu-monitor-wpfnet-8-nvml-pinvoke) | feat | 16/17 | 4h 07m |
 | 07-10-2026 20:34:00 | [T2: Power column shows usage / cap](#task-t2-power-column-shows-usage--cap) | fix | 4/4 | 11m |
 | 07-10-2026 21:40:27 | [T3: Update README for published bin/ executables](#task-t3-update-readme-for-published-bin-exes) | docs | 6/6 | 13m |
+

@@ -16,6 +16,7 @@ public static class SmiFormatter
     private const int WName    = 24;  // "Name"       | longest GPU name
     private const int WUtil    = 9;   // "GPU Usage"  | "100 %"
     private const int WMemUtil = 9;   // "Mem Usage"  | "100 %"
+    private const int WSm      = 5;   // "SM"       | "100 %"
     private const int WTemp    = 6;   // "Temp"       | "100 °C"
     private const int WPower   = 15;  // "Power"      | "112.2 / 430.0 W"
     private const int WMemory  = 17;  // "Memory"     | "23784 / 24576 MB"
@@ -48,6 +49,7 @@ public static class SmiFormatter
         sb.Append(Pad("Name", WName)).Append(Spaces(Sep));
         sb.Append(PadL("GPU Usage", WUtil)).Append(Spaces(Sep));
         sb.Append(PadL("Mem Usage", WMemUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("SM", WSm)).Append(Spaces(Sep));
         sb.Append(PadL("Temp", WTemp)).Append(Spaces(Sep));
         sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
         sb.Append(PadL("Memory", WMemory)).Append(Spaces(Sep));
@@ -62,6 +64,7 @@ public static class SmiFormatter
         sb.Append(Dash(WName)).Append(Spaces(Sep));
         sb.Append(Dash(WUtil)).Append(Spaces(Sep));
         sb.Append(Dash(WMemUtil)).Append(Spaces(Sep));
+        sb.Append(Dash(WSm)).Append(Spaces(Sep));
         sb.Append(Dash(WTemp)).Append(Spaces(Sep));
         sb.Append(Dash(WPower)).Append(Spaces(Sep));
         sb.Append(Dash(WMemory)).Append(Spaces(Sep));
@@ -77,6 +80,7 @@ public static class SmiFormatter
             sb.Append(Pad(g.Name, WName)).Append(Spaces(Sep));
             sb.Append(PadL(Pct(g.GpuUtilizationPct), WUtil)).Append(Spaces(Sep));
             sb.Append(PadL(Pct(g.MemoryUtilizationPct), WMemUtil)).Append(Spaces(Sep));
+            sb.Append(PadL(Pct(g.SmUtilizationPct), WSm)).Append(Spaces(Sep));
             sb.Append(PadL(TempVal(g.TemperatureGpu), WTemp)).Append(Spaces(Sep));
             sb.Append(PadL(Power(g.PowerMw, g.EnforcedPowerLimitMw), WPower)).Append(Spaces(Sep));
             sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMemory)).Append(Spaces(Sep));

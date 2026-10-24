@@ -19,6 +19,10 @@ public sealed record GpuSnapshot
     // ── Utilization (%) ────────────────────────────────────────
     public int GpuUtilizationPct { get; init; }
     public int MemoryUtilizationPct { get; init; }
+    // SM (streaming-multiprocessor) utilization: sum of the per-process SM-utilization
+    // values for the last sampling period, clamped to 100 — the same number
+    // `nvidia-smi dmon` shows in its `sm` column.
+    public int SmUtilizationPct { get; init; }
     public int EncoderUtilizationPct { get; init; }
     public int DecoderUtilizationPct { get; init; }
 

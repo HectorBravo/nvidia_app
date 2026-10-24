@@ -70,6 +70,64 @@ internal static class NvmlTypes
         public uint GpuInstanceId;
         public uint ComputeInstanceId;
     }
+
+    /// <summary>
+    /// nvmlProcessUtilizationSample_t (32 bytes; the 4 bytes after the PID are
+    /// implicit padding for the 64-bit timestamp). One sample per process that
+    /// was active during the last driver sample period.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ProcessUtilizationSample
+    {
+        public uint Pid;
+        public ulong TimeStamp;
+        public uint SmUtil;
+        public uint MemUtil;
+        public uint EncUtil;
+        public uint DecUtil;
+    }
+
+    /// <summary>
+    /// nvmlProcessUtilizationInfo_v1_t (40 bytes; the v0 layout plus JpgUtil and
+    /// OfaUtil, trailing pad to an 8-byte boundary).
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ProcessUtilizationInfo
+    {
+        public ulong TimeStamp;
+        public uint Pid;
+        public uint SmUtil;
+        public uint MemUtil;
+        public uint EncUtil;
+        public uint DecUtil;
+        public uint JpgUtil;
+        public uint OfaUtil;
+    }
+
+    /// <summary>
+    /// nvmlProcessesUtilizationInfo_v1_t (24 bytes). <see cref="Version"/> must be
+    /// <see cref="ProcessesUtilizationVersion"/>. The batched API is two-phase: a call
+    /// with <see cref="ProcUtilArray"/> = null returns NVML_INSUFFICIENT_SIZE and fills
+    /// <see cref="ProcessSamplesCount"/> with the number of elements the caller must
+    /// then allocate (stride <see cref="ProcessUtilizationInfoSize"/> bytes).
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ProcessesUtilizationInfo
+    {
+        public uint Version;
+        public uint ProcessSamplesCount;
+        public ulong LastSeenTimeStamp;
+        public IntPtr ProcUtilArray;
+    }
+
+    /// <summary>Size in bytes of <see cref="ProcessUtilizationSample"/> (no unsafe sizeof).</summary>
+    internal const int ProcessUtilizationSampleSize = 32;
+
+    /// <summary>Size in bytes of <see cref="ProcessUtilizationInfo"/> (no unsafe sizeof).</summary>
+    internal const int ProcessUtilizationInfoSize = 40;
+
+    /// <summary>NVML_STRUCT_VERSION(ProcessesUtilizationInfo, 1) = 24 | (1 &lt;&lt; 24).</summary>
+    internal const int ProcessesUtilizationVersion = 16777240; // 24 | (1 << 24)
 }
 
 /// <summary>Exact NVML enum values from nvml.h 13.4.92.</summary>

@@ -1,3 +1,34 @@
+// ── HectorBravo.Nvidia — WPF charts + shared crosshair controller ───────────
+//
+// This file is a single cohesive unit:
+//   * MetricChart          – one time-series plot per metric (custom Canvas
+//                             rendering, no third-party charting lib).
+//   * ChartController      – the cross-chart controller. It owns the *shared*
+//                            horizontal scale (pixels-per-second, CTRL+wheel),
+//                            the scroll-follow mode, and the red crosshair.
+//
+// Shared scale: all charts receive the SAME timeline, so they all derive the
+// same pixels-per-second. A single controller redraws them all, which is what
+// makes the red crosshair line up vertically across every chart (the feature
+// that was broken before this controller existed).
+//
+// Crosshair interaction model (red line + red value readouts):
+//   * Each chart hosts a red *dotted* vertical line that is shown only while
+//     the pointer is over one of the charts (it moves as the pointer moves,
+//     rather than persisting after the pointer leaves — per spec).
+//   * While hovering, each chart paints a small red "value readout" at the top
+//     of the crosshair: one readout per GPU showing its current value (plus
+//     PCIe gen/width on the PCIe chart). The readouts are staggered downward
+//     (one per GPU, in the same left-to-right order as the legend) so they
+//     never overlap, and each sits above its own legend entry, so you can
+//     always tell which series a value belongs to.
+//   * The crosshair + readouts only appear over the PLOT area (the time axis
+//     strip below is excluded), and the pointer is captured while hovering so
+//     the crosshair tracks the pointer even as it scrolls the charts.
+//
+// All values are drawn with GDI-style manual Canvas primitives (Lines +
+// TextBlocks). There is no XAML / resource dictionary for the charts — the
+// styling lives in Theme.cs and inline in this file.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -33,7 +64,7 @@ namespace HectorBravo.Nvidia.Monitor;
 public class MetricChart : Border
 {
     // GPU 0 is always the NVIDIA green; extra GPUs cycle through distinguishable hues.
-    private static readonly Brush[] Palette =
+    public static readonly Brush[] Palette =
     {
         Frozen("#76b900"), // NVIDIA green
         Frozen("#3ba55c"),
@@ -64,15 +95,15 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
-    private const double TopPad = 26;        // headroom so the top (max) value isn't clipped
 
     private readonly Grid _inner = new();
 
+    // The "max N" readout at the header's right end — bright yellow, same size as the legend (T15).
     private readonly TextBlock _maxText = new()
     {
-        Foreground = Theme.Muted,
+        Foreground = Theme.Yellow,
         FontFamily = Theme.Mono,
-        FontSize = 10,
+        FontSize = 12,
         VerticalAlignment = VerticalAlignment.Center,
     };
 
@@ -91,10 +122,13 @@ public class MetricChart : Border
 
     private readonly TextBlock _titleText;
 
+    // The horizontal bar is *always* reserved (Visible, not Auto): WPF Auto bars take 0 px
+    // until they appear, so the moment a timeline outgrows the viewport every plot would
+    // grow by the bar's 13 px and the startup fit-height would stop fitting the content (T14).
     private readonly ScrollViewer _plotScroll = new()
     {
         VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
         VerticalContentAlignment = VerticalAlignment.Top,
         MinWidth = 1,
         Background = Theme.Card,
@@ -150,8 +184,6 @@ public class MetricChart : Border
     // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
     private Dictionary<int, int[]> _pcieGen = new();
     private Dictionary<int, int[]> _pcieWidth = new();
-    // Per-GPU card name for the "[idx: name]" identity shown in the legend and hover readout.
-    private Dictionary<int, string> _gpuNames = new();
     // Per-GPU percentage denominator (total memory in MiB / enforced power cap in W); 0 = N/A.
     private Dictionary<int, double> _pctBase = new();
 
@@ -247,8 +279,7 @@ public class MetricChart : Border
         int decimals,
         IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieGen = null,
         IReadOnlyCollection<KeyValuePair<int, int[]>>? pcieWidth = null,
-        IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null,
-        IReadOnlyCollection<KeyValuePair<int, string>>? gpuNames = null)
+        IReadOnlyCollection<KeyValuePair<int, double>>? pctBase = null)
     {
         _tl = timelineSec ?? Array.Empty<double>();
         _ser = values ?? new List<KeyValuePair<int, double[]>>();
@@ -261,9 +292,7 @@ public class MetricChart : Border
         if (pcieGen != null) foreach (var kv in pcieGen) _pcieGen[kv.Key] = kv.Value;
         if (pcieWidth != null) foreach (var kv in pcieWidth) _pcieWidth[kv.Key] = kv.Value;
         _pctBase = new Dictionary<int, double>();
-        _gpuNames = new Dictionary<int, string>();
         if (pctBase != null) foreach (var kv in pctBase) _pctBase[kv.Key] = kv.Value;
-        if (gpuNames != null) foreach (var kv in gpuNames) _gpuNames[kv.Key] = kv.Value;
     }
 
     public ScrollViewer PlotScroll => _plotScroll;
@@ -271,23 +300,22 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (top=ceiling at
-    /// y=TopPad, bottom=0 at y=PlotH — both scales keep TopPad headroom so the max value
-    /// and its axis label are never clipped at the top edge).</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (ceiling at
+    /// y = 0, 0 at y = PlotH — the scale spans the whole plot height, so the max value
+    /// reaches the top edge; the topmost tick label is clamped in DrawAxisTick instead of
+    /// reserving headroom — T15).</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
+            return PlotH * (1.0 - value / ceiling);
 
-        // Log scale with top headroom: bottom = 0.01 * ceiling at y = PlotH,
-        // top = ceiling at y = TopPad, so the max value sits just below the top
-        // edge instead of being clipped right at it.
+        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = 0
+        // (full-height scale — T15).
         double minLog = Math.Log(ceiling * 0.01);
         double maxLog = Math.Log(ceiling);
         double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
         double frac = (vLog - minLog) / (maxLog - minLog);
-        double span = PlotH - TopPad;
-        return TopPad + span * (1 - Math.Clamp(frac, 0, 1));
+        return PlotH * (1 - Math.Clamp(frac, 0, 1));
     }
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
@@ -465,7 +493,8 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         });
 
-        double topY = TopPad; // y of the topmost tick (value = max) — both scales keep headroom
+        // T15: the scale spans the whole plot height — the topmost tick (value = max) sits
+        // at y = 0, i.e. on the plot's top edge (no headroom anymore).
         if (_logScale)
         {
             for (int p = 0; p <= 8; p++)
@@ -480,7 +509,7 @@ public class MetricChart : Border
             for (int i = 0; i <= 5; i++)
             {
                 double val = max * i / 5.0;
-                DrawAxisTick(Fmt(val), topY + (PlotH - topY) * (1 - i / 5.0));
+                DrawAxisTick(Fmt(val), PlotH * (1 - i / 5.0));
             }
         }
     }
@@ -497,13 +526,15 @@ public class MetricChart : Border
         var lbl = new TextBlock
         {
             Text = text,
-            Foreground = Theme.Muted,
+            Foreground = Theme.White, // T15: white (was muted gray)
             FontFamily = Theme.Mono,
             FontSize = 10,
             IsHitTestVisible = false,
         };
         Canvas.SetLeft(lbl, 8);
-        Canvas.SetTop(lbl, y - 7);
+        // T15: the topmost tick (value = max) sits at y = 0 — clamp so the label isn't
+        // clipped above the axis canvas (that case used to be covered by the TopPad headroom).
+        Canvas.SetTop(lbl, Math.Max(y - 7, 1));
         _axisCanvas.Children.Add(lbl);
     }
 
@@ -561,9 +592,7 @@ public class MetricChart : Border
                 text += $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
-                text += $"  [{GpuSnapshot.PcieLinkLabel(gen, width)}]";
-            if (_gpuNames.TryGetValue(kvp.Key, out string? gname) && !string.IsNullOrWhiteSpace(gname))
-                text += $"  [{kvp.Key}: {gname}]";
+                text += $" [{GpuSnapshot.PcieLinkLabel(gen, width)}]"; // T15: one space (was two)
             _readout.Children.Add(new TextBlock
             {
                 Text = text,
@@ -722,9 +751,7 @@ public class MetricChart : Border
             if (_pctBase.TryGetValue(kvp.Key, out double denom) && denom > 0)
                 legendText += $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
-                legendText += $"  [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]";
-            if (_gpuNames.TryGetValue(kvp.Key, out string? name) && !string.IsNullOrWhiteSpace(name))
-                legendText += $"  [{kvp.Key}: {name}]";
+                legendText += $" [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]"; // T15: one space (was two)
             _legend.Children.Add(new TextBlock
             {
                 Text = legendText,

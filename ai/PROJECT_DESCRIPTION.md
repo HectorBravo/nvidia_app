@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-16 17:27:57
-git_head: ed0e4f198c72bc5402c0194d43c00e06def391a2
+last_indexed: 2026-10-20 10:15:00
+git_head: 389de9c96e4c1db1e22e8146ec529e2f9f59dc90
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -15,13 +15,19 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 `nvidia-smi`. Two front-ends share one NVML engine:
 - **`NvidiaMonitor`** — a WPF live dashboard (overview grid, synchronized line
   charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
-  fit-to-content window size** (never maximized); the **Processes** and
+  fit-to-content window size** (never maximized; sized so no scrollbar is needed at
+  first launch — and every scrollbar's 13 px is reserved from the first layout, so the
+  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name, with a colour
+  swatch matching each GPU's chart series) sits at the **top-right of the header
+  row**; the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab).
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
-  table, or a live `--watch` feed (the interval defaults to 1 s when omitted).
+  table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
+  one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
+  batch API's version-constant sweep).
 
-Reads per-GPU telemetry: GPU/memory utilization, temperature, power (+limits), memory
+Reads per-GPU telemetry: GPU/memory utilization, **SM utilization** (per-process sum, clamped at 100), temperature, power (+limits), memory
 used/total/free, clocks, fan, P-state, **PCIe link (gen × width)** and derived
 theoretical **PCIe bandwidth (GB/s)**, ECC, NVLink count, throttle reasons, and a
 per-GPU process list (compute + graphics) with PID, kind and memory. When NVML/GPU is
@@ -67,21 +73,27 @@ Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
   "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`.
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
-  value is omitted), `SmiFormatter` (nvidia-smi-style table). Its "PCIe" column
+  value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic),
+  `NvmlProbe` (the `--probe` runner: NVML version, the legacy two-phase
+  `nvmlDeviceGetProcessUtilization`, the batched `nvmlDeviceGetProcessesUtilizationInfo`
+  with its version-constant sweep), `SmiFormatter` (nvidia-smi-style table, now
+  including an `SM` utilization column). Its "PCIe" column
   shows the link config plus the theoretical bandwidth
   (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the WPF GUI's PCIe values.
 
 ## 4. Entry Points
 - **WPF dashboard:** `NvidiaMonitor` → `App.Main` (`[STAThread]`). No args = launches
   `MainWindow` at a **calculated fit-to-content size** (never maximized; the no-NVML
-  fallback screen keeps the 1040×640 default) with the green "slide" scrollbars;
+  fallback screen keeps the 1040×640 default) with the green "slide" scrollbars
+  (**always visible** — T14 reserved each bar's 13 px from the first layout, so the
+  window never grows when the chart timelines outgrow the view);
   `--print` = headless single refresh printing a one-line summary per
-  GPU (never opens a window), exit 0 on success / 1 when NVML unavailable.
+  GPU (includes `sm=` — SM utilization; never opens a window), exit 0 on success / 1 when NVML unavailable.
 - **CLI:** `NvmlTest` → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
   `--print --watch [<seconds>]` = live feed that re-prints the table every N seconds
   until Ctrl-C (**N defaults to 1** when the value is omitted; an explicit
   non-numeric value exits 2). Exits 0 on success, 1 when NVML/GPU unavailable
-  (reason on stdout).
+  (reason on stdout). `--probe` = one-shot NVML diagnostic (versions + both SM-utilization APIs).
 
 ## 5. Build / Run / Test
 ```powershell
@@ -116,8 +128,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                                   driving 7 MetricChart cards (util, mem-util, temp,
-                                   power, clock, mem-used, PCIe-bandwidth [log Y]) — native WPF shapes
+                                   driving 9 MetricChart cards (GPU-util, mem-util, mem-used, temp, SM-util,
+                                   power, PCIe-bandwidth [log Y], GPU-clock, mem-clock) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -128,10 +140,11 @@ implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
 - `IGpuMonitorService` — the service surface: `InitializeAsync()`, `RefreshAsync() →
   GpuSnapshot`, `ShutdownAsync()`, `IsAvailable`, `StatusMessage`, plus a
   status-change event and an `AppLog` hook.
-- `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics).
+- `GpuSnapshot` — driver/CUDA/NVML versions + `GpuCount` + `Gpus[]` (per-GPU metrics, incl. `SmUtilizationPct`).
 - `GpuMetricSample` — one timestamped sample of every metric (feeds history); it also
-  carries the per-GPU `GpuName`, `MemoryTotalBytes`, and `PowerCapWatts` (the
-  denominators behind the charts' percentage readouts).
+  carries the per-GPU `MemoryTotalBytes` and `PowerCapWatts` (the denominators behind
+  the charts' percentage readouts) — plus `SmUtilizationPct` and `MemoryClockMhz`
+  (the SM and memory-clock charts).
 - `GpuHistory` — per-GPU **ring buffer** (`new GpuHistory(capacity)`; the dashboard
   uses 720 ≈ 12 min @ 1 Hz). `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>`
   (oldest→newest), `GetSampleTimestamps(gpu)`, `GpuIndices`. The charts plot over the
@@ -162,6 +175,15 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - **Never shell out to `nvidia-smi`** — all reads go through the P/Invoke engine.
 - `ref/nvml.h` is the **authoritative** NVML reference; don't hand-edit P/Invoke
   signatures to diverge from it.
+- **NVML version constants:** *Info*-struct version fields encode
+  `struct-size | (1 << 24)` — the 24-byte v1
+  `nvmlDeviceProcessUtilizationInfo_t` is `24 | (1 << 24)` (= 16777240; the old
+  16777264 was 48-based and wrong). The batched
+  `nvmlDeviceGetProcessesUtilizationInfo` rejects any other encoding with
+  `NVML_ERROR_ARGUMENT_VERSION_MISMATCH` (rc 25). The engine therefore reads SM
+  utilization through the **legacy two-phase** `nvmlDeviceGetProcessUtilization`
+  (NULL-probe → filled read; the loop must count the samples the driver *wrote*,
+  which can be fewer than requested), with the batched API as fallback.
 - **`TreatWarningsAsErrors`** is on for `Contracts` and `NvmlCore` — their builds must
   stay warning-free (the dashboard/CLI projects are not).
 - **Threading:** `NvmlCoreService` is polled off the UI thread by `GpuPollingService`;
@@ -175,15 +197,17 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   polyline per GPU. `SetSeries` only stores data; the controller's `OnDataTick()`
   resizes then redraws all charts. Drag-and-drop reorder is handled per chart panel.
   Layout: a **fixed right-hand Y-axis** column (a non-scrolling `Canvas` beside the
-  plot) shows value labels + tick marks — linear charts: evenly spaced 0…max with the
-  same top headroom as the log chart (`TopPad = 26`, so the max value and the top
-  axis label are never clipped at `y = 0`); the log-scale PCIe chart: powers of two
-  (1G, 2G, 4G, 8G, 16G, 32G …). The **t = 0** marker is a normal `MinuteBlue`
+  plot) shows value labels + tick marks in **white** (`Theme.White`) — the scale spans
+  the **full plot height** (max value at `y = 0`, zero at `y = PlotH = 128`; the topmost
+  tick label is clamped to `y ≥ 1` so it is never clipped): linear charts = evenly
+  spaced 0…max; the log-scale PCIe chart = powers of two (1G, 2G, 4G, 8G, 16G,
+  32G …). The **t = 0** marker is a normal `MinuteBlue`
   (1 px) vertical line with a `MinuteLabel` "0m" — the same styling as the other
   per-minute gridlines (light blue). The PCIe chart carries **per-sample link
   gen/width** (`GpuMetricSample.PcieLinkGen/Width`) so the **legend and hover readout
   show the link config** (e.g. `4.0 x16`) for current and historical points, formatted
-  by `GpuSnapshot.PcieLinkLabel(gen,width)`. The **follow-right** pin keeps the view
+  by `GpuSnapshot.PcieLinkLabel(gen,width)` and appended after **one** space
+  (`4.0GB/s [1.0 x16]`). The **follow-right** pin keeps the view
   on the newest data until the user scrolls into history: programmatic pin targets
   are remembered per chart (`_progOffset`) and `OnPlotScroll` treats a
   `ScrollChanged` as programmatic only when it lands within 8 px of the queued target
@@ -192,13 +216,19 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   user gesture and permanently killed following); `OnDataTick()` forces
   `UpdateLayout()` before re-pinning (so `ScrollableWidth` is current) and re-pins
   when the content range grows while following (fixes the "left-aligned at 10 min"
-  scroll race). Every chart's **legend and hover readout** end with the per-GPU
-  identity **`[index: name]`** (e.g. `[0: NVIDIA GeForce RTX 3090]`); the
+  scroll race). The **legend and hover readout** show the per-GPU value (the
   **Memory Used** and **Power** charts additionally show **`(NN %)`** of the
-  per-GPU total memory / enforced power cap (omitted when the denominator is N/A);
-  the **legend text is pure white** (`Theme.White`), the **temperature Y-axis is
-  capped at 100 °C** (auto-expanding only if a card runs hotter), and the **window opens at a calculated fit-to-content size** (T12 superseded the
-  "opens maximized" behaviour — see the T12 change-log entry below).
+  per-GPU total memory / enforced power cap, omitted when the denominator is N/A);
+  the **legend text is pure white** (`Theme.White`) and the **"max N" readout** at the
+  legend's right is **bright yellow** (`Theme.Yellow`, `#ffe14d`) at the same 12 px
+  legend size; the **temperature Y-axis is capped at 100 °C** (auto-expanding only if a
+  card runs hotter). The per-GPU
+  identity (`[index: name]`) that T11 appended to every legend/readout was
+  **removed again in T13** — device identity now lives in the **top-right device
+  list** (see the T13 change-log entry below). The **window opens at a calculated
+  fit-to-content size** (T12 superseded "opens maximized"; T13 fixed the height so
+  no scrollbar appears at first launch; T14 reserved every scrollbar's 13 px from the
+  first layout — `Visible`, not `Auto` — so the window never grows when data arrives).
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -206,6 +236,44 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-10-20 — **T16: SM utilization (clamped at 100) + memory-clock chart + chart reorder** (`GpuSnapshot`/`GpuMetricSample`/`NvmlCoreService`/`MainWindow`/`App`/`NvmlProbe`/`SmiFormatter`): per-GPU **SM utilization** = `min(100, Σ per-process smUtil)` read from the two NVML process-utilization APIs — the legacy two-phase `nvmlDeviceGetProcessUtilization` is **primary** (the old batch-first order died on `rc=25` before ever reaching it); the batched `nvmlDeviceGetProcessesUtilizationInfo` (version `24 | (1 << 24)`) is the fallback; the read loop counts the driver-**written** records. The dashboard now drives **9 charts**: GPU-util, mem-util, mem-used, temp, **SM-util** (new; `ChartSpec.Percent` 0–100 axis), power, **PCIe** (moved down), GPU-clock, **mem-clock** (new); the headless `--print` line prints `sm=`. NvmlTest gained `NvmlProbe.cs` (`--probe`) and an `SM` column. `NvmlTypes.ProcessesUtilizationVersion` corrected 16777264 → 16777240. Verified: SM 73 % under load, 0–4 % idle.
+- 2026-10-19 — **Index re-point (T16 pre-flight)**: `git_head` `72c7a1d` → `99ae2d0` and
+  `last_indexed` bumped. The delta is **task-log metadata only** (T15's final log commit), so
+  every section below remains accurate as-is; the next refresh lands on the T16 branch and
+  covers T16 itself (SM-utilization metric clamped at 100, new Memory-Clock chart, 9-chart
+  reorder, `sm=` in the `--print` line).
+- 2026-10-19 — **T14: scrollbar space reserved from the first layout** (`MainWindow` +
+  `ChartController`): the window **no longer grows/shifts when data arrives** — the two
+  `Auto` scrollbar visibilities (0 px until shown) became `Visible`, so each bar's 13 px
+  "slide" track is reserved from the start: each chart's `_plotScroll` H-bar at the
+  plot's bottom and the outer charts-tab `_chartsScroll` V-bar at the right edge; the
+  startup fit re-measure in `OnLayoutUpdated` subtracts the always-reserved outer bar
+  (`w - 48` → `w - 61`). The bars keep the green "slide" styling; when nothing
+  overflows they show as a slim, dark, disabled track.
+- 2026-10-19 — **T15: chart readout polish** (`Theme.cs` + `ChartController.cs`): the
+  right-side Y-axis value labels are **white** (were muted gray `Theme.Muted`); the
+  **"max N"** readout at each legend's right is **bright yellow** (`Theme.Yellow`,
+  `#ffe14d`) at the legend's **12 px** size (was muted 10 px); the PCIe legend/hover
+  link config uses **one** space before the `[gen width]` bracket (was two); and the
+  T9.5 `TopPad = 26` headroom is **gone** — both linear and log scales now span the
+  full 128 px plot height (max value at the top edge, `y = 0`), with the topmost tick
+  label clamped (`Math.Max(y - 7, 1)`) so it never clips.
+- 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
+  (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
+  **[index: name]** text is **removed again** from the chart legends and the
+  red hover readouts (the T11 `gpuNames` plumbing is gone: `GpuMetricSample.GpuName`
+  deleted, `SetSeries` back to its 9-arg form with `pctBase` as the last parameter);
+  the **(NN %)** denominators and the pure-white legend text **stay**. (2) A new
+  **per-device list** sits at the **top-right of the window** (right column of the
+  header row): one row per GPU with a colour swatch in that GPU's chart-series colour
+  (`MetricChart.Palette`, now `public`) + muted `cuda:N` + card name, rebuilt on
+  every snapshot (`MainWindow.UpdateDevicesPanel`). (3) The startup **fit-height** in
+  `OnLayoutUpdated` is fixed: the tab-strip height is read from the `TabControl`
+  template part `PART_HeaderPanel` (the unselected item container under-reported it),
+  the chart content is **re-measured at the realised width** (infinite-width
+  measuring under-counted wrapped header rows), the header row uses
+  `max(header, devices)` and the slack grew 12→20 px — so no vertical scrollbar
+  appears at first launch.
 - 2026-10-16 — **T12: fit-to-content window + green "slide" scrollbars** (`MainWindow`
   + `Theme`) and **NvmlTest `--watch` default**: (1) the WPF window **no longer opens
   maximized** — a one-shot `LayoutUpdated` pass measures each tab's content at

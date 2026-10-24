@@ -42,11 +42,14 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: util, memUtil, temp, power, clock, memUsed, pcieBw.
-    private readonly double[] _runningMax = { 100, 100, 100, 400, 2100, 16384, 32 };
+    // Index order matches _charts/_specs: util, memUtil, memUsed, temp, smUtil,
+    // power, pcieBw, clock, memClock.
+    private readonly double[] _runningMax = { 100, 100, 16384, 100, 100, 400, 32, 2100, 1600 };
 
     // One-shot fit-to-content startup sizing (see OnContentRendered).
     private readonly StackPanel _header;
+    // Top-right per-device list (colour swatch + "cuda:N  card name"), one row per GPU.
+    private readonly StackPanel _devices;
     private readonly Border _rootBorder;
     private bool _autoSized;
     private bool _dataReceived;
@@ -97,14 +100,33 @@ public class MainWindow : Window
             Margin = new Thickness(16, 6, 16, 10),
         };
 
+        // Right side of the header row: one line per device — a swatch in the same
+        // colour as that GPU's chart series, plus "cuda:N  card name" — so the device
+        // list doubles as the legend key for every chart below it.
+        _devices = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 12, 16, 8),
+        };
+
+        var headerRow = new Grid();
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(_header, 0);
+        Grid.SetColumn(_devices, 1);
+        headerRow.Children.Add(_header);
+        headerRow.Children.Add(_devices);
+
         _root = new Grid();
         _root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         _root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetRow(_header, 0);
+        Grid.SetRow(headerRow, 0);
         Grid.SetRow(_tabs, 1);
         Grid.SetRow(_statusText, 2);
-        _root.Children.Add(_header);
+        _root.Children.Add(headerRow);
         _root.Children.Add(_tabs);
         _root.Children.Add(_statusText);
 
@@ -243,6 +265,7 @@ public class MainWindow : Window
     {
         _dataReceived = true;
         _driverText.Text = BuildVersionLine(snap);
+        UpdateDevicesPanel(snap);
 
         // Feed the bounded time-series history (used by future charts).
         foreach (var g in snap.Gpus)
@@ -252,15 +275,16 @@ public class MainWindow : Window
                 GpuIndex = g.Index,
                 GpuUtilizationPct = g.GpuUtilizationPct,
                 MemoryUtilizationPct = g.MemoryUtilizationPct,
+                SmUtilizationPct = g.SmUtilizationPct,
                 PowerWatts = g.PowerMw / 1000.0,
                 MemoryUsedBytes = g.MemoryUsedBytes,
                 TemperatureGpu = g.TemperatureGpu,
                 GpuClockMhz = g.GpuClockMhz,
+                MemoryClockMhz = g.MemoryClockMhz,
                 PcieBandwidthGbps = g.PcieBandwidthGbps,
                 PcieMaxBandwidthGbps = g.PcieMaxBandwidthGbps,
                 PcieLinkGen = g.PcieLinkGen,
                 PcieLinkWidth = g.PcieLinkWidth,
-                GpuName = g.Name,
                 MemoryTotalBytes = g.MemoryTotalBytes,
                 PowerCapWatts = g.EnforcedPowerLimitMw > 0 ? g.EnforcedPowerLimitMw / 1000.0 : 0.0,
                 Timestamp = snap.Timestamp,
@@ -293,6 +317,43 @@ public class MainWindow : Window
         _statusText.Text = string.IsNullOrWhiteSpace(_monitor?.StatusMessage)
             ? string.Empty
             : _monitor!.StatusMessage;
+    }
+
+    /// <summary>
+    /// Rebuilds the top-right per-device list: a colour swatch (the same colour as
+    /// that GPU's chart series) plus "cuda:N  card name", one row per visible device.
+    /// </summary>
+    private void UpdateDevicesPanel(SystemSnapshot snap)
+    {
+        _devices.Children.Clear();
+        for (int i = 0; i < snap.Gpus.Count; i++)
+        {
+            var g = snap.Gpus[i];
+            string name = string.IsNullOrWhiteSpace(g.Name) ? $"GPU {i}" : g.Name;
+            var swatch = new Border
+            {
+                Width = 10,
+                Height = 10,
+                CornerRadius = new CornerRadius(5),
+                Background = MetricChart.Palette[i % MetricChart.Palette.Length],
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0),
+            };
+            var text = new TextBlock
+            {
+                Foreground = Theme.Fg,
+                FontFamily = Theme.Mono,
+                FontSize = 12,
+            };
+            text.Inlines.Add(new System.Windows.Documents.Run($"cuda:{i}") { Foreground = Theme.Muted });
+            text.Inlines.Add(new System.Windows.Documents.Run($"  {name}"));
+            _devices.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 2),
+                Children = { swatch, text },
+            });
+        }
     }
 
     /// <summary>
@@ -338,18 +399,14 @@ public class MainWindow : Window
             var pcieWidthMap = new List<KeyValuePair<int, int[]>>();
             double max = _runningMax[c];
 
-            // Per-GPU identity ("[idx: name]") and, for percentage charts, the current
-            // denominator (total memory in MiB / enforced power cap in W) taken from each
-            // GPU's newest sample.
+            // For percentage charts: the current denominator (total memory in MiB /
+            // enforced power cap in W) taken from each GPU's newest sample.
             var pctBase = new List<KeyValuePair<int, double>>();
-            var gpuNames = new List<KeyValuePair<int, string>>();
-            foreach (var kv in samplesByGpu)
+            if (spec.Pct && spec.PctBase != null)
             {
-                var last = kv.Value[^1];
-                gpuNames.Add(new KeyValuePair<int, string>(kv.Key, last.GpuName));
-                if (spec.Pct && spec.PctBase != null)
+                foreach (var kv in samplesByGpu)
                 {
-                    double denom = spec.PctBase(last);
+                    double denom = spec.PctBase(kv.Value[^1]);
                     if (denom > 0) pctBase.Add(new KeyValuePair<int, double>(kv.Key, denom));
                 }
             }
@@ -417,12 +474,12 @@ public class MainWindow : Window
             }
             else
             {
-                ceiling = Math.Max(spec.MinCeiling, c < 2 ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));
+                ceiling = Math.Max(spec.MinCeiling, spec.Percent ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1));
             }
 
             _charts[c].SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals,
                 spec.Pcie ? pcieGenMap : null, spec.Pcie ? pcieWidthMap : null,
-                spec.Pct ? pctBase : null, gpuNames);
+                spec.Pct ? pctBase : null);
         }
 
         // All charts share the timeline (same samples), so one combined tick resizes + follows +
@@ -523,6 +580,8 @@ public class MainWindow : Window
         bool LogScale = false,
         bool Pcie = false,
         bool Pct = false,
+        // Fixed 0–100 Y axis (percentage charts): the ceiling never auto-grows.
+        bool Percent = false,
         double MinCeiling = 0,
         Func<HectorBravo.Nvidia.Contracts.GpuMetricSample, double>? PctBase = null);
 
@@ -544,26 +603,34 @@ public class MainWindow : Window
         // ── Charts ──────────────────────────────────────────────
         var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
         _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.GpuUtilizationPct).ToList()));
+            s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
+            Percent: true));
         _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList()));
+            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
+            Percent: true));
+        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
+            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
+            Pct: true,
+            PctBase: s => s.MemoryTotalBytes / 1048576.0));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
+            MinCeiling: 100));
+        _specs.Add(new ChartSpec("SM Utilization (%)", "%", 0,
+            s => s.Select(x => (double)x.SmUtilizationPct).ToList(),
+            Percent: true,
             MinCeiling: 100));
         _specs.Add(new ChartSpec("Power (W)", " W", 1,
             s => s.Select(x => x.PowerWatts).ToList(),
             Pct: true,
             PctBase: s => s.PowerCapWatts));
-        _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
-            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
-        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
-            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
-            Pct: true,
-            PctBase: s => s.MemoryTotalBytes / 1048576.0));
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
             LogScale: true,
             Pcie: true));
+        _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
+            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
+        _specs.Add(new ChartSpec("Memory Clock (MHz)", " MHz", 0,
+            s => s.Select(x => (double)x.MemoryClockMhz).ToList()));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);
@@ -574,10 +641,14 @@ public class MainWindow : Window
         }
 
         // CTRL + mouse-wheel zoom: changes how many minutes fit the view, across all charts.
+        // The vertical bar is *always* reserved (Visible, not Auto): an Auto bar takes 0 px
+        // until it appears, so once the chart stack outgrows the window the bar would add its
+        // 13 px and the layout would shift. Reserving it from the first layout keeps the
+        // window stable (T14).
         _chartsScroll = new System.Windows.Controls.ScrollViewer
         {
             Content = stack,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -635,39 +706,55 @@ public class MainWindow : Window
         Theme.ApplyScrollStyles(this);
 
         // One-time sizing (skipped on the "no NVML" fallback screen, which keeps
-        // the default 1040×640): measure each tab's content at an infinite
-        // constraint, size the window to the bigger of the two + the fixed
-        // chrome, clamp to the work area, and re-centre.
+        // the default 1040×640): derive the window width from an unconstrained
+        // content measure, then re-measure the content at that *realised* width
+        // (at infinite width the chart header rows never wrap, so the first pass
+        // underestimates their height), add the fixed chrome — including the real
+        // tab-strip height from the TabControl template part — clamp to the work
+        // area, and re-centre.
         if (_autoSized) return;
         if (Content is not Border b || !ReferenceEquals(b, _rootBorder)) return;
         if (!_dataReceived) return;
         _autoSized = true;
 
+        var work = SystemParameters.WorkArea;
+
         double contentW = 0, contentH = 0;
         MeasureFit(_grid, ref contentW, ref contentH);
         if (_chartsScroll.Content is FrameworkElement chartsStack)
             MeasureFit(chartsStack, ref contentW, ref contentH);
+        double w = Math.Clamp(Math.Max(contentW, 900), 720, work.Width - 16);
 
-        var work = SystemParameters.WorkArea;
-        double strip = 34; // fallback tab-strip height
-        if (_tabs.Items.Count > 0)
+        // Re-measure at the realised content width (window width minus the tab margins and
+        // the charts viewer's always-reserved 13 px vertical bar) so wrapped header rows
+        // are counted at their true height.
+        double contentH2 = 0;
+        if (_chartsScroll.Content is FrameworkElement cs)
         {
-            var gen = _tabs.ItemContainerGenerator;
-            if (gen is not null && gen.ContainerFromIndex(0) is FrameworkElement fc)
-                strip = Math.Max(fc.ActualHeight, 20);
+            cs.Measure(new Size(Math.Max(400, w - 61), double.PositiveInfinity));
+            contentH2 = cs.DesiredSize.Height;
         }
 
-        // Fixed chrome: window border/frame + title bar + tab strip + header + status row.
+        // The real tab-strip height comes from the TabControl template part, not
+        // from item containers (the non-selected ones report a collapsed height).
+        double strip = 34; // fallback tab-strip height
+        if (_tabs.Template is ControlTemplate tpl &&
+            tpl.FindName("PART_HeaderPanel", _tabs) is FrameworkElement hp && hp.ActualHeight > 0)
+        {
+            strip = hp.ActualHeight;
+        }
+
+        // Fixed chrome: window border/frame + title bar + tab strip + header row
+        // (taller of the left header / right device list) + status row + slack.
         double chrome = SystemParameters.WindowResizeBorderThickness.Top
             + SystemParameters.WindowResizeBorderThickness.Bottom
             + SystemParameters.WindowCaptionHeight
             + strip
-            + _header.ActualHeight
+            + Math.Max(_header.ActualHeight, _devices.ActualHeight)
             + _statusText.ActualHeight
-            + 12;
+            + 20;
 
-        double w = Math.Clamp(Math.Max(contentW, 900), 720, work.Width - 16);
-        double h = Math.Clamp(contentH + chrome, 420, work.Height - 16);
+        double h = Math.Clamp(Math.Max(contentH, contentH2) + chrome, 420, work.Height - 16);
         Width = w;
         Height = h;
 
