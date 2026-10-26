@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 0/8 | 0m | none |
+| 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
 | 19-10-2026 14:20:00 | [T15: Chart readouts: white axis labels, yellow max, tight PCIe legend, full-height scale](#task-t15-chart-readouts-white-axis-labels-yellow-max-tight-pcie-legend-full-height-scale) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 18m | none |
@@ -22,21 +22,23 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
 - **Created**: 24-10-2026 21:08:57
-- **Last Updated**: 24-10-2026 21:10:00
-- **Time Spent**: 0m
+- **Last Updated**: 24-10-2026 21:20:07
+- **Time Spent**: 11m
 - **Branch**: [`chore/ai-add-build-bat`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-add-build-bat)
-- **Commit(s)**: pending
+- **Commit(s)**: [74b60e9](https://github.com/HectorBravo/nvidia_app/commit/74b60e99fd2de06380f1f37f5c7b4daf4691201a) (index re-point, on `main`) + [7830275](https://github.com/HectorBravo/nvidia_app/commit/7830275f48337b12daeec763a892549e471fe3a8) (this log v1, on `main`) + [079eb3f](https://github.com/HectorBravo/nvidia_app/commit/079eb3f2ad0cc012a1a5bceadc32a0ab3c27f653) (the .bat) + [ae1a280](https://github.com/HectorBravo/nvidia_app/commit/ae1a280e853ef4721acb217f5d1b3718eb740f7b) (index refresh = branch tip, on origin)
 - **Blockers**: none
 - **Findings & Notes**:
   - User request: a Windows `.bat` (one double-click) that compiles the solution and produces the runnable executables in `bin\` — i.e. the README "Build" + "Produce the runnable executables" steps in a single script.
   - New root file `build_executables.bat` (sibling of `build_release.ps1`), pure ASCII + CRLF: (1) `dotnet build nvidia_app.sln -c Release`; (2) abort (`exit /b 1`) if `NvidiaMonitor.exe` is still running — it locks `bin\NvidiaMonitor\NvidiaMonitor.dll`; (3–4) `dotnet publish` both apps into `bin\NvmlTest` / `bin\NvidiaMonitor` (framework-dependent, .NET 8 runtime required on the run machine).
   - `ai/PROJECT_DESCRIPTION.md` was STALE at task start (`git_head` 389de9c vs `main` HEAD 25fbbc2) → re-pointed in the pre-flight commit (T16 close-out pattern); the full refresh (adding the .bat to the map) lands on the branch as the post-code commit.
+  - **Push outcome (24-10-2026)**: `origin/chore/ai-add-build-bat` = `ae1a280` (== local tip) — the push **did** go through; the first attempt only *looked* like a failure (PowerShell wraps git's stderr as a NativeCommandError; the credentials reported broken in the earlier session were no longer blocking). `origin/main` is still behind local `main` (T13–T16 close-out never pushed) — the user must push `main` themselves if satisfied with those commits.
+  - **Run quirk**: the *agent's* process running `D:\Repos\nvidia_app\build_executables.bat` directly gets "Acceso denegado" (AV/EDR hold on the just-created file; an identical byte-copy from `%TEMP%` executed fine and proved the batch syntax + the running-app guard). A user double-click in Explorer is a different context; if it is denied there, check AV/SmartScreen/AppLocker or re-save the file.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (24-10-2026 21:10:00) Pushing `chore/ai-add-build-bat` to origin is still blocked by the broken git credentials (same blocker as the T13–T16 close-out). Once fixed: confirm, and I will push; after you merge the branch into `main` I will do the final log + `--ff-only` fast-forward + re-push of the branch.
+- [ ] (24-10-2026 21:20:07) The branch is on origin (`ae1a280`). Please merge `chore/ai-add-build-bat` into `main` when ready (I never push to your branch). Note `origin/main` is still behind local `main` (the T13–T16 close-out `6e77b73`/`25fbbc2` never went up) — if you're happy with those commits, run `git push origin main` on your side. After your merge: I do the final log on `main` + `--ff-only` fast-forward of the branch + `--force-with-lease` re-push (or, if you squash/rebase-merge: I leave the branch as-is — nothing is lost).
 
 **Confirmed (user provided):**
 
@@ -44,14 +46,15 @@ None yet.
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Pre-flight: re-point project index on `main` (dedicated `docs(ai):` commit)
-- [ ] Subtask 2 — Update `ai/AI_TASKLOG.md` with this entry; commit on `main`
-- [ ] Subtask 3 — Create branch `chore/ai-add-build-bat` from `main`
-- [ ] Subtask 4 — Write `build_executables.bat` (pure ASCII, CRLF)
-- [ ] Subtask 5 — Verify: run the .bat (build 0/0; both exes published; `--print` smoke)
-- [ ] Subtask 6 — Commit the .bat on the branch
-- [ ] Subtask 7 — Post-code project-index refresh (add the .bat to the map) + dedicated commit on the branch
-- [ ] Subtask 8 — Push branch (blocked: credentials) → user merges → final log + fast-forward + re-push
+- [x] Subtask 1 — Pre-flight: re-point project index on `main` (dedicated `docs(ai):` commit) → 74b60e9
+- [x] Subtask 2 — Update `ai/AI_TASKLOG.md` with this entry; commit on `main` → 7830275
+- [x] Subtask 3 — Create branch `chore/ai-add-build-bat` from `main`
+- [x] Subtask 4 — Write `build_executables.bat` (pure ASCII, CRLF)
+- [x] Subtask 5 — Verify: build 0/0 + both publishes + `--print` smoke (via the underlying commands; see the agent-run quirk note)
+- [x] Subtask 6 — Commit the .bat on the branch → 079eb3f
+- [x] Subtask 7 — Post-code project-index refresh (add the .bat to the map) + dedicated commit on the branch → ae1a280
+- [x] Subtask 8 — Push branch to origin (done 24-10-2026: `origin/chore/ai-add-build-bat` = ae1a280)
+- [ ] Subtask 9 — User merges into `main` → final log on `main` + `--ff-only` fast-forward of the branch + `--force-with-lease` re-push
 
 ### Full Context Notes for AI Agents
 
@@ -69,11 +72,12 @@ None yet.
 **Git flow (what happened / what is pending)**
 - On `main`, in order: (1) `docs(ai): [ai] refresh project index (T17 pre-flight)` — only the `PROJECT_INDEXER` block re-pointed (`git_head` → `25fbbc2…`, `last_indexed` → 24-10-2026); (2) `docs(ai): [ai] update task log before push (T17)`.
 - On branch `chore/ai-add-build-bat` (cut from `main`): (3) `chore(build): [ai] add build_executables.bat … (T17)`; (4) `docs(ai): [ai] refresh project index (T17)` — full refresh via the `hector-project_indexer` skill (`git_head` → commit (3); body: add the .bat to the §3 repo-root listing + change-log bullet).
-- **Pending (user action first)**: the user's git credentials for origin are broken (same blocker as the T13–T16 close-out; no push from this machine has succeeded this session). When the user confirms they are fixed: `git push origin chore/ai-add-build-bat`. After the user merges into `main`: final log update on `main` as the commit immediately after the merge (`docs(ai): [ai] update task log after push (T17)` — status done, real hashes of (3)+(4), final Time Spent), then `git fetch origin; git checkout chore/ai-add-build-bat; git merge --ff-only origin/main; git push --force-with-lease origin chore/ai-add-build-bat`. If they squash- or rebase-merge: fast-forward is impossible — leave the branch as-is, tell the user, nothing is lost.
+- **Pending (user action first)**: the branch push **succeeded** 24-10-2026 (the first attempt *looked* like a failure — PowerShell wraps git's stderr as a NativeCommandError — and the "broken credentials" of the earlier session were no longer blocking). `origin/chore/ai-add-build-bat` = `ae1a280` = local tip. `origin/main` is **still behind** local `main` (T13–T16 close-out never pushed; only `ai/AI_TASKLOG.md` may be pushed to the user's branch by the agent — the user pushes `main` themselves if satisfied with those commits). After the user merges the branch into `main`: final log commit on `main` (`docs(ai): [ai] update task log after push (T17)` — status done, real hashes of (3)+(4), final Time Spent) as the commit immediately after the merge, then `git fetch origin; git checkout chore/ai-add-build-bat; git merge --ff-only origin/main; git push --force-with-lease origin chore/ai-add-build-bat`. If they squash- or rebase-merge: fast-forward is impossible — leave the branch as-is, tell the user, nothing is lost.
 
 **Verification (performed before commit (3))**
 - The .bat runs end-to-end: build → 0 warnings / 0 errors; both exes published into `bin\`; smoke `bin\NvmlTest\NvmlTest.exe --print` and `bin\NvidiaMonitor\NvidiaMonitor.exe --print` exit 0 (dev box: 3 GPUs — 2× RTX 3090 + RTX 4070, driver 617.42).
 - Re-verifying is cheap: just run the .bat again — but if a dashboard instance is open it aborts with `exit /b 1` by design; close it first.
+- **Agent-run quirk**: the agent process running the .bat from its repo path gets "Acceso denegado" (AV/EDR hold on the just-created file; an identical byte-copy from `%TEMP%` executed fine). A user double-click in Explorer is a different context; if denied there, check AV/SmartScreen/AppLocker or re-save the file.
 
 **Encoding gotchas (they bit the previous session — do not repeat)**
 - `ai/AI_TASKLOG.md`: UTF-8 **with BOM** (line 1 = BOM + "AI Tasks Log" — never modify it), CRLF on disk (`i/lf w/crlf`, autocrlf=true). Edit only with the `editor` tool (UTF-8 safe); PowerShell 5.1 reads BOM-less UTF-8 as cp1252 and corrupts em-dashes/arrows — never drive this file through a PS 5.1 script. Keep `\r\n` when inserting lines.
