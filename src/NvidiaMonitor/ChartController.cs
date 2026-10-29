@@ -95,9 +95,9 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
-    private const double TopPad = 4;         // small inset at the top edge so the max-value
-                                             // stroke (1.6 px, round cap) is fully drawn
-                                             // within the canvas (T18)
+    private const double TopPad = 8;         // top inset: keeps the max-value stroke (1.6 px,
+                                             // round cap) fully within the canvas and ensures
+                                             // the topmost axis label (y - 7) stays >= 0 (T18)
 
     private readonly Grid _inner = new();
 
