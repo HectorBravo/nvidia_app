@@ -433,12 +433,16 @@ public class MetricChart : Border
             int n = values.Length;
             if (n < 2 || n != _tl.Length) continue;
 
+            // Clamp to [1, PlotH-1] (1 px inset) so the 1.6 px round-capped/joined stroke
+            // never extends past the canvas edge — the clipped sliver would anti-alias
+            // against the dark background and read as a different colour. The 1 px offset
+            // (0.8% of plot height) is imperceptible; axis labels stay at the true edges.
             var pts = new PointCollection(n);
             for (int i = 0; i < n; i++)
             {
                 double xv = _tl[i] * px + off;
                 double yv = ValueToY(values[i], max);
-                pts.Add(new Point(xv, Math.Clamp(yv, 0, PlotH)));
+                pts.Add(new Point(xv, Math.Clamp(yv, 1, PlotH - 1)));
             }
 
             _canvas.Children.Add(new Polyline
@@ -446,8 +450,8 @@ public class MetricChart : Border
                 Points = pts,
                 Stroke = Palette[kvp.Key % Palette.Length],
                 StrokeThickness = 1.6,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeEndLineCap = PenLineCap.Round,
+                StrokeStartLineCap = PenLineCap.Flat,
+                StrokeEndLineCap = PenLineCap.Flat,
                 StrokeLineJoin = PenLineJoin.Round,
                 IsHitTestVisible = false,
             });
