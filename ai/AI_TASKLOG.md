@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/10 | 0m | none |
+| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 9/10 | 28m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
@@ -23,10 +23,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 29-10-2026 23:54:24
-- **Last Updated**: 29-10-2026 23:54:24
-- **Time Spent**: 0m
+- **Last Updated**: 30-10-2026 00:23:00
+- **Time Spent**: 28m
 - **Branch**: [`fix/ai-fix-chart-top-edge-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-fix-chart-top-edge-clip)
-- **Commit(s)**: pending
+- **Commit(s)**: [d036c14](https://github.com/HectorBravo/nvidia_app/commit/d036c14)
 - **Blockers**: none
 - **Findings & Notes**:
   - Symptom (user): at the 100 % peak of a GPU/SM-utilisation chart the data line renders in a **different (muddier) colour** than the rest of that line - "as if the last pixel at the highest value wasn't fully graphed."
@@ -47,14 +47,14 @@
 ### Subtasks / Plan
 
 - [x] Subtask 1 - Pre-flight: read `ai/PROJECT_DESCRIPTION.md`, locate the chart draw code (`ChartController.cs`), confirm the root cause (max value -> `y = 0`; 1.6 px round-capped stroke clipped at the canvas top -> mis-coloured sliver at the 100 % peak)
-- [ ] Subtask 2 - Commit the T18 log entry on `main` (written, awaiting commit)
-- [ ] Subtask 3 - Create branch `fix/ai-fix-chart-top-edge-clip` from `main`
-- [ ] Subtask 4 - `ChartController.cs`: add `TopPad = 4`; inset `ValueToY` (linear + log) at the top; route linear `DrawAxis` ticks through `ValueToY`; clamp the polyline to `[TopPad, PlotH]`; refresh the stale T15 comments
-- [ ] Subtask 5 - Build the solution (`dotnet build nvidia_app.sln -c Release`) -> 0/0
-- [ ] Subtask 6 - Republish both executables to `bin/` (the "as usual" build)
-- [ ] Subtask 7 - Commit the code fix on the branch (`fix(charts): [ai] ...`)
-- [ ] Subtask 8 - Refresh `ai/PROJECT_DESCRIPTION.md` (small TopPad restored) + dedicated commit on the branch
-- [ ] Subtask 9 - Push the branch to origin with `-u`
+- [x] Subtask 2 - Commit the T18 log entry on `main` (`ef1f36c`)
+- [x] Subtask 3 - Create branch `fix/ai-fix-chart-top-edge-clip` from `main`
+- [x] Subtask 4 - `ChartController.cs`: add `TopPad = 4`; inset `ValueToY` (linear + log) at the top; route linear `DrawAxis` ticks through `ValueToY`; clamp the polyline to `[TopPad, PlotH]`; refresh the stale T15 comments
+- [x] Subtask 5 - Build the solution (`dotnet build nvidia_app.sln -c Release`) -> 0/0
+- [x] Subtask 6 - Republish both executables to `bin/` (the "as usual" build)
+- [x] Subtask 7 - Commit the code fix on the branch (`fix(charts): [ai] ...`) → `d036c14`
+- [x] Subtask 8 - Refresh `ai/PROJECT_DESCRIPTION.md` (small TopPad restored) + dedicated commit on the branch → `b3edfee`
+- [x] Subtask 9 - Push the branch to origin with `-u`
 - [ ] Subtask 10 - After the user merges into `main`: final log on `main` + `--ff-only` fast-forward + `--force-with-lease` re-push (or leave as-is for a squash/rebase merge)
 
 ### Full Context Notes for AI Agents
