@@ -376,14 +376,13 @@ public class MetricChart : Border
         Canvas.SetTop(lbl0, PlotH + 2);
         _canvas.Children.Add(lbl0);
 
-        // ── per-minute dark-blue gridlines within the visible window ──
-        double viewSec = _ctl.WindowSeconds;
-        double tStart = _ctl.ViewStartSec();
-        double tEnd = tStart + viewSec;
-        int firstMin = (int)Math.Floor(tStart / 60.0) + 1;
-        if (tStart > 0.0 && firstMin * 60.0 < tStart) firstMin = (int)Math.Ceiling(tStart / 60.0);
-        if (firstMin < 1) firstMin = 1;
-        for (int m = firstMin; m * 60.0 <= tEnd; m++)
+        // ── per-minute dark-blue gridlines for the full timeline ──
+        // Draw every minute mark from 1 to the end of the timeline. The ScrollViewer
+        // clips the canvas to the viewport, so off-screen gridlines cost nothing at
+        // render time. Drawing them all at once lets OnDataTick skip the second
+        // full Redraw() (previously needed to refresh gridlines after the scroll pin).
+        int lastMin = _tl.Length > 0 ? (int)(_tl[^1] / 60.0) : 0;
+        for (int m = 1; m <= lastMin; m++)
         {
             double x = m * 60.0 * px + off;
             _canvas.Children.Add(new Line
@@ -427,20 +426,15 @@ public class MetricChart : Border
             }
         }
 
-        // ── per-GPU polylines (only the portion inside/near the viewport) ──
+        // ── per-GPU polylines (full timeline; the ScrollViewer clips to the viewport) ──
         foreach (var kvp in _ser)
         {
             var values = kvp.Value;
             int n = values.Length;
             if (n < 2 || n != _tl.Length) continue;
 
-            // 1s margin each side for continuity past the viewport edges.
-            int i0 = LowerIndex(tStart - 1);
-            int i1 = UpperIndex(tEnd + 1);
-            if (i1 - i0 < 1) continue;
-
-            var pts = new PointCollection(i1 - i0 + 1);
-            for (int i = i0; i <= i1; i++)
+            var pts = new PointCollection(n);
+            for (int i = 0; i < n; i++)
             {
                 double xv = _tl[i] * px + off;
                 double yv = ValueToY(values[i], max);
@@ -814,7 +808,8 @@ public sealed class ChartController
     public void OnDataTick()
     {
         RecomputePx();
-        RaiseRedraw();      // resize the canvases to the new timeline
+        RaiseRedraw();      // single full pass: gridlines cover the entire timeline, so no
+                           // second pass is needed after the scroll pin (T19 perf fix).
         // Force every plot's ScrollViewer to measure/arrange NOW, before pinning. Without
         // this the pin below targets the STALE (previous-tick) ScrollableWidth, and as the
         // canvas outgrows the viewport the offset lags further and further left of the
@@ -823,7 +818,6 @@ public sealed class ChartController
         _syncing = true;    // suppress the ScrollChanged events this causes
         AutoFollow();
         _syncing = false;
-        RaiseRedraw();      // re-render (gridlines shift) after the scroll offset changed
 
         // Safety re-pin: a ScrollChanged for our own pin can still land during the layout
         // pass after _syncing cleared; if it ever moved a following chart off the right
