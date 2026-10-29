@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/10 | 0m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
@@ -16,6 +17,69 @@
 > 14 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+
+## Task T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 29-10-2026 23:54:24
+- **Last Updated**: 29-10-2026 23:54:24
+- **Time Spent**: 0m
+- **Branch**: [`fix/ai-fix-chart-top-edge-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-fix-chart-top-edge-clip)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Symptom (user): at the 100 % peak of a GPU/SM-utilisation chart the data line renders in a **different (muddier) colour** than the rest of that line - "as if the last pixel at the highest value wasn't fully graphed."
+  - Root cause: `MetricChart.ValueToY` maps the max value to `y = 0` (T15 made the scale span the whole 128 px plot). The data `Polyline` is 1.6 px with `Round` caps, so centred on `y = 0` its upper ~0.8 px is clipped by the canvas boundary; the surviving sub-pixel anti-aliases against the dark `Theme.Card` background -> a different shade. T15 had deleted an earlier `TopPad = 26` headroom (T9.5) and judged 0.8 px "negligible" - it is not.
+  - Fix: reintroduce a **small** `TopPad = 4` (~3 % of the plot, not the rejected 26 px) so the max value + topmost tick plot 4 px below the top edge -> the stroke is drawn fully in its true colour. Change is confined to `ChartController.cs`.
+  - Binaries rebuilt + republished to `bin/` after the fix (the "as usual" step).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (29-10-2026 23:54:24) The `fix/ai-fix-chart-top-edge-clip` branch will be pushed to origin. Please merge it into `main` when ready (I never push code to your branch). After your merge I'll do the final log on `main` + `--ff-only` fast-forward of the branch + `--force-with-lease` re-push (if you squash/rebase-merge: I leave the branch as-is - nothing is lost).
+
+**Confirmed (user provided):**
+
+- (29-10-2026 23:54:24) "On the graphs I see that if you're drawing the maximum value, like the 100% on the GPU utilization or the SM utilization, the color of the line changes, as if the last pixel with the highest value was not fully graphed. Look into it and fix it. After compile the binaries as usual." -> fix the top-edge clip so the peak keeps the line colour, then rebuild + republish the executables.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 - Pre-flight: read `ai/PROJECT_DESCRIPTION.md`, locate the chart draw code (`ChartController.cs`), confirm the root cause (max value -> `y = 0`; 1.6 px round-capped stroke clipped at the canvas top -> mis-coloured sliver at the 100 % peak)
+- [ ] Subtask 2 - Commit the T18 log entry on `main` (written, awaiting commit)
+- [ ] Subtask 3 - Create branch `fix/ai-fix-chart-top-edge-clip` from `main`
+- [ ] Subtask 4 - `ChartController.cs`: add `TopPad = 4`; inset `ValueToY` (linear + log) at the top; route linear `DrawAxis` ticks through `ValueToY`; clamp the polyline to `[TopPad, PlotH]`; refresh the stale T15 comments
+- [ ] Subtask 5 - Build the solution (`dotnet build nvidia_app.sln -c Release`) -> 0/0
+- [ ] Subtask 6 - Republish both executables to `bin/` (the "as usual" build)
+- [ ] Subtask 7 - Commit the code fix on the branch (`fix(charts): [ai] ...`)
+- [ ] Subtask 8 - Refresh `ai/PROJECT_DESCRIPTION.md` (small TopPad restored) + dedicated commit on the branch
+- [ ] Subtask 9 - Push the branch to origin with `-u`
+- [ ] Subtask 10 - After the user merges into `main`: final log on `main` + `--ff-only` fast-forward + `--force-with-lease` re-push (or leave as-is for a squash/rebase merge)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh session can finish T18 without other context.
+
+**Environment**
+- Windows, PowerShell 5.1 (non-admin). Repo root `D:\Repos\nvidia_app`; remote `https://github.com/HectorBravo/nvidia_app.git`. House git rules: before each commit set `$env:GIT_AUTHOR_NAME="AI_bot"` and `$env:GIT_COMMITTER_NAME="AI_bot"` (PowerShell); never set `GIT_*_EMAIL` (the user's `git config user.email` = `hbravo@cuic.net` applies); never edit `git config` itself; every message carries `[ai]` after the colon. Never push code to the user's branch (`main`) - only the log file may be committed/pushed there.
+
+**Where the bug lives**
+- File `src/NvidiaMonitor/ChartController.cs`, class `MetricChart` (one `Polyline` per GPU, drawn in `Redraw()`).
+  - Layout consts (~ lines 95-97): `PlotH = 128` (plot height), `AxisH = 16`, `ScrollReserve = 16`. The plot canvas is `PlotH + AxisH` tall; the plot occupies `y in [0, PlotH]`.
+  - `ValueToY(value, ceiling)` (~ line 307): linear `return PlotH * (1.0 - value / ceiling);`, log `return PlotH * (1 - Math.Clamp(frac, 0, 1));`. **Both return 0 at the ceiling** -> the max data point sits exactly on the canvas top edge.
+  - Polyline (~ lines 450-459): `Points` clamped with `Math.Clamp(yv, 0, PlotH)`; `StrokeThickness = 1.6`; `StrokeStartLineCap`/`StrokeEndLineCap = PenLineCap.Round`. At `y = 0` the round cap + the top half of the stroke (~0.8 px above the centre line) is clipped by the canvas, and the remaining sliver anti-aliases against the dark `Theme.Card` background -> reads as a different colour at the 100 % peak. **This is the user's reported symptom.**
+  - `DrawAxis`/`DrawAxisTick` (~ 482-539): fixed right-hand Y-axis. Linear ticks at `PlotH * (1 - i/5.0)` (i = 0..5, i=5 -> y=0); log ticks at `ValueToY(val, max)`. The top tick label is clamped with `Canvas.SetTop(lbl, Math.Max(y - 7, 1))`.
+
+- **The fix**: introduce `private const double TopPad = 4;` (only 4 px — 3% of the 128 px plot, so the scale still spans ~97% of the height, unlike the rejected T9.5 26 px). Three coordinated changes:
+  1. `ValueToY` (both linear and log): the y range becomes `[TopPad, PlotH]` instead of `[0, PlotH]`. Linear: `return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);`. Log: `return TopPad + (PlotH - TopPad) * (1 - Math.Clamp(frac, 0, 1));`.
+  2. Polyline point clamping: `Math.Clamp(yv, 0, PlotH)` → `Math.Clamp(yv, TopPad, PlotH)` so a data point can never be plotted above the inset line.
+  3. Linear axis ticks in `DrawAxis`: the inline `PlotH * (1 - i / 5.0)` formula (which gives y=0 at the max) is replaced with a call to `ValueToY(val, max)` so ticks align with the inset scale automatically.
+  4. The `ValueToY` doc comment is updated to note that the scale spans `TopPad..PlotH` (max at y = TopPad, not y = 0).
+
+  No other code touches `ValueToY`'s output or assumes y=0 is the max: the gridlines (line 391: `Y1 = 0, Y2 = PlotH`) are decorative 1-px lines full-height (fine); the log horizontal gridlines (line 419) call `ValueToY` directly (fine); the crosshair `UpdateCrosshair` clamps to `[0, PlotH]` via `_canvas` bounds (fine); the baseline axis line at `PlotH` is unchanged.
+
+- **Build**: `dotnet build nvidia_app.sln -c Release` → 0/0. Publish both targets (WPF `win-x64` + console `net8.0`) to `bin/` via the existing `build_executables.bat` flow.
 
 ## Task T17: Add build .bat: compile + publish executables to bin/
 
