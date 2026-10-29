@@ -95,6 +95,9 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
+    private const double TopPad = 4;         // small inset at the top edge so the max-value
+                                             // stroke (1.6 px, round cap) is fully drawn
+                                             // within the canvas (T18)
 
     private readonly Grid _inner = new();
 
@@ -300,22 +303,21 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot (ceiling at
-    /// y = 0, 0 at y = PlotH — the scale spans the whole plot height, so the max value
-    /// reaches the top edge; the topmost tick label is clamped in DrawAxisTick instead of
-    /// reserving headroom — T15).</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot. The scale spans
+    /// <c>[TopPad, PlotH]</c> (T18): the max value sits <see cref="TopPad"/> px below the
+    /// canvas top edge, so a 1.6 px round-capped stroke is drawn fully within the canvas
+    /// without the top sliver being clipped and mis-coloured. 0 maps to y = PlotH.</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return PlotH * (1.0 - value / ceiling);
+            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
 
-        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = 0
-        // (full-height scale — T15).
+        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = TopPad.
         double minLog = Math.Log(ceiling * 0.01);
         double maxLog = Math.Log(ceiling);
         double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
         double frac = (vLog - minLog) / (maxLog - minLog);
-        return PlotH * (1 - Math.Clamp(frac, 0, 1));
+        return TopPad + (PlotH - TopPad) * (1 - Math.Clamp(frac, 0, 1));
     }
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
@@ -444,7 +446,7 @@ public class MetricChart : Border
             {
                 double xv = _tl[i] * px + off;
                 double yv = ValueToY(values[i], max);
-                pts.Add(new Point(xv, Math.Clamp(yv, 0, PlotH)));
+                pts.Add(new Point(xv, Math.Clamp(yv, TopPad, PlotH)));
             }
 
             _canvas.Children.Add(new Polyline
@@ -493,8 +495,8 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         });
 
-        // T15: the scale spans the whole plot height — the topmost tick (value = max) sits
-        // at y = 0, i.e. on the plot's top edge (no headroom anymore).
+        // The scale spans [TopPad, PlotH] (T18) — the topmost tick (value = max) sits
+        // at y = TopPad (4 px below the canvas top edge).
         if (_logScale)
         {
             for (int p = 0; p <= 8; p++)
@@ -509,7 +511,7 @@ public class MetricChart : Border
             for (int i = 0; i <= 5; i++)
             {
                 double val = max * i / 5.0;
-                DrawAxisTick(Fmt(val), PlotH * (1 - i / 5.0));
+                DrawAxisTick(Fmt(val), ValueToY(val, max));
             }
         }
     }
@@ -532,8 +534,8 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         };
         Canvas.SetLeft(lbl, 8);
-        // T15: the topmost tick (value = max) sits at y = 0 — clamp so the label isn't
-        // clipped above the axis canvas (that case used to be covered by the TopPad headroom).
+        // The topmost tick (value = max) sits at y = TopPad (4 px) — clamp so the label
+        // isn't clipped above the axis canvas.
         Canvas.SetTop(lbl, Math.Max(y - 7, 1));
         _axisCanvas.Children.Add(lbl);
     }
