@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 9/10 | 28m | none |
+| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 9/10 | 34m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
@@ -23,10 +23,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 29-10-2026 23:54:24
-- **Last Updated**: 30-10-2026 00:23:00
-- **Time Spent**: 28m
+- **Last Updated**: 30-10-2026 00:28:30
+- **Time Spent**: 34m
 - **Branch**: [`fix/ai-fix-chart-top-edge-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-fix-chart-top-edge-clip)
-- **Commit(s)**: [d036c14](https://github.com/HectorBravo/nvidia_app/commit/d036c14)
+- **Commit(s)**: [d036c14](https://github.com/HectorBravo/nvidia_app/commit/d036c14) + [7425800](https://github.com/HectorBravo/nvidia_app/commit/7425800)
 - **Blockers**: none
 - **Findings & Notes**:
   - Symptom (user): at the 100 % peak of a GPU/SM-utilisation chart the data line renders in a **different (muddier) colour** than the rest of that line - "as if the last pixel at the highest value wasn't fully graphed."
