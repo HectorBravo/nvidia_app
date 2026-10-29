@@ -88,6 +88,7 @@ public class MetricChart : Border
     // (it can fire after _syncing is cleared), never a user gesture — so it must not
     // touch the follow-right latch. -1 when no programmatic scroll is pending.
     private double _progOffset = -1;
+    private int _lastMinute = -1;
     internal void QueueProgrammaticScroll(double target) => _progOffset = target;
     // Fixed right-hand Y-axis: reserved width for the axis column (value labels + tick marks).
     private const int AxisPad = 62;
@@ -95,9 +96,7 @@ public class MetricChart : Border
     private const double PlotH = 128;        // fixed plot (drawing) height in px
     private const double AxisH = 16;         // bottom strip for minute labels (below the plot)
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
-    private const double TopPad = 8;         // top inset: keeps the max-value stroke (1.6 px,
-                                             // round cap) fully within the canvas and ensures
-                                             // the topmost axis label (y - 7) stays >= 0 (T18)
+    private const double TopPad = 0;
 
     private readonly Grid _inner = new();
 
@@ -230,7 +229,8 @@ public class MetricChart : Border
         Grid.SetColumn(_plotScroll, 0);
 
         _axisScroll.Content = _axisCanvas;
-        _axisCanvas.Height = PlotH + AxisH; // match the plot so value labels line up
+        _axisCanvas.Height = PlotH; // match the plot area exactly (no AxisH for minutes)
+        _axisScroll.VerticalAlignment = VerticalAlignment.Top;
         Grid.SetColumn(_axisScroll, 1);
 
         body.Children.Add(_plotScroll);
@@ -303,21 +303,19 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
-    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot. The scale spans
-    /// <c>[TopPad, PlotH]</c> (T18): the max value sits <see cref="TopPad"/> px below the
-    /// canvas top edge, so a 1.6 px round-capped stroke is drawn fully within the canvas
-    /// without the top sliver being clipped and mis-coloured. 0 maps to y = PlotH.</summary>
+    /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot.
+    /// 0 maps to y = PlotH (bottom), ceiling maps to y = 0 (top).</summary>
     private double ValueToY(double value, double ceiling)
     {
         if (!_logScale)
-            return TopPad + (PlotH - TopPad) * (1.0 - value / ceiling);
+            return PlotH * (1.0 - value / ceiling);
 
-        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = TopPad.
+        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = 0.
         double minLog = Math.Log(ceiling * 0.01);
         double maxLog = Math.Log(ceiling);
         double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
         double frac = (vLog - minLog) / (maxLog - minLog);
-        return TopPad + (PlotH - TopPad) * (1 - Math.Clamp(frac, 0, 1));
+        return PlotH * (1 - Math.Clamp(frac, 0, 1));
     }
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
@@ -446,7 +444,7 @@ public class MetricChart : Border
             {
                 double xv = _tl[i] * px + off;
                 double yv = ValueToY(values[i], max);
-                pts.Add(new Point(xv, Math.Clamp(yv, TopPad, PlotH)));
+                pts.Add(new Point(xv, Math.Clamp(yv, 0, PlotH)));
             }
 
             _canvas.Children.Add(new Polyline
@@ -486,17 +484,17 @@ public class MetricChart : Border
         for (int i = _axisCanvas.Children.Count - 1; i >= 0; i--)
             _axisCanvas.Children.RemoveAt(i);
 
-        // Axis line at the left edge of the axis column (abuts the plot's right edge).
+        // Vertical axis line at the left edge of the axis column (abuts the plot's right edge).
         _axisCanvas.Children.Add(new Line
         {
             X1 = 0, Y1 = 0, X2 = 0, Y2 = PlotH,
-            Stroke = Theme.Border,
+            Stroke = Theme.White,
             StrokeThickness = 1,
             IsHitTestVisible = false,
         });
 
-        // The scale spans [TopPad, PlotH] (T18) — the topmost tick (value = max) sits
-        // at y = TopPad (4 px below the canvas top edge).
+        // The scale spans [0, PlotH] — the topmost tick (value = max) sits at y = 0
+        // (the very top), and the bottom tick (value = 0) at y = PlotH.
         if (_logScale)
         {
             for (int p = 0; p <= 8; p++)
@@ -521,7 +519,7 @@ public class MetricChart : Border
         _axisCanvas.Children.Add(new Line
         {
             X1 = 0, Y1 = y, X2 = 6, Y2 = y,
-            Stroke = Theme.Border,
+            Stroke = Theme.White,
             StrokeThickness = 1,
             IsHitTestVisible = false,
         });
@@ -534,9 +532,9 @@ public class MetricChart : Border
             IsHitTestVisible = false,
         };
         Canvas.SetLeft(lbl, 8);
-        // The topmost tick (value = max) sits at y = TopPad (4 px) — clamp so the label
-        // isn't clipped above the axis canvas.
-        Canvas.SetTop(lbl, Math.Max(y - 7, 1));
+        // Center the label vertically on the tick: label top at (y - halfLabelHeight).
+        // Clamp to >= 0 so the topmost tick (y=0) isn't drawn above the canvas.
+        Canvas.SetTop(lbl, Math.Max(y - 7, 0));
         _axisCanvas.Children.Add(lbl);
     }
 
