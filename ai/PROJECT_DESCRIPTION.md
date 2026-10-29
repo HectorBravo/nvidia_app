@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-24 21:18:00
-git_head: 079eb3f2ad0cc012a1a5bceadc32a0ab3c27f653
+last_indexed: 2026-10-30 00:22:00
+git_head: d036c14e616ceafc6efbd4af59b15124b9fd6c4d
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -259,14 +259,20 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   startup fit re-measure in `OnLayoutUpdated` subtracts the always-reserved outer bar
   (`w - 48` → `w - 61`). The bars keep the green "slide" styling; when nothing
   overflows they show as a slim, dark, disabled track.
+- 2026-10-30 — **T18: fix max-value line colour shift at the 100 % peak**
+  (`ChartController.cs`): the 1.6 px round-capped polyline was clipped by the canvas
+  boundary when the max value mapped to `y = 0`, producing a sub-pixel sliver that
+  anti-aliases against the dark card background and reads as a different colour. Fix:
+  a **small** `TopPad = 4` px inset (≈3 % of the plot) so the scale spans
+  `[TopPad, PlotH]` instead of `[0, PlotH]`; the top tick sits 4 px below the top
+  edge and the stroke is drawn fully in its true colour. Both linear and log scales
+  are affected.
 - 2026-10-19 — **T15: chart readout polish** (`Theme.cs` + `ChartController.cs`): the
   right-side Y-axis value labels are **white** (were muted gray `Theme.Muted`); the
   **"max N"** readout at each legend's right is **bright yellow** (`Theme.Yellow`,
   `#ffe14d`) at the legend's **12 px** size (was muted 10 px); the PCIe legend/hover
   link config uses **one** space before the `[gen width]` bracket (was two); and the
-  T9.5 `TopPad = 26` headroom is **gone** — both linear and log scales now span the
-  full 128 px plot height (max value at the top edge, `y = 0`), with the topmost tick
-  label clamped (`Math.Max(y - 7, 1)`) so it never clips.
+  T9.5 `TopPad = 26` headroom was **removed** (replaced in T18 by `TopPad = 4`).
 - 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
   (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
   **[index: name]** text is **removed again** from the chart legends and the
