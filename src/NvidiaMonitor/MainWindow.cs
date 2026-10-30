@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -82,9 +83,16 @@ public class MainWindow : Window
             FontFamily = Theme.Mono,
             FontSize = 12,
         };
+        var buildTime = new TextBlock
+        {
+            Text = $"[{new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).LastWriteTime:yyyy-MM-dd HH:mm}]",
+            Foreground = Theme.White,
+            FontFamily = Theme.Mono,
+            FontSize = 12,
+        };
         _header = new StackPanel
         {
-            Children = { title, _driverText },
+            Children = { title, buildTime, _driverText },
             Margin = new Thickness(16, 12, 16, 8),
         };
 
