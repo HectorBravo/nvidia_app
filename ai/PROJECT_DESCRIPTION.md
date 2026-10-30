@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-30 00:22:00
-git_head: d036c14e616ceafc6efbd4af59b15124b9fd6c4d
+last_indexed: 2026-10-30 03:47:39
+git_head: 45532d1747a169e8e1c8f2338c419ab828d1056a
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -259,20 +259,27 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   startup fit re-measure in `OnLayoutUpdated` subtracts the always-reserved outer bar
   (`w - 48` → `w - 61`). The bars keep the green "slide" styling; when nothing
   overflows they show as a slim, dark, disabled track.
-- 2026-10-30 — **T18: fix max-value line colour shift at the 100 % peak**
-  (`ChartController.cs`): the 1.6 px round-capped polyline was clipped by the canvas
-  boundary when the max value mapped to `y = 0`, producing a sub-pixel sliver that
-  anti-aliases against the dark card background and reads as a different colour. Fix:
-  a **small** `TopPad = 4` px inset (≈3 % of the plot) so the scale spans
-  `[TopPad, PlotH]` instead of `[0, PlotH]`; the top tick sits 4 px below the top
-  edge and the stroke is drawn fully in its true colour. Both linear and log scales
-  are affected.
+- 2026-10-30 — **T18: fix max-value line colour shift at the 100 % peak + chart perf**
+  (`ChartController.cs`): the 1.6 px round-capped/joined polyline was clipped by the
+  canvas edge when a value mapped to `y = 0` (or `y = PlotH`), leaving a sub-pixel
+  sliver that anti-aliases against the dark card background and reads as a different
+  colour. After iterating on a `TopPad` headroom (which mis-aligned the top/bottom axis
+  labels the user wanted flush to the edges), the final fix sets `TopPad = 0` so the
+  scale truly spans `[0, PlotH]` (0 → bottom, max → top) and clamps **only the
+  polyline** points to `[1, PlotH-1]` (1 px inset) with `PenLineCap.Flat` — axis
+  labels/ticks stay on the true edges while the 1.6 px stroke never crosses the canvas.
+  Per-minute gridlines **and** polylines are now drawn for the **full timeline** in one
+  pass, and `ChartController.OnDataTick` no longer performs a second full `Redraw()`
+  per tick (previously needed to refresh only-visible-window gridlines after the
+  scroll pin) — roughly halving the per-tick WPF element churn that was making the app
+  degrade / freeze over long sessions.
 - 2026-10-19 — **T15: chart readout polish** (`Theme.cs` + `ChartController.cs`): the
   right-side Y-axis value labels are **white** (were muted gray `Theme.Muted`); the
   **"max N"** readout at each legend's right is **bright yellow** (`Theme.Yellow`,
   `#ffe14d`) at the legend's **12 px** size (was muted 10 px); the PCIe legend/hover
   link config uses **one** space before the `[gen width]` bracket (was two); and the
-  T9.5 `TopPad = 26` headroom was **removed** (replaced in T18 by `TopPad = 4`).
+  T9.5 `TopPad = 26` headroom was **removed** (T18's final `TopPad = 0` + 1 px polyline
+  inset supersedes any fixed headroom).
 - 2026-10-17 — **T13: compact legend + top-right device list + fit-height fix**
   (`MainWindow` + `GpuMetricSample` + `ChartController`): (1) the per-GPU
   **[index: name]** text is **removed again** from the chart legends and the

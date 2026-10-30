@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 9/10 | 34m | none |
+| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
 
@@ -14,35 +14,37 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 14 completed task(s) - [View completed tasks](#completed-tasks)
+> 15 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 29-10-2026 23:54:24
-- **Last Updated**: 30-10-2026 00:28:30
-- **Time Spent**: 34m
-- **Branch**: [`fix/ai-fix-chart-top-edge-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-fix-chart-top-edge-clip)
-- **Commit(s)**: [d036c14](https://github.com/HectorBravo/nvidia_app/commit/d036c14) + [7425800](https://github.com/HectorBravo/nvidia_app/commit/7425800)
+- **Last Updated**: 30-10-2026 03:47:39
+- **Time Spent**: 50m
+- **Branch**: merged into [`main`](https://github.com/HectorBravo/nvidia_app/tree/main) (fast-forward to `45532d1`); working branch `fix/ai-fix-chart-top-edge-clip` deleted (local + remote) on user request
+- **Commit(s)**: [45532d1](https://github.com/HectorBravo/nvidia_app/commit/45532d1) (final: 1 px polyline inset + Flat caps) + [284e864](https://github.com/HectorBravo/nvidia_app/commit/284e864) (perf: single Redraw pass) + [fee1a9d](https://github.com/HectorBravo/nvidia_app/commit/fee1a9d) (`TopPad` -> 0 for edge alignment)
 - **Blockers**: none
 - **Findings & Notes**:
-  - Symptom (user): at the 100 % peak of a GPU/SM-utilisation chart the data line renders in a **different (muddier) colour** than the rest of that line - "as if the last pixel at the highest value wasn't fully graphed."
-  - Root cause: `MetricChart.ValueToY` maps the max value to `y = 0` (T15 made the scale span the whole 128 px plot). The data `Polyline` is 1.6 px with `Round` caps, so centred on `y = 0` its upper ~0.8 px is clipped by the canvas boundary; the surviving sub-pixel anti-aliases against the dark `Theme.Card` background -> a different shade. T15 had deleted an earlier `TopPad = 26` headroom (T9.5) and judged 0.8 px "negligible" - it is not.
-  - Fix: reintroduce a **small** `TopPad = 4` (~3 % of the plot, not the rejected 26 px) so the max value + topmost tick plot 4 px below the top edge -> the stroke is drawn fully in its true colour. Change is confined to `ChartController.cs`.
-  - Binaries rebuilt + republished to `bin/` after the fix (the "as usual" step).
+  - Symptom (user): at the 100 % peak the data line renders in a **different (muddier) colour** than the rest of that line - "as if the last pixel at the highest value wasn't fully graphed."
+  - Root cause: `MetricChart.ValueToY` maps the max value to `y = 0`. The 1.6 px data `Polyline` centred on `y = 0` has its upper ~0.8 px (round cap / join) clipped by the canvas; the surviving sub-pixel row anti-aliases against the dark `Theme.Card` background -> a different shade.
+  - **Evolution**: (1) first `TopPad = 4`/`8` px headroom fixed the colour but **mis-aligned the topmost axis label** - the user then asked for 0 at the very bottom edge, max at the very top, ticks matching the printed values. (2) `TopPad = 0` so the scale truly spans `[0, PlotH]`. (3) colour broke again at the peak; final fix = clamp the **polyline** Y to `[1, PlotH-1]` (1 px inset, imperceptible) + `PenLineCap.Flat`, so the stroke never crosses the edge while **axis labels/ticks stay on the true edges**.
+  - **Perf (same task; user reported the app eventually froze the PC, and froze almost immediately in one run)**: `ChartController.OnDataTick` did a **second full `Redraw()`** of all 9 charts each tick (per-minute gridlines were drawn only for the *visible* window, so they had to be re-drawn after the scroll pin). Now gridlines **and** polylines are drawn for the **full timeline** in one pass and the second `Redraw()` is gone -> ~half the per-tick UI-element churn (was ~700 elements/2 s, now ~350).
+  - All changes confined to `src/NvidiaMonitor/ChartController.cs`. Binaries rebuilt + republished to `bin/` ("as usual").
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (29-10-2026 23:54:24) The `fix/ai-fix-chart-top-edge-clip` branch will be pushed to origin. Please merge it into `main` when ready (I never push code to your branch). After your merge I'll do the final log on `main` + `--ff-only` fast-forward of the branch + `--force-with-lease` re-push (if you squash/rebase-merge: I leave the branch as-is - nothing is lost).
+None.
 
 **Confirmed (user provided):**
 
 - (29-10-2026 23:54:24) "On the graphs I see that if you're drawing the maximum value, like the 100% on the GPU utilization or the SM utilization, the color of the line changes, as if the last pixel with the highest value was not fully graphed. Look into it and fix it. After compile the binaries as usual." -> fix the top-edge clip so the peak keeps the line colour, then rebuild + republish the executables.
+- (30-10-2026) User wanted **0 at the very bottom edge and max at the very top** with ticks matching the printed values (dropped the `TopPad` headroom in favour of a 1 px polyline inset); separately reported the app **freezing the PC** over time (perf fix); on close-out (30-10-2026) asked to **delete both local + remote `fix/ai-fix-chart-top-edge-clip` branches** after merging to `main` (done - fast-forward, so no `--ff-only` re-push was needed; log committed + pushed to `main`).
 
 ### Subtasks / Plan
 
@@ -55,7 +57,10 @@
 - [x] Subtask 7 - Commit the code fix on the branch (`fix(charts): [ai] ...`) → `d036c14`
 - [x] Subtask 8 - Refresh `ai/PROJECT_DESCRIPTION.md` (small TopPad restored) + dedicated commit on the branch → `b3edfee`
 - [x] Subtask 9 - Push the branch to origin with `-u`
-- [ ] Subtask 10 - After the user merges into `main`: final log on `main` + `--ff-only` fast-forward + `--force-with-lease` re-push (or leave as-is for a squash/rebase merge)
+- [x] Subtask 10 - After the user merges into `main`: final log committed + pushed to `main` (user merged via fast-forward to `45532d1`)
+- [x] Subtask 11 - Re-fix peak colour after `TopPad` removal: clamp polyline to `[1, PlotH-1]` + `PenLineCap.Flat` so the 1.6 px round stroke never crosses the edge (`45532d1`)
+- [x] Subtask 12 - Perf: draw full-timeline gridlines + polylines in one pass; remove the second `Redraw()` from `OnDataTick` (`284e864`); rebuild + republish `bin/`
+- [x] Subtask 13 - On close-out: delete local + remote `fix/ai-fix-chart-top-edge-clip` on user request (branch fully merged, nothing lost)
 
 ### Full Context Notes for AI Agents
 
@@ -1279,6 +1284,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | fix | 13/13 | 50m |
 | 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | fix | 6/6 | 28m |
 | 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | fix | 10/10 | 20m |
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | feat | 6/6 | 1h 2m |
