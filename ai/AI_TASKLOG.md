@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
 | 19-10-2026 17:39:28 | [T16: SM-utilization metric (clamped at 100) + memory-clock chart + chart reorder](#task-t16-sm-utilization-metric-clamped-at-100--memory-clock-chart-chart-reorder) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 11/11 | 9m | none |
@@ -14,9 +15,55 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 15 completed task(s) - [View completed tasks](#completed-tasks)
+> 16 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+
+## Task T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 30-10-2026 12:15:01
+- **Last Updated**: 30-10-2026 12:18:48
+- **Time Spent**: 4m
+- **Branch**: [`feat/ai-add-build-time-header`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-add-build-time-header)
+- **Commit(s)**: [`869ddb6`](https://github.com/HectorBravo/nvidia_app/commit/869ddb6fb636e257f4e1fdc417182b9485375aff)
+- **Blockers**: none
+- **Findings & Notes**:
+  - One user request, three small UI additions: (1) a **build timestamp** `[yyyy-MM-dd HH:mm]` in white under the "NVIDIA GPU MONITOR" title (`MainWindow.cs`, same font as the driver/CUDA/NVML readouts); (2) a **white vertical Y-axis line** on the right edge of every chart; (3) **white tick marks** at each Y-axis label (0/20/…/100 %) so a right-side value maps to a horizontal line across the plot (`ChartController.cs`).
+  - The build-timestamp edit was made in a **prior session** but **never committed** — it was the only dirty file (`M src/NvidiaMonitor/MainWindow.cs`) when the PC crashed. On resume it was committed to a fresh `feat/ai-add-build-time-header` branch and **fast-forwarded into `main`** (user: "merge all to main"), then the redundant branch was deleted (local + remote).
+  - The white-axis-line + tick-mark changes were already committed in an earlier commit in the same session; the working tree is now clean.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None.
+
+**Confirmed (user provided):**
+
+- (30-10-2026 12:15:01) "push that too, I wanted that. And merge all to main." -> commit the build-timestamp feature (plus the white axis-line/tick-mark work from the same request) to a branch, fast-forward `main` onto it, push, then delete the now-redundant AI branch.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 - `MainWindow.cs`: white build-timestamp `[yyyy-MM-dd HH:mm]` under the "NVIDIA GPU MONITOR" title (same `FontSize` 12 as the driver/CUDA/NVML readouts)
+- [x] Subtask 2 - `ChartController.cs`: white vertical Y-axis line on the right edge of every chart
+- [x] Subtask 3 - `ChartController.cs`: white tick marks at each Y-axis value label so right-side values map to a horizontal line across the plot
+- [x] Subtask 4 - Commit to `feat/ai-add-build-time-header`, push `-u`; fast-forward `main` onto it + push; delete the redundant branch (local + remote); rebuild + republish `bin/`
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh session can resume T19 without other context.
+
+**What changed (this task)**
+- `src/NvidiaMonitor/MainWindow.cs`: a white build-timestamp `[yyyy-MM-dd HH:mm]` TextBlock under the "NVIDIA GPU MONITOR" title, same style/`FontSize` (12) as the driver/CUDA/NVML readouts. The stamp comes from the assembly's image last-write time (the build's compile time), so it always reflects the fresh binary.
+- `src/NvidiaMonitor/ChartController.cs`: white vertical Y-axis line at the right plot edge + white horizontal tick marks at each Y-axis label position (0/20/…/100 %).
+
+**Gotcha**
+- The build-timestamp edit was made in a **prior session** but **never committed**; it sat as the sole dirty file (`M src/NvidiaMonitor/MainWindow.cs`) when the user's PC crashed mid-session. It was recoverable from the working tree but was not yet on any branch. On resume it was committed to a fresh AI branch and fast-forwarded into `main`. **Lesson: commit product-code changes in the same session** — a crash can strand uncommitted work (recoverable here, but not on any branch).
+
+**State**
+- Everything is merged into `main` and pushed; the AI branch `feat/ai-add-build-time-header` (same commit as `main`'s tip) was deleted local + remote per the user's "merge all to main". Binaries rebuilt + republished. Task complete.
 
 ## Task T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak
 
@@ -1284,6 +1331,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | feat | 4/4 | 4m |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | fix | 13/13 | 50m |
 | 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | fix | 6/6 | 28m |
 | 17-10-2026 21:44:41 | [T13: Compact legend, GPU device list (top-right), fit-height fix](#task-t13-compact-legend-gpu-device-list-top-right-fit-height-fix) | fix | 10/10 | 20m |
