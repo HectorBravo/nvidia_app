@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 1/9 | 0m | none |
+| 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 8/9 | 3m | none |
 
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -27,16 +27,17 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 08-11-2026 23:52:01
-- **Last Updated**: 08-11-2026 23:52:01
-- **Time Spent**: 0m
-- **Branch**: pending — will be `fix/ai-collapse-gpu-util-card` (cut from `main`)
-- **Commit(s)**: pending
+- **Last Updated**: 08-11-2026 23:54:47
+- **Time Spent**: 3m
+- **Branch**: [`fix/ai-collapse-gpu-util-card`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-collapse-gpu-util-card) — pushed with `-u`, cut from `main` @ `a6bde46`
+- **Commit(s)**: [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46) (log plan, `main`) · [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7) (code, branch) · [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f) (index refresh, branch)
 - **Blockers**: none
 - **Findings & Notes**:
   - **User correction**: "you made a mistake on the last change of this repo and set the *memory utilization %* as collapsed instead of the *GPU utilization* as I asked. Fix it." So the T21 spec block collapsed the **wrong** card.
   - Current `main` state (from [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f)): `Memory Used` + `GPU Utilization` open **expanded**, `Memory Utilization` carries `Collapsed: true` — the code matched T21's own comment but not the user's intent.
   - Intended end state: the two **expanded** cards are `Memory Used (%)` (spec index 0) and `Memory Utilization (%)`; `GPU Utilization (%)` starts **collapsed**. Still 7 of 9 cards collapsed, so no window-height change and no other spec touched.
   - Fix is a one-line swap of `Collapsed: true` between the two adjacent specs (`MainWindow.cs` L641-647) plus the comment at L638 that names the expanded pair — nothing else in the file mentions which card is expanded.
+  - **Verified (08-11-2026 23:54)**: `dotnet build nvidia_app.sln -c Release` → 0 warnings / 0 errors; both exes republished to `bin/` after stopping the running dashboard; `bin\NvmlTest\NvmlTest.exe --print` still prints all 3 GPUs; dashboard relaunched (PID 32188) and starts with Memory Used + Memory Utilization expanded, GPU Utilization collapsed.
 
 ### User Confirmations
 
@@ -50,14 +51,14 @@ None.
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Pre-flight: re-read the T20/T21 log entries + the `_specs` block in `MainWindow.cs`
-- [ ] Subtask 2 — This log entry committed on `main` (log-only `docs(ai)` commit) and pushed
-- [ ] Subtask 3 — Create `fix/ai-collapse-gpu-util-card` from `main`
-- [ ] Subtask 4 — Move `Collapsed: true` from the Memory Utilization spec to the GPU Utilization spec; reword the "expanded pair" comment
-- [ ] Subtask 5 — `dotnet build nvidia_app.sln -c Release` → 0 errors / 0 warnings
-- [ ] Subtask 6 — Stop the running dashboard, republish both exes to `bin/`, `--print` sanity check, relaunch
-- [ ] Subtask 7 — Refresh `ai/PROJECT_DESCRIPTION.md` (collapsed-card wording, `git_head`, `last_indexed`)
-- [ ] Subtask 8 — Commit code + index on the branch, push with `-u`
+- [x] Subtask 1 — Pre-flight: re-read the T20/T21 log entries + the `_specs` block in `MainWindow.cs`
+- [x] Subtask 2 — This log entry committed on `main` as [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46) and pushed
+- [x] Subtask 3 — Created `fix/ai-collapse-gpu-util-card` from `main`
+- [x] Subtask 4 — Moved `Collapsed: true` onto the GPU Utilization spec / off the Memory Utilization spec, reworded the expanded-pair comment → [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7)
+- [x] Subtask 5 — `dotnet build nvidia_app.sln -c Release` → **0 warnings / 0 errors**
+- [x] Subtask 6 — Stopped the running dashboard (PID 4524), republished `NvmlTest` + `NvidiaMonitor` to `bin/`, `--print` still shows all 3 GPUs, relaunched (alive, PID 32188)
+- [x] Subtask 7 — Refreshed `ai/PROJECT_DESCRIPTION.md` (Overview L27-28, Directory/Architecture L140, Conventions L268-272, new T22 changelog entry, `git_head: 945e82c…`, `last_indexed: 2026-11-08 23:56:30`) as [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f)
+- [x] Subtask 8 — Code + index committed on the branch and pushed with `-u`
 - [ ] Subtask 9 — Close-out on request: merge into `main`, finalize this entry, fast-forward + re-push
 
 ### Full Context Notes for AI Agents
@@ -92,7 +93,16 @@ _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
 - `NvidiaMonitor.exe` was **running (PID 4524)** at task start — it locks its `bin/` DLLs, so stop it before `dotnet publish`, then relaunch.
 - Gotchas still live: lazygit can leave `.git/index.lock` → retry the git command; PowerShell splits `-m` payloads that contain `%`/parens → keep commit messages plain.
 
-**Current state / next step**: log entry written and committed on `main`; next is `git checkout -b fix/ai-collapse-gpu-util-card` and the spec swap in `MainWindow.cs`. No `src/` file is changed yet.
+**Current state / next step (08-11-2026 23:54:47)**: the swap is **done** — `MainWindow.cs`
+`BuildTabs()` now reads GPU Utilization with `Percent: true, Collapsed: true` and Memory
+Utilization with `Percent: true` only. Build is 0/0, both exes republished to `bin/`, the
+dashboard was relaunched from the branch build (PID 32188) so the user already sees the
+correct start state. `ai/PROJECT_DESCRIPTION.md` re-pointed to `git_head: 945e82c…`.
+Branch `fix/ai-collapse-gpu-util-card` is pushed with `-u` (tip `b07c10f`); **only**
+`ai/AI_TASKLOG.md` remains to be committed on it (this follow-up). Next step is the user
+merging the branch into `main`, after which this entry is finalized (`done`, real merge
+hash, final Time Spent) on `main` and the branch fast-forwarded onto it
+(`merge --ff-only origin/main` + `--force-with-lease` re-push).
 
 ---
 
