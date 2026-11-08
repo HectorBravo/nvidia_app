@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 5m | none |
 | 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 11m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -17,6 +18,67 @@
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 16 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 08-11-2026 22:56:30
+- **Last Updated**: 08-11-2026 23:01:17
+- **Time Spent**: 5m
+- **Branch**: [`feat/ai-chart-collapse-tweaks`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-collapse-tweaks)
+- **Commit(s)**: [c9bb819](https://github.com/HectorBravo/nvidia_app/commit/c9bb819113de9dd2a91b6f671b837195739a7c2e) (T21 plan, on `main`) · [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) (code, branch) · [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) (index refresh, branch)
+- **Blockers**: none
+- **Findings & Notes**:
+  - Four follow-ups to [T20](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis), **all inside `MainWindow.cs`** — `ChartController.cs` untouched:
+    - (a) the Memory-Used legend read `80 %` because `ChartSpec.Unit` was `" %"`; it is now `"%"` → **`80% (19739 MiB)`** (the other percent charts already used `"%"`).
+    - (b) Memory Utilization, PCIe Bandwidth and Power also start **collapsed** → 7 of 9 cards collapsed, so only GPU Utilization + Memory Used are expanded (chart stack ≈ 672 px; the fit-to-content window shrinks with it).
+    - (c) **Memory Used is now spec index 0** (heads the Charts tab); the others keep their relative order, and `_runningMax` keeps the same values but its **order comment was rewritten** to memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock so the index↔spec mapping stays honest.
+    - (d) the top-right device list now prints each card's own max memory right after its name: **`cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)`** (muted `Run`, `Theme.Mb(g.MemoryTotalBytes)`, `" (N/A)"` when NVML reports no total) — the same number the percent chart divides by.
+  - Branch was cut from `feat/ai-collapsible-chart-cards` (not `main`) because `main` does not carry the T20 code yet, so this branch must be a superset to keep both merges clean.
+  - Verified: `dotnet build nvidia_app.sln -c Release` → **0 errors / 0 warnings**; both exes republished to `bin/` after stopping the running dashboard; `--print` still exits clean; fresh dashboard launched and alive (window now shows Memory Used first with the tight `%` legend and the device totals).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (08-11-2026 22:56:30) After the branch is pushed: please merge `feat/ai-chart-collapse-tweaks` (superset of the T20 branch) into `main` so the final `done` log + the `merge --ff-only` / `--force-with-lease` re-push of both AI branches can happen.
+
+**Confirmed (user provided):**
+
+- (08-11-2026 22:56:30) "the memory used graph, on the top legent you are separateing the value from the percentage sign. Remove the space between. Make the memory utilization graph, the pcie bandwidth and the power graphs also collapsed by default. Move the memory used % graph to the first graph position. Also, on the top right of the aplication where you show the graphic cards, show the maximum memory they have righa after each card, for instance 'NVIDIA Geforce RTX 3090 (XXXX MiB)'"
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Pre-flight: confirmed the T20 code only exists on `feat/ai-collapsible-chart-cards`, re-read the `_specs` block + `UpdateDevicesPanel`
+- [x] Subtask 2 — T21 plan committed on `main` as [c9bb819](https://github.com/HectorBravo/nvidia_app/commit/c9bb819113de9dd2a91b6f671b837195739a7c2e) and pushed (log-only file on the user's branch)
+- [x] Subtask 3 — `feat/ai-chart-collapse-tweaks` created from `feat/ai-collapsible-chart-cards` (superset)
+- [x] Subtask 4 — Memory Used `ChartSpec` unit `" %"` → `"%"` (legend/hover now `80% (19739 MiB)`)
+- [x] Subtask 5 — `Collapsed: true` added to Memory Utilization, PCIe Bandwidth and Power specs
+- [x] Subtask 6 — Memory Used spec moved to index 0; `_runningMax` order comment rewritten (values unchanged)
+- [x] Subtask 7 — `UpdateDevicesPanel`: third muted `Run` with ` (NNNN MiB)` (`" (N/A)"` when `MemoryTotalBytes <= 0`)
+- [x] Subtask 8 — Stopped the running dashboard, `dotnet build` → 0/0, `dotnet publish` both exes → `bin/`, `--print` sanity check, relaunched (alive, PID 46156)
+- [x] Subtask 9 — Code committed as [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) and the index refresh as [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) on the branch; branch pushed with `-u`. **Still open:** the `done` log + merge-triggered fast-forward of both AI branches once the user merges.
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh session can replay or extend T21 without other context.
+
+**Where T21 lives — `src/NvidiaMonitor/MainWindow.cs` only**
+- `_runningMax` (~L45-48): `private readonly double[] _runningMax = { 100, 100, 100, 100, 100, 400, 32, 2100, 1600 };` — positional against `_charts`/`_specs`; the new order comment is **memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock**. Percent charts keep the `Percent: true` short-circuit in `UpdateCharts` (`ceiling = Math.Max(spec.MinCeiling, spec.Percent ? 100 : …)`), so their seeds only matter as a fallback.
+- `BuildTabs()` Charts section: nine `_specs.Add(new ChartSpec(...))` calls, now led by `("Memory Used (%)", "%", 0, <percent-of-card selector>, Pct: true, Percent: true, PctBase: s => s.MemoryTotalBytes / 1048576.0, PctValue: true)`; then GPU Util (`Percent: true`, expanded), then the seven `Collapsed: true` cards. `ChartSpec` params: `Title, Unit, Decimals, Selector, LogScale, Pcie, Pct, Percent, MinCeiling, PctBase, PctValue, Collapsed`.
+- Build loop (unchanged from T20): `new MetricChart(spec.Title)` → `chart.Bind(_chartCtl)` → `SetLogScale` / `SetPctValue` / `SetCollapsed` → `_charts.Add` → `stack.Children.Add`.
+- `UpdateDevicesPanel(SystemSnapshot)` (~L334-370): swatch + `TextBlock` Inlines — `Run("cuda:{i}")` muted, `Run("  {name}")` foreground, and the new `maxMemLabel = g.MemoryTotalBytes > 0 ? $" ({Theme.Mb(g.MemoryTotalBytes)} MiB)" : " (N/A)"` muted.
+- The unit string is consumed in `MetricChart.UpdateLegend()` **and** `UpdateCrosshair()` as `Fmt(cur) + _unit`, which is why `"%"` alone produced the requested tight `80%`; the MiB parenthetical (`_absUnit = "MiB"`) keeps its own leading space.
+
+**Git state after T21 (verify before resuming)**
+- `main`: `c9bb819` (T21 plan log, pushed) — does **not** contain T20/T21 code.
+- `feat/ai-collapsible-chart-cards`: `fa562ba` (T20 code + index + log) — pushed with `-u`.
+- `feat/ai-chart-collapse-tweaks`: `232f205` (code `4c73f52` + index refresh) + the T21 log entry committed on the branch — **superset**, so merging it into `main` brings T20 and T21 at once.
+- After that merge: write the final `done` entries for T20 + T21 on `main`, then fast-forward both AI branches onto it (`fetch` → `checkout` → `merge --ff-only origin/main` → `push --force-with-lease`).
+- Gotchas: the user's lazygit periodically leaves `.git/index.lock` → retry the git command rather than deleting the lock; a running `NvidiaMonitor.exe` locks its `bin/` DLLs, so stop it before `dotnet publish`; `git commit -m` payloads with `%`/parens/escaped quotes get split by PowerShell → keep commit messages simple or split `-m` args.
 
 ---
 
