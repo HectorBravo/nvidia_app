@@ -26,7 +26,7 @@
 - **Created**: 08-11-2026 22:56:30
 - **Last Updated**: 08-11-2026 23:10:00
 - **Time Spent**: 11m
-- **Branch**: [`feat/ai-chart-collapse-tweaks`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-collapse-tweaks) — **merged into `main`**
+- **Branch**: ~~`feat/ai-chart-collapse-tweaks`~~ — merged into `main` as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) then **deleted locally + remotely at 08-11-2026 23:09**; its commits live on `main`.
 - **Commit(s)**: [c9bb819](https://github.com/HectorBravo/nvidia_app/commit/c9bb819113de9dd2a91b6f671b837195739a7c2e) (plan, `main`) · [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) (code) · [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) (index refresh) · [daaa98b](https://github.com/HectorBravo/nvidia_app/commit/daaa98b) (branch log) · **merged** by [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) into `main`
 - **Blockers**: none
 - **Findings & Notes**:
@@ -48,6 +48,7 @@ None.
 **Confirmed (user provided):**
 
 - (08-11-2026 23:04:23) "merge both ai branches into main and update the tasklog" → merged `feat/ai-chart-collapse-tweaks` (a superset that already contains `feat/ai-collapsible-chart-cards`, so both AI branches are in `main` with one merge) as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea); task log finalized on `main`; both AI branches fast-forwarded onto `origin/main` and re-pushed with `--force-with-lease`.
+- (08-11-2026 23:09:24) "once merged, remove the two ai branches from local and remote" → both deleted (`git branch -d` locally — safe, both merged — plus `git push origin --delete …`, then `git fetch --prune`); only `main` remains locally and remotely.
 - (08-11-2026 22:56:30) "the memory used graph, on the top legent you are separateing the value from the percentage sign…" → unit `"%"` (no space), Memory Utilization + PCIe + Power also `Collapsed: true` (7 of 9 collapsed), Memory Used moved to spec index 0, and ` (24576 MiB)` appended to each device-list row.
 
 ### Subtasks / Plan
@@ -76,7 +77,7 @@ None.
 
 **Git state after T21 (final — verified 08-11-2026 23:10)**
 - `main`: [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) **merge commit carrying all T20 + T21 code** (parents `c9bb819` = plan logs on `main`, `daaa98b` = branch tip), with the final `done` log entries committed right on top of it. `git diff main feat/ai-chart-collapse-tweaks` is empty ⇒ `main` is the single source of truth for the code.
-- `feat/ai-chart-collapse-tweaks` and `feat/ai-collapsible-chart-cards`: both **fast-forwarded onto `origin/main`** (`merge --ff-only`, no merge commit) and re-pushed with `--force-with-lease`, so all three refs and the remote agree — `git branch -vv` shows `-> origin/main` for both.
+- `feat/ai-chart-collapse-tweaks` and `feat/ai-collapsible-chart-cards`: both **fast-forwarded onto `origin/main`** (`merge --ff-only`, no merge commit) and re-pushed with `--force-with-lease`, so all three refs and the remote agree — `git branch -vv` shows `-> origin/main` for both. **Then deleted at the user's request (08-11-2026 23:09)** — `git branch -d` (both merged, so nothing was lost) locally and `git push origin --delete …` on GitHub; `git ls-remote --heads origin` now lists **only `refs/heads/main`** and `git branch -a` has no leftover remote mirrors. A resumed session therefore starts on `main`; there is no AI branch to check out or fast-forward, and the next task must create a fresh `<type>/ai-*` branch from `main`.
 - Historical: plans were `6c63ac1` (T20) / `c9bb819` (T21) on `main`; code was `a8ca26b` + `4c73f52`, index refreshes `f284faf` + `232f205`, branch log follow-ups `fa562ba` + `daaa98b`.
 - Project map: `ai/PROJECT_DESCRIPTION.md` still carries `git_head: 4c73f52…` (the **T21 code commit**, whose content is byte-identical to what is on `main` — `git diff main feat/ai-chart-collapse-tweaks` is empty). The two commits after it (`a680099` merge, `4d77ddd` log finalize) touched **only** `ai/AI_TASKLOG.md`, so no source, build, config, packaging or dependency file changed since that index refresh — the map's *content* is current, only its `git_head` metadata trails by two doc-only commits. Left untouched on `main` because the git rules permit only `ai/AI_TASKLOG.md` to be pushed to the user's branch; a future index refresh will re-point it.
 - Gotchas: the user's lazygit periodically leaves `.git/index.lock` → retry the git command rather than deleting the lock; a running `NvidiaMonitor.exe` locks its `bin/` DLLs, so stop it before `dotnet publish`; `git commit -m` payloads with `%`/parens/escaped quotes get split by PowerShell → keep commit messages simple or split `-m` args; `git merge` reports a conflict **only** in `ai/AI_TASKLOG.md` when the log was updated on both sides → `git checkout --theirs` (the branch copy is the fuller one) then finish the entry on `main`.
@@ -90,7 +91,7 @@ None.
 - **Created**: 08-11-2026 22:29:12
 - **Last Updated**: 08-11-2026 23:10:00
 - **Time Spent**: 17m
-- **Branch**: [`feat/ai-collapsible-chart-cards`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-collapsible-chart-cards) — **merged into `main`** (its commits are ancestors of [daaa98b](https://github.com/HectorBravo/nvidia_app/commit/daaa98b) → [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea), so one merge covered both AI branches)
+- **Branch**: ~~`feat/ai-collapsible-chart-cards`~~ — merged into `main` (ancestor of the T21 branch, so one merge covered both AI branches) and **deleted locally + remotely at 08-11-2026 23:09**; its commits live on `main`.
 - **Commit(s)**: [6c63ac1](https://github.com/HectorBravo/nvidia_app/commit/6c63ac188ef1a980f468f990b4ea74146aaa13b4) (log, on `main`) · [a8ca26b](https://github.com/HectorBravo/nvidia_app/commit/a8ca26b05f5598104691b24d08953555a1f6095d) (code, on branch) · [f284faf](https://github.com/HectorBravo/nvidia_app/commit/f284fafeaf948f254b4ddd1becdfca9ea4a778d5) (index refresh, on branch) · **merged** by [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) into `main`
 - **Blockers**: none
 - **Findings & Notes**:
@@ -113,6 +114,7 @@ None.
 **Confirmed (user provided):**
 
 - (08-11-2026 23:04:23) "merge both ai branches into main and update the tasklog" → `feat/ai-chart-collapse-tweaks` (which already contained `feat/ai-collapsible-chart-cards`) merged into `main` as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea); this entry finalized as `done` on `main`; both AI branches fast-forwarded onto `origin/main` and re-pushed with `--force-with-lease`.
+- (08-11-2026 23:09:24) "once merged, remove the two ai branches from local and remote" → `feat/ai-collapsible-chart-cards` deleted locally (`git branch -d`, merged ⇒ nothing lost) and on `origin` (`git push origin --delete`); `git ls-remote --heads origin` now lists only `refs/heads/main`.
 - (08-11-2026 22:29:12) "A `NvidiaMonitor.exe` is running (PID 34296) — how should I rebuild?" → "Kill/stop PID 34296 for me, then build + publish to bin/"
 - (08-11-2026 22:29:12) Original request: "add a dropbox that lets me compact every graph, that icon should be on the top left of each graph. Upon start, temperature, sm utilization, gpu clock and memory clock should be collapsed… make the window a bit shorter… the memory used should graph a percentage between 0 and 100%… Read the 100% from the card itself… instead of showing the value in MiB you show the first value as the percentage, and between parenthesis the amount of memory"
 
