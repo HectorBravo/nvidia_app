@@ -4,8 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 8/9 | 3m | none |
-
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -17,22 +15,23 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 18 completed task(s) - [View completed tasks](#completed-tasks)
+> 19 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
 
 ## Task T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 08-11-2026 23:52:01
-- **Last Updated**: 08-11-2026 23:54:47
-- **Time Spent**: 3m
-- **Branch**: [`fix/ai-collapse-gpu-util-card`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-collapse-gpu-util-card) — pushed with `-u`, cut from `main` @ `a6bde46`
-- **Commit(s)**: [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46) (log plan, `main`) · [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7) (code, branch) · [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f) (index refresh, branch)
+- **Last Updated**: 08-11-2026 23:56:30
+- **Time Spent**: 4m
+- **Branch**: ~~`fix/ai-collapse-gpu-util-card`~~ — **fast-forward merged** into `main` (the user merged it, so `main` tip became `4b8c0d5` and no merge commit was created), then **deleted locally + remotely at 08-11-2026 23:56**; its commits now live on `main`.
+- **Commit(s)**: [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46203e68320ac34a4d4991a6c2cfa0981b9) (plan log, `main`) · [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7) (code) · [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f) (project-index refresh) · [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2) (branch log follow-up, now the `main` tip after the fast-forward merge) · finalize log commit: see the Follow-up below
 - **Blockers**: none
 - **Findings & Notes**:
+  - **Close-out (08-11-2026 23:55–23:56)**: the user fast-forward merged `fix/ai-collapse-gpu-util-card` into `main`, so `main` tip became [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2) (**no merge commit** — the branch was already next to `main` after the plan-log commit) and `git diff main fix/ai-collapse-gpu-util-card` is empty ⇒ `main` is the single source of truth. This entry was then finalized on `main` as a dedicated `docs(ai)` log commit, the branch was fast-forwarded onto that finalize commit (`merge --ff-only origin/main`) and re-pushed with `--force-with-lease`, and finally **deleted locally (`git branch -d`) + remotely (`git push origin --delete`)** at the user's request — `git ls-remote --heads origin` now lists only `refs/heads/main`.
   - **User correction**: "you made a mistake on the last change of this repo and set the *memory utilization %* as collapsed instead of the *GPU utilization* as I asked. Fix it." So the T21 spec block collapsed the **wrong** card.
   - Current `main` state (from [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f)): `Memory Used` + `GPU Utilization` open **expanded**, `Memory Utilization` carries `Collapsed: true` — the code matched T21's own comment but not the user's intent.
   - Intended end state: the two **expanded** cards are `Memory Used (%)` (spec index 0) and `Memory Utilization (%)`; `GPU Utilization (%)` starts **collapsed**. Still 7 of 9 cards collapsed, so no window-height change and no other spec touched.
@@ -59,7 +58,7 @@ None.
 - [x] Subtask 6 — Stopped the running dashboard (PID 4524), republished `NvmlTest` + `NvidiaMonitor` to `bin/`, `--print` still shows all 3 GPUs, relaunched (alive, PID 32188)
 - [x] Subtask 7 — Refreshed `ai/PROJECT_DESCRIPTION.md` (Overview L27-28, Directory/Architecture L140, Conventions L268-272, new T22 changelog entry, `git_head: 945e82c…`, `last_indexed: 2026-11-08 23:56:30`) as [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f)
 - [x] Subtask 8 — Code + index committed on the branch and pushed with `-u`
-- [ ] Subtask 9 — Close-out on request: merge into `main`, finalize this entry, fast-forward + re-push
+- [x] Subtask 9 — Close-out: user fast-forward merged `fix/ai-collapse-gpu-util-card` into `main` (main tip = `4b8c0d5`, no merge commit, `git diff main fix/ai-collapse-gpu-util-card` empty), this entry finalized as `done` on `main`, branch fast-forwarded onto the finalize commit + re-pushed, then **deleted locally and remotely** at the user's request
 
 ### Full Context Notes for AI Agents
 
@@ -93,19 +92,26 @@ _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
 - `NvidiaMonitor.exe` was **running (PID 4524)** at task start — it locks its `bin/` DLLs, so stop it before `dotnet publish`, then relaunch.
 - Gotchas still live: lazygit can leave `.git/index.lock` → retry the git command; PowerShell splits `-m` payloads that contain `%`/parens → keep commit messages plain.
 
-**Current state / next step (08-11-2026 23:54:47)**: the swap is **done** — `MainWindow.cs`
-`BuildTabs()` now reads GPU Utilization with `Percent: true, Collapsed: true` and Memory
-Utilization with `Percent: true` only. Build is 0/0, both exes republished to `bin/`, the
-dashboard was relaunched from the branch build (PID 32188) so the user already sees the
-correct start state. `ai/PROJECT_DESCRIPTION.md` re-pointed to `git_head: 945e82c…`.
-Branch `fix/ai-collapse-gpu-util-card` is pushed with `-u` (tip `b07c10f`); **only**
-`ai/AI_TASKLOG.md` remains to be committed on it (this follow-up). Next step is the user
-merging the branch into `main`, after which this entry is finalized (`done`, real merge
-hash, final Time Spent) on `main` and the branch fast-forwarded onto it
-(`merge --ff-only origin/main` + `--force-with-lease` re-push).
+**Current state / next step — DONE (08-11-2026 23:56:30)**
+- All 9 subtasks complete. `MainWindow.cs` `BuildTabs()` now declares GPU Utilization with
+  `Percent: true, Collapsed: true` and Memory Utilization with `Percent: true` only; the
+  expanded pair at start-up is **Memory Used + Memory Utilization** (verified by
+  `git diff main fix/ai-collapse-gpu-util-card` being empty and 7 `Collapsed: true` spec
+  flags on `main`).
+- **Git state after T22 (verified 08-11-2026 23:56)**: `main` = finalize log commit on top of
+  [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2)
+  (which is the user's fast-forward merge of the branch, so no merge commit exists);
+  `fix/ai-collapse-gpu-util-card` was fast-forwarded onto the finalize commit and re-pushed,
+  then **deleted locally + remotely** — `git branch -a` has no AI branch and
+  `git ls-remote --heads origin` lists **only `refs/heads/main`**. A resumed session therefore
+  starts on `main` and must cut a fresh `<type>/ai-*` branch from it.
+- `ai/PROJECT_DESCRIPTION.md` carries `git_head: 945e82c94e15607e8d4672df5db3a8705a6a22c7`
+  (the **T22 code commit**, whose content is byte-identical to `main` — every later commit
+  touched only `ai/AI_TASKLOG.md` / the index itself), so the map's content is current; only
+  that metadata trails the doc-only commits, and the next index refresh will re-point it.
+- Nothing pending for a resumed session.
 
 ---
-
 
 
 
@@ -1570,6 +1576,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | fix | 9/9 | 4m |
 | 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | feat | 9/9 | 11m |
 | 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | feat | 9/9 | 17m |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | feat | 4/4 | 4m |
