@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-08 22:39:21
-git_head: a8ca26b05f5598104691b24d08953555a1f6095d
+last_indexed: 2026-11-08 22:59:08
+git_head: 4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -17,14 +17,15 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
   fit-to-content window size** (never maximized; sized so no scrollbar is needed at
   first launch — and every scrollbar's 13 px is reserved from the first layout, so the
-  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name, with a colour
-  swatch matching each GPU's chart series) sits at the **top-right of the header
+  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name
+  **plus that card's own max memory in MiB**, with a colour swatch matching each GPU's
+  chart series) sits at the **top-right of the header
   row**; the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab). Every chart card also carries a **chevron
   "dropbox" at its top-left** that collapses the card down to just its header row, and
-  **Temperature, SM Utilization and both clock cards open collapsed** — that is what
-  keeps the calculated fit-to-content window short (T20).
+  **only GPU Utilization and Memory Used open expanded — the other seven cards start
+  collapsed** (T20 + T21), which is what keeps the calculated fit-to-content window short.
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
@@ -135,8 +136,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                                   driving 9 MetricChart cards (GPU-util, mem-util, mem-used, temp, SM-util,
-                                   power, PCIe-bandwidth [log Y], GPU-clock, mem-clock) — native WPF shapes
+                                   driving 9 MetricChart cards (mem-used [% of that card's own memory → FIRST], GPU-util,
+                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y], GPU-clock, mem-clock — all but mem-used and GPU-util start collapsed, see T20/T21) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -252,8 +253,18 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   card's **own** `MemoryTotalBytes` (from `nvmlDeviceGetMemoryInfo`) using a **double**
   division — `long/long` would truncate to 0/1 — on the fixed 0-100 axis, and
   `MetricChart._pctValue` (set through `ChartSpec.PctValue`) makes its legend/hover
-  readout **`NN % (MMMM MiB)`** — percent first, the absolute amount in parentheses;
-  the Power chart keeps the old `NN.N W (NN %)` shape.
+  readout **`NN% (MMMM MiB)`** — percent first (no space before `%`, T21), the absolute
+  amount in parentheses; the Power chart keeps the old `NN.N W (NN %)` shape.
+  **T21 chart tweaks (all in `MainWindow.cs`)**: the Memory-Used spec's `Unit` is `"%"`
+  (not `" %"`) so legend/hover read `80% (19739 MiB)`; **Memory Used is spec index 0**
+  (heads the stack) and `_runningMax`'s order comment was rewritten to match — memUsed,
+  util, memUtil, temp, smUtil, power, pcieBw, clock, memClock (the literal itself stayed
+  `{100,100,100,100,100,400,32,2100,1600}`); Memory Utilization, PCIe Bandwidth and
+  Power also start `Collapsed: true`, so **7 of 9 cards open collapsed** (only GPU
+  Utilization + Memory Used expanded ≈ 672 px of chart stack); and the top-right
+  **device list now prints each card's own max memory** after its name —
+  `cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)` (muted `Run`, `Theme.Mb(g.MemoryTotalBytes)`,
+  `" (N/A)"` when unknown) — i.e. exactly the denominator that card's percent series divides by.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -261,6 +272,18 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-08 — **T21: chart tweaks — tight percent readout, more collapsed cards, Memory
+  Used first, device max memory** (`MainWindow.cs` only): the Memory-Used `ChartSpec.Unit`
+  became `"%"` (was `" %"`) so the legend/hover read **`80% (19739 MiB)`** with no gap
+  before the sign; Memory Utilization, PCIe Bandwidth and Power also start
+  `Collapsed: true` → only GPU Utilization + Memory Used open expanded, which trims the
+  chart stack to ≈ 672 px and the fit-to-content window accordingly; **Memory Used moved
+  to spec index 0** (heads the Charts tab) with the `_runningMax` index-order comment
+  rewritten to memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock
+  (the values stay all-100 for the percent charts then 400/32/2100/1600); and
+  `UpdateDevicesPanel` appends each card's own max memory right after its name in muted
+  text — `cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)` (`" (N/A)"` if NVML reports no
+  total), the same number the Memory-Used percentage chart divides by.
 - 2026-11-08 — **T20: collapsible chart cards (top-left dropbox chevron) + Memory-Used
   percent axis** (`ChartController.cs`, `MainWindow.cs`): every `MetricChart` card grew a
   chevron "dropbox" at its **top-left** (first `Dock.Left` header child: a 16 px
