@@ -43,9 +43,9 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: util, memUtil, memUsed, temp, smUtil,
-    // power, pcieBw, clock, memClock.
-    private readonly double[] _runningMax = { 100, 100, 16384, 100, 100, 400, 32, 2100, 1600 };
+    // Index order matches _charts/_specs: util, memUtil, memUsed (now a 0-100 % axis),
+    // temp, smUtil, power, pcieBw, clock, memClock.
+    private readonly double[] _runningMax = { 100, 100, 100, 100, 100, 400, 32, 2100, 1600 };
 
     // One-shot fit-to-content startup sizing (see OnContentRendered).
     private readonly StackPanel _header;
@@ -591,7 +591,13 @@ public class MainWindow : Window
         // Fixed 0–100 Y axis (percentage charts): the ceiling never auto-grows.
         bool Percent = false,
         double MinCeiling = 0,
-        Func<HectorBravo.Nvidia.Contracts.GpuMetricSample, double>? PctBase = null);
+        Func<HectorBravo.Nvidia.Contracts.GpuMetricSample, double>? PctBase = null,
+        // The values are already percentages of PctBase (Memory Used): the readout then
+        // leads with "NN %" and shows the absolute amount in parentheses.
+        bool PctValue = false,
+        // Card starts collapsed to its header row (the top-left chevron expands it), so
+        // the fit-to-content window opens shorter.
+        bool Collapsed = false);
 
     /// <summary>Builds the 2-tab control (Overview / Charts); Charts is the default tab.</summary>
     private TabControl BuildTabs()
@@ -616,17 +622,30 @@ public class MainWindow : Window
         _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
             Percent: true));
-        _specs.Add(new ChartSpec("Memory Used (MiB)", " MiB", 0,
-            s => s.Select(x => x.MemoryUsedBytes / 1048576.0).ToList(),
+        // Memory Used is plotted as a percentage of *this card's own* memory (the total
+        // NVML reports for it), so cards with different VRAM sizes share one 0-100 %
+        // axis. The same denominator (in MiB) feeds the readout's "(NN MiB)" amount,
+        // which now goes *after* the percentage (PctValue). The cast is mandatory:
+        // used/total are longs, so long/long would truncate to 0/1.
+        _specs.Add(new ChartSpec("Memory Used (%)", " %", 0,
+            s => s.Select(x => x.MemoryTotalBytes > 0
+                ? (double)x.MemoryUsedBytes / x.MemoryTotalBytes * 100.0
+                : 0.0).ToList(),
             Pct: true,
-            PctBase: s => s.MemoryTotalBytes / 1048576.0));
+            Percent: true,
+            PctBase: s => s.MemoryTotalBytes / 1048576.0,
+            PctValue: true));
+        // These four cards start collapsed (header row only, chevron at the top-left
+        // expands them) so the fit-to-content window opens much shorter.
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
-            MinCeiling: 100));
+            MinCeiling: 100,
+            Collapsed: true));
         _specs.Add(new ChartSpec("SM Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.SmUtilizationPct).ToList(),
             Percent: true,
-            MinCeiling: 100));
+            MinCeiling: 100,
+            Collapsed: true));
         _specs.Add(new ChartSpec("Power (W)", " W", 1,
             s => s.Select(x => x.PowerWatts).ToList(),
             Pct: true,
@@ -636,15 +655,19 @@ public class MainWindow : Window
             LogScale: true,
             Pcie: true));
         _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
-            s => s.Select(x => (double)x.GpuClockMhz).ToList()));
+            s => s.Select(x => (double)x.GpuClockMhz).ToList(),
+            Collapsed: true));
         _specs.Add(new ChartSpec("Memory Clock (MHz)", " MHz", 0,
-            s => s.Select(x => (double)x.MemoryClockMhz).ToList()));
+            s => s.Select(x => (double)x.MemoryClockMhz).ToList(),
+            Collapsed: true));
         foreach (var spec in _specs)
         {
             var chart = new MetricChart(spec.Title);
+            chart.Bind(_chartCtl); // before the flags: SetCollapsed repaints via Redraw
             if (spec.LogScale) chart.SetLogScale(true);
+            if (spec.PctValue) chart.SetPctValue(true);
+            if (spec.Collapsed) chart.SetCollapsed(true);
             _charts.Add(chart);
-            chart.Bind(_chartCtl);
             stack.Children.Add(chart);
         }
 
