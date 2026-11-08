@@ -28,9 +28,10 @@
 - **Last Updated**: 08-11-2026 23:56:30
 - **Time Spent**: 4m
 - **Branch**: ~~`fix/ai-collapse-gpu-util-card`~~ — **fast-forward merged** into `main` (the user merged it, so `main` tip became `4b8c0d5` and no merge commit was created), then **deleted locally + remotely at 08-11-2026 23:56**; its commits now live on `main`.
-- **Commit(s)**: [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46203e68320ac34a4d4991a6c2cfa0981b9) (plan log, `main`) · [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7) (code) · [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f) (project-index refresh) · [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2) (branch log follow-up, now the `main` tip after the fast-forward merge) · finalize log commit: see the Follow-up below
+- **Commit(s)**: [a6bde46](https://github.com/HectorBravo/nvidia_app/commit/a6bde46203e68320ac34a4d4991a6c2cfa0981b9) (plan log, `main`) · [945e82c](https://github.com/HectorBravo/nvidia_app/commit/945e82c94e15607e8d4672df5db3a8705a6a22c7) (code) · [b07c10f](https://github.com/HectorBravo/nvidia_app/commit/b07c10f) (project-index refresh) · [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2) (branch log follow-up = the user's fast-forward merge point) · [5390ce7](https://github.com/HectorBravo/nvidia_app/commit/5390ce7) (finalize log, `main` — current tip)
 - **Blockers**: none
 - **Findings & Notes**:
+  - **Cleanup follow-up (08-11-2026 23:57)**: finalize commit is [5390ce7](https://github.com/HectorBravo/nvidia_app/commit/5390ce7) on `main`; the AI branch was fast-forwarded onto it (`merge --ff-only origin/main`, no merge commit) and re-pushed with `--force-with-lease`, then `git branch -d fix/ai-collapse-gpu-util-card` + `git push origin --delete …` removed it locally and remotely — `git branch -a` / `git ls-remote --heads origin` now show **only `main`** (a first `-d` attempt raced with the user's lazygit worktree and re-run cleanly).
   - **Close-out (08-11-2026 23:55–23:56)**: the user fast-forward merged `fix/ai-collapse-gpu-util-card` into `main`, so `main` tip became [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2) (**no merge commit** — the branch was already next to `main` after the plan-log commit) and `git diff main fix/ai-collapse-gpu-util-card` is empty ⇒ `main` is the single source of truth. This entry was then finalized on `main` as a dedicated `docs(ai)` log commit, the branch was fast-forwarded onto that finalize commit (`merge --ff-only origin/main`) and re-pushed with `--force-with-lease`, and finally **deleted locally (`git branch -d`) + remotely (`git push origin --delete`)** at the user's request — `git ls-remote --heads origin` now lists only `refs/heads/main`.
   - **User correction**: "you made a mistake on the last change of this repo and set the *memory utilization %* as collapsed instead of the *GPU utilization* as I asked. Fix it." So the T21 spec block collapsed the **wrong** card.
   - Current `main` state (from [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f)): `Memory Used` + `GPU Utilization` open **expanded**, `Memory Utilization` carries `Collapsed: true` — the code matched T21's own comment but not the user's intent.
@@ -98,9 +99,10 @@ _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
   expanded pair at start-up is **Memory Used + Memory Utilization** (verified by
   `git diff main fix/ai-collapse-gpu-util-card` being empty and 7 `Collapsed: true` spec
   flags on `main`).
-- **Git state after T22 (verified 08-11-2026 23:56)**: `main` = finalize log commit on top of
-  [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2)
-  (which is the user's fast-forward merge of the branch, so no merge commit exists);
+- **Git state after T22 (verified 08-11-2026 23:57)**: `main` = cleanup log commit on top of
+  [5390ce7](https://github.com/HectorBravo/nvidia_app/commit/5390ce7) (the finalize entry), itself
+  on top of [4b8c0d5](https://github.com/HectorBravo/nvidia_app/commit/4b8c0d5153a1bcbab395fd1a97185a2b9de513d2)
+  (the user's fast-forward merge of the branch, so no merge commit exists);
   `fix/ai-collapse-gpu-util-card` was fast-forwarded onto the finalize commit and re-pushed,
   then **deleted locally + remotely** — `git branch -a` has no AI branch and
   `git ls-remote --heads origin` lists **only `refs/heads/main`**. A resumed session therefore
