@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/9 | 0m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -16,6 +17,85 @@
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
 > 16 completed task(s) - [View completed tasks](#completed-tasks)
+
+---
+
+## Task T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 08-11-2026 22:29:12
+- **Last Updated**: 08-11-2026 22:29:12
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-collapsible-chart-cards`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-collapsible-chart-cards)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **User request (two parts)**: (1) every graph gets a **dropbox/collapse toggle at its top-left**; clicking it compacts that card. On start-up **Temperature, SM Utilization, GPU Clock and Memory Clock are collapsed**, so the (now too tall) window is much shorter. (2) The **Memory Used** chart must plot **0-100 % of that card's own memory** (the real `MemoryTotalBytes` from the card, not an auto-grown MiB ceiling), and its readout must lead with the **percentage** and show the **MiB amount in parentheses** (today it is the opposite).
+  - Collapse is **layout-only**: `_inner` row 1 (the body Grid holding `_plotScroll` + `_axisScroll`) gets a fixed `GridLength(0)` height and `_body.Visibility = Hidden`, so the card keeps only its header row (title + per-GPU legend + yellow "max") ≈ 45 px instead of ≈ 190 px. Four collapsed cards ≈ **576 px shorter**.
+  - The one-shot **fit-to-content sizing** (`MainWindow.OnLayoutUpdated` → `MeasureFit(chartsStack)`) measures the real stack, so the collapsed start state yields the shorter window with **no sizing-code change**.
+  - Collapsed cards keep their **legend/max live** (`Redraw()` short-circuits to legend + max) but hide the red crosshair readout and skip all canvas work.
+  - Memory percent must use a **double** division — `(double)used / total`; the plain `long/long` form truncates to 0/1.
+  - The percent-first readout is **opt-in per chart** (`SetPctValue`), so the **Power** chart keeps its old `12.5 W (45 %)` shape.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (08-11-2026 22:29:12) After the branch is pushed: please merge `feat/ai-collapsible-chart-cards` into `main` so the final log commit (status `done`, real hashes) can land on `main` and the branch be fast-forwarded onto it.
+
+**Confirmed (user provided):**
+
+- (08-11-2026 22:29:12) "A `NvidiaMonitor.exe` is running (PID 34296) — how should I rebuild?" → "Kill/stop PID 34296 for me, then build + publish to bin/"
+- (08-11-2026 22:29:12) Original request: "add a dropbox that lets me compact every graph, that icon should be on the top left of each graph. Upon start, temperature, sm utilization, gpu clock and memory clock should be collapsed… make the window a bit shorter… the memory used should graph a percentage between 0 and 100%… Read the 100% from the card itself… instead of showing the value in MiB you show the first value as the percentage, and between parenthesis the amount of memory"
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Pre-flight: read `ai/PROJECT_DESCRIPTION.md`, map the chart card + legend/readout + fit-height code, confirm the memory denominator plumbing
+- [ ] Subtask 2 — Commit this T20 log entry on `main` (dedicated `docs(ai): [ai]` commit + push)
+- [ ] Subtask 3 — Create `feat/ai-collapsible-chart-cards` from `main`
+- [ ] Subtask 4 — `ChartController.cs`: collapse state + top-left chevron "dropbox" button (hover highlight, click toggles, drag-reorder guard), collapsed row/body, live legend + max while collapsed, crosshair suppressed
+- [ ] Subtask 5 — `ChartController.cs`: percent-first readout (`NN % (1234 MiB)`) via `SetPctValue` + `_pctBase` (MiB)
+- [ ] Subtask 6 — `MainWindow.cs`: new `ChartSpec.Collapsed` (+ `SetCollapsed` on the card), collapse Temp/SM/GPU-Clock/Mem-Clock at start; Memory Used spec → card-relative percent (`Percent: true`), `_runningMax` mem-used seed 16384 → 100
+- [ ] Subtask 7 — Stop the running `NvidiaMonitor.exe`, `dotnet build nvidia_app.sln -c Release` (0/0) + `dotnet publish` both exes into `bin/`
+- [ ] Subtask 8 — Commit the code on the branch, then refresh `ai/PROJECT_DESCRIPTION.md` (`last_indexed`/`git_head` + sections) with its own `docs(ai)` commit
+- [ ] Subtask 9 — Push the branch with `-u`; after the user merges: final log on `main` + fast-forward the branch
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh session can finish T20 without other context.
+
+**Environment**
+- Windows, PowerShell 5.1 (non-admin). Repo root `D:\Repos\nvidia_app`; remote `https://github.com/HectorBravo/nvidia_app.git`; user's `git config user.email` = `hbravo@cuic.net` (never set `GIT_*_EMAIL`, never edit `git config`). Prefix commits with `$env:GIT_AUTHOR_NAME="AI_bot"; $env:GIT_COMMITTER_NAME="AI_bot"` and tag `feat(monitor): [ai] …`.
+- Build: `dotnet build nvidia_app.sln -c Release` (0 errors / 0 warnings; `TreatWarningsAsErrors` is on for Contracts + NvmlCore only). Publish: `dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor` + `dotnet publish src/NvmlTest -c Release -o bin/NvmlTest` (git-ignored `bin/`). A running `NvidiaMonitor.exe` locks its own DLLs → it was stopped on request (PID 34296). Headless sanity check: `bin\NvidiaMonitor\NvidiaMonitor.exe --print` (exit 0).
+
+**Chart stack (`src/NvidiaMonitor/ChartController.cs` + `MainWindow.cs`)**
+- `MetricChart : Border` consts: `PlotH = 128`, `AxisH = 16`, `ScrollReserve = 16`, `AxisPad = 62`, `Padding = 8`, `Margin = (0,0,0,10)`. `_inner` = `Grid` row0 = header `DockPanel` (`_maxText` Dock.Right, `_legend` Dock.Right, `_readout` Dock.Right, `_titleText` default Dock.Left), row1 = body `Grid` (col0 star = `_plotScroll`, col1 `AxisPad` = `_axisScroll`/`_axisCanvas`).
+- Reorder lives on the card Border: `MouseLeftButtonDown += OnCardMouseDown` → `DragDrop.DoDragDrop(this, new DataObject("metric-chart", this), Move)`; `OnChartDragOver`/`OnChartDrop` re-insert into the parent `StackPanel`.
+- `MainWindow.BuildTabs()` (Charts tab) adds 9 `ChartSpec`s in this order: GPU Util, Mem Util, **Memory Used (MiB)**, Temperature, SM Util, Power, PCIe (log), GPU Clock, Memory Clock; loop does `new MetricChart(spec.Title)` + `if (spec.LogScale) SetLogScale(true)` + `chart.Bind(_chartCtl)` into `stack` inside `_chartsScroll`.
+- `ChartSpec` params today: `Title, Unit, Decimals, Selector, LogScale=false, Pcie=false, Pct=false, Percent=false, MinCeiling=0, PctBase=null`; the new `Collapsed = false` param is appended last so positional call sites stay valid.
+- `_runningMax = { 100, 100, 16384, 100, 100, 400, 32, 2100, 1600 }` — index 2 is the mem-used MiB seed → becomes `100` (percent axis).
+- `MainWindow.UpdateCharts()` per chart: aligned `arr`, `pctBase` from `spec.PctBase(kv.Value[^1])` (only when `spec.Pct`), ceiling `Math.Max(spec.MinCeiling, spec.Percent ? 100 : (max <= 0 ? _runningMax[c] : max * 1.1))`, `SetSeries(timeline, seriesList, ceiling, spec.Title, spec.Unit, spec.Decimals, spec.Pcie ? genMap : null, spec.Pcie ? widthMap : null, spec.Pct ? pctBase : null)`, then `_chartCtl.OnDataTick()` once for all charts.
+- Readout text is built in **two** places with the same shape: `UpdateLegend()` (`Fmt(cur)+_unit`, then `({(int)round(cur/denom*100)} %)` when `_pctBase[gpu] > 0`, then ` [gen xwidth]`) and `UpdateCrosshair()` (same, red). `Fmt(v)` honours `_dec`.
+
+**Memory percent plumbing**
+- `src/NvmlCore/NvmlCoreService.cs` L414: `MemoryTotalBytes = (long)(mem?.Total ?? 0)` from `nvmlDeviceGetMemoryInfo` → **the card's own total** (exactly what "read the 100 % from the card itself" asks for). `MainWindow.ApplySnapshot` already stores it per sample into `GpuMetricSample.MemoryTotalBytes`, so the chart selector divides per sample.
+- New Memory Used spec: `"Memory Used (%)"`, unit `" %"`, decimals 0, selector `x => x.MemoryTotalBytes > 0 ? (double)x.MemoryUsedBytes / x.MemoryTotalBytes * 100.0 : 0.0`, `Percent: true`, `Pct: true`, `PctBase: s => s.MemoryTotalBytes / 1048576.0` (MiB denominator), and the card gets `SetPctValue(true)`.
+- `MetricChart._pctValue` (public `SetPctValue(bool)`) makes the parenthetical the **absolute amount** instead of a percentage: `text = Fmt(cur) + _unit` (already "45 %") then `(" + Fmt(cur / 100.0 * denom) + " " + _absUnit + ")"` → `(1234 MiB)`; `_absUnit` defaults to `"MiB"`. Power leaves `_pctValue` false → keeps `12.5 W (45 %)`.
+
+**Collapse design (decisions)**
+- Toggle = `Border _toggle` 16×16, `Background = Transparent` (that is what makes it hit-testable), `Cursor = Cursors.Pointer`, child `Canvas` with explicit 16×16 (a 0-size Canvas would let the lines overflow) holding two `Line`s that share pivot (8,9): expanded down-chevron (3,4)-(8,9)-(13,4); collapsed keeps leg A and moves leg B's end to (3,14) (right-chevron). Stroke `Theme.Muted` → `Theme.Accent` on hover via `MouseEnter`/`MouseLeave` (`MouseEventArgs`).
+- Insert `_toggle` as the **first** child of the header `DockPanel` with `Dock.Left` so it is the card's top-left, left of `_titleText`.
+- Click handler: `System.Windows.Input.MouseLeftButtonUp` on `_toggle` (same event family the card already uses, so it compiles on a `Border`); if the compiler rejects it, fall back to `Click`/`MouseUp`.
+- The press bubbles to the card's `MouseLeftButtonDown` drag handler, so `OnCardMouseDown` must early-return inside `ToggleHit(e.GetPosition(this))` (a `Padding + 16×16 + 6 px` slack box in the card's top-left) so the chevron never drags the card.
+- `SetCollapsed(bool)`: `_inner.RowDefinitions[1].Height = collapsed ? new GridLength(0) : GridLength.Auto` + `_body.Visibility = collapsed ? Hidden : Visible` + card bottom `Margin` 10→2 + chevron legs + `Redraw()` when expanding. `_body` must become a **field** (`private readonly Grid _body = new();`) instead of the ctor-local `body`.
+- `Redraw()` hoists `double max = _ceiling > 0 ? _ceiling : 1` to the top and adds a collapsed branch: set `_maxText`, `UpdateLegend()`, `UpdateCrosshair()` (which also early-outs when `_collapsed`, clearing the red header readout) and `return` — no canvas churn.
+- `ChartController` needs no collapse-awareness: `RaiseRedraw`/`AutoFollow`/`SetScrolled` still run for collapsed cards (their `PlotScroll` is 0-height; a `ScrollChanged` fired while collapsing lands in the else-branch and re-pins each chart to its own max — harmless).
+
+**Current state / next step**
+- Done: pre-flight + this log entry (committed on `main`); branch creation.
+- Next: subtask 4-6 edits, then build/publish (subtask 7), then the branch commit + index refresh + `git push -u`.
+- Gotchas: (1) WPF `Grid` does not clip cell content, hence the explicit `Visibility.Hidden` on `_body`; (2) `Visibility.Hidden` still participates in layout, so the row must be forced to 0 px; (3) the chevron's `Canvas` needs explicit `Width`/`Height`; (4) `Background = Transparent` (not null) is what makes the button hit-testable; (5) do NOT use `SizeToContent`; (6) `_pctBase` denominators are per-card constants taken from the newest sample only; (7) the `bin/` DLLs are locked while the dashboard runs.
 
 ---
 
