@@ -59,7 +59,15 @@ namespace HectorBravo.Nvidia.Monitor;
 /// The X-axis is anchored at t = 0 (start). While less than the window width has elapsed
 /// the data plots from the left edge and the canvas is narrow; once history exceeds the
 /// window, the view pins to the most-recent window and the user can scroll left back
-/// toward t = 0. <see cref="SetSeries"/> stores data only; the controller redraws.
+/// toward t = 0. <see cref="SetSeries"/> stores data only; the controller performs the redraw.
+///
+/// Every card can be collapsed from a chevron ("dropbox") at its top-left
+/// (<see cref="MetricChart.SetCollapsed"/>): a collapsed card keeps only its header
+/// row (title + legend + "max"), which is how the fit-to-content window is kept short.
+/// MainWindow opens Temperature, SM Utilization and both clock charts collapsed;
+/// clicking the chevron toggles any card.
+/// which is how the fit-to-content window is kept short. MainWindow opens Temperature,
+/// SM Utilization and both clock charts collapsed; clicking the chevron toggles any card.
 /// </summary>
 public class MetricChart : Border
 {
@@ -88,7 +96,6 @@ public class MetricChart : Border
     // (it can fire after _syncing is cleared), never a user gesture — so it must not
     // touch the follow-right latch. -1 when no programmatic scroll is pending.
     private double _progOffset = -1;
-    private int _lastMinute = -1;
     internal void QueueProgrammaticScroll(double target) => _progOffset = target;
     // Fixed right-hand Y-axis: reserved width for the axis column (value labels + tick marks).
     private const int AxisPad = 62;
@@ -98,7 +105,33 @@ public class MetricChart : Border
     private const double ScrollReserve = 16; // space for the horizontal scrollbar row (below labels)
     private const double TopPad = 0;
 
+    // ── Collapse ("dropbox") state ───────────────────────────────────────────
+    // When true the card keeps only its header row (title + legend + "max"): the
+    // plot body is hidden AND its grid row pinned to 0 px, so the one-shot
+    // fit-to-content window sizing shrinks by ~(PlotH + AxisH) per collapsed card.
+    private bool _collapsed;
+    // Card padding in px — shared with the chevron hit box so the two stay honest.
+    private const double CardPad = 8;
+    // Top-left chevron button size in px.
+    private const double ToggleSize = 16;
+    // When true this chart's values are already percentages of `_pctBase` (Memory
+    // Used): the readout leads with "NN %" and the absolute amount goes in
+    // parentheses instead (the Power chart keeps the old "W (NN %)" shape).
+    private bool _pctValue;
+    // Unit label for that absolute amount (the Memory Used denominator is MiB).
+    private string _absUnit = "MiB";
+
     private readonly Grid _inner = new();
+    // The plot body row (plot + fixed right-hand axis). A field so collapsing can
+    // hide it — WPF Grid never clips cell content, so hiding is what does the job.
+    private readonly Grid _body = new();
+
+    // Top-left "dropbox" chevron: down-chevron while expanded, right-chevron while
+    // collapsed. Two Lines share the pivot, so toggling needs no Path-data surgery.
+    private readonly Border _toggle;
+    private readonly Canvas _toggleCanvas;
+    private readonly Line _chevronA;
+    private readonly Line _chevronB;
 
     // The "max N" readout at the header's right end — bright yellow, same size as the legend (T15).
     private readonly TextBlock _maxText = new()
@@ -208,10 +241,34 @@ public class MetricChart : Border
         _inner.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _inner.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+        // Top-left "dropbox" chevron (the collapse toggle): the first Dock.Left child,
+        // so it sits at the card's top-left, left of the title.
+        _toggleCanvas = new Canvas { Width = ToggleSize, Height = ToggleSize };
+        _chevronA = new Line { Stroke = Theme.Muted, StrokeThickness = 1.5, IsHitTestVisible = false };
+        _chevronB = new Line { Stroke = Theme.Muted, StrokeThickness = 1.5, IsHitTestVisible = false };
+        _toggleCanvas.Children.Add(_chevronA);
+        _toggleCanvas.Children.Add(_chevronB);
+        _toggle = new Border
+        {
+            // An opaque (card-coloured) background is what makes the button hit-testable
+            // for the click + hover events — a null background would hit-test nothing.
+            Background = Theme.Card,
+            Width = ToggleSize,
+            Height = ToggleSize,
+            Child = _toggleCanvas,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ApplyChevron();
+        _toggle.MouseEnter += OnToggleHoverIn;
+        _toggle.MouseLeave += OnToggleHoverOut;
+        _toggle.MouseLeftButtonUp += OnToggleClick;
+
         var header = new DockPanel { Margin = new Thickness(2, 2, 2, 4) };
+        DockPanel.SetDock(_toggle, Dock.Left);
         DockPanel.SetDock(_maxText, Dock.Right);
         DockPanel.SetDock(_legend, Dock.Right);
         DockPanel.SetDock(_readout, Dock.Right);
+        header.Children.Add(_toggle);
         header.Children.Add(_maxText);
         header.Children.Add(_legend);
         header.Children.Add(_readout);
@@ -220,10 +277,10 @@ public class MetricChart : Border
 
         // Body: the plot fills the remaining width; the fixed right-hand Y-axis sits in a
         // dedicated (non-scrolling, fixed-width) column to its right, so it stays put while
-        // the plot scrolls across time.
-        var body = new Grid();
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(AxisPad) });
+        // the plot scrolls across time. This row is hidden (and pinned to 0 px) when the
+        // card is collapsed, which is what makes the window shorter.
+        _body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        _body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(AxisPad) });
 
         _plotScroll.Content = _canvas;
         Grid.SetColumn(_plotScroll, 0);
@@ -233,19 +290,19 @@ public class MetricChart : Border
         _axisScroll.VerticalAlignment = VerticalAlignment.Top;
         Grid.SetColumn(_axisScroll, 1);
 
-        body.Children.Add(_plotScroll);
-        body.Children.Add(_axisScroll);
-        Grid.SetRow(body, 1);
+        _body.Children.Add(_plotScroll);
+        _body.Children.Add(_axisScroll);
+        Grid.SetRow(_body, 1);
 
         _inner.Children.Add(header);
-        _inner.Children.Add(body);
+        _inner.Children.Add(_body);
         Child = _inner;
 
         Background = Theme.Card;
         BorderBrush = Theme.Border;
         BorderThickness = new Thickness(1);
         Margin = new Thickness(0, 0, 0, 10);
-        Padding = new Thickness(8);
+        Padding = new Thickness(CardPad);
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
         _canvas.MouseMove += OnCanvasMouseMove;
@@ -303,6 +360,70 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
+    /// <summary>Marks that this chart's plotted values are already percentages of the per-GPU
+    /// <c>pctBase</c> denominator (the Memory Used chart): the legend and the hover readout
+    /// then lead with "NN %" and show the absolute amount in parentheses instead.</summary>
+    public void SetPctValue(bool pctValue) => _pctValue = pctValue;
+
+    /// <summary>Collapse or expand this card. MainWindow sets the startup state from
+    /// <c>ChartSpec.Collapsed</c>; the top-left chevron ("dropbox") toggles it at runtime.
+    /// Collapsed keeps only the header row (title + legend + "max"): the plot body is
+    /// hidden AND its grid row pinned to 0 px, so the one-shot fit-to-content window
+    /// sizing shrinks by ~(PlotH + AxisH) per collapsed card.</summary>
+    public void SetCollapsed(bool collapsed)
+    {
+        if (collapsed == _collapsed) return;
+        _collapsed = collapsed;
+
+        // Hiding alone is not enough: a Visibility.Hidden subtree still takes part in
+        // layout, so the body row has to be pinned to 0 px as well (WPF Grid never
+        // clips cell content, which is why hiding is needed in the first place).
+        _inner.RowDefinitions[1].Height = collapsed ? new GridLength(0) : GridLength.Auto;
+        _body.Visibility = collapsed ? Visibility.Hidden : Visibility.Visible;
+        Margin = new Thickness(0, 0, 0, collapsed ? 2 : 10);
+        ApplyChevron();
+
+        // Expanding needs a full repaint right away; collapsing takes the cheap path
+        // inside Redraw (live legend + max, cleared crosshair).
+        Redraw();
+    }
+
+    // Down-chevron while expanded, right-chevron while collapsed — both share the pivot
+    // (8,9), so toggling the state never needs Path-data surgery.
+    private void ApplyChevron()
+    {
+        double pivotX = 8, pivotY = 9;
+        _chevronA.X1 = 3; _chevronA.Y1 = 4; _chevronA.X2 = pivotX; _chevronA.Y2 = pivotY;
+        if (_collapsed)
+        {
+            _chevronB.X1 = pivotX; _chevronB.Y1 = pivotY; _chevronB.X2 = 3; _chevronB.Y2 = 14;
+        }
+        else
+        {
+            _chevronB.X1 = pivotX; _chevronB.Y1 = pivotY; _chevronB.X2 = 13; _chevronB.Y2 = 4;
+        }
+    }
+
+    // Click on the chevron: toggle this card. MouseUp (not down) keeps a press that
+    // started on the button but dragged away from it from feeling like a toggle.
+    private void OnToggleClick(object? sender, MouseButtonEventArgs e) => SetCollapsed(!_collapsed);
+    private void OnToggleHoverIn(object? sender, MouseEventArgs e)
+    {
+        _chevronA.Stroke = Theme.Accent;
+        _chevronB.Stroke = Theme.Accent;
+    }
+    private void OnToggleHoverOut(object? sender, MouseEventArgs e)
+    {
+        _chevronA.Stroke = Theme.Muted;
+        _chevronB.Stroke = Theme.Muted;
+    }
+
+    // True when a press belongs to the top-left chevron rather than to the card body:
+    // the press bubbles up to the card's MouseLeftButtonDown drag handler, and clicking
+    // the chevron must never start a drag-and-drop reorder.
+    private bool ToggleHit(Point p)
+        => p.X >= 0 && p.X <= CardPad + ToggleSize + 6 && p.Y >= 0 && p.Y <= CardPad + ToggleSize + 6;
+
     /// <summary>Maps a value in [0..ceiling] to a Y pixel on the plot.
     /// 0 maps to y = PlotH (bottom), ceiling maps to y = 0 (top).</summary>
     private double ValueToY(double value, double ceiling)
@@ -318,10 +439,24 @@ public class MetricChart : Border
         return PlotH * (1 - Math.Clamp(frac, 0, 1));
     }
 
-    /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair).</summary>
+    /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair),
+    /// or — while collapsed — refreshes only the header readouts and draws nothing.</summary>
     public void Redraw()
     {
         if (_ctl == null) return;
+
+        double max = _ceiling > 0 ? _ceiling : 1;
+
+        // Collapsed: only the header row is on screen, so keep its readouts live (they
+        // are what still tells the user where a metric sits) and skip every canvas
+        // element — the plot body is hidden and pinned to 0 px tall.
+        if (_collapsed)
+        {
+            _maxText.Text = $"max {max:0}";
+            UpdateLegend();
+            UpdateCrosshair();
+            return;
+        }
 
         double px = _ctl.PxPerSec;
         double contentW = _tl.Length > 0 ? _tl[^1] * px : 0;
@@ -350,8 +485,8 @@ public class MetricChart : Border
             return;
         }
 
-        double max = _ceiling > 0 ? _ceiling : 1;
-
+        // (the Y-axis ceiling `max` is hoisted to the top of Redraw so the collapsed
+        // path can still report it.)
         // t = 0 "start" marker: drawn in EXACTLY the same format as the other per-minute
         // gridlines (same light blue, same thickness, same "0m" label style), so minute 0
         // reads as the first of the minute lines — only its position marks the timeline's
@@ -545,10 +680,12 @@ public class MetricChart : Border
         if (_pcieWidth.TryGetValue(gpu, out int[]? w) && idx >= 0 && idx < w.Length) width = w[idx];
     }
 
-    /// <summary>Cheap update: move the red crosshair and refresh the red per-GPU readout.</summary>
+    /// <summary>Cheap update: move the red crosshair and refresh the red per-GPU readout.
+    /// Collapsed cards clear it — the crosshair line would live in the hidden plot body,
+    /// so a lone red value row in the header would be meaningless.</summary>
     public void UpdateCrosshair()
     {
-        if (_ctl == null || _tl.Length < 2)
+        if (_ctl == null || _collapsed || _tl.Length < 2)
         {
             _crossLine.Visibility = Visibility.Hidden;
             _readout.Children.Clear();
@@ -586,8 +723,12 @@ public class MetricChart : Border
                 VerticalAlignment = VerticalAlignment.Center,
             });
             string text = Fmt(v) + _unit;
+            // Memory Used plots the percentage itself (percent first, then the absolute
+            // MiB amount in parentheses); Power keeps the "value (NN %)" shape.
             if (_pctBase.TryGetValue(kvp.Key, out double pdenom) && pdenom > 0)
-                text += $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
+                text += _pctValue
+                    ? $" ({Fmt(v / 100.0 * pdenom)} {_absUnit})"
+                    : $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
                 text += $" [{GpuSnapshot.PcieLinkLabel(gen, width)}]"; // T15: one space (was two)
@@ -656,6 +797,9 @@ public class MetricChart : Border
     private void OnCardMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ButtonState != MouseButtonState.Pressed) return;
+        // A press on the top-left chevron belongs to the collapse toggle, not to the
+        // drag-to-reorder gesture (the press bubbles up from the button to this card).
+        if (ToggleHit(e.GetPosition(this))) return;
         var data = new DataObject("metric-chart", this);
         DragDrop.DoDragDrop(this, data, DragDropEffects.Move);
     }
@@ -746,8 +890,12 @@ public class MetricChart : Border
             int n = s.Length;
             PcieAt(kvp.Key, n > 0 ? n - 1 : 0, out int pgen, out int pwidth);
             string legendText = Fmt(cur) + _unit;
+            // Memory Used plots the percentage itself (percent first, then the absolute
+            // MiB amount in parentheses); Power keeps the "value (NN %)" shape.
             if (_pctBase.TryGetValue(kvp.Key, out double denom) && denom > 0)
-                legendText += $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
+                legendText += _pctValue
+                    ? $" ({Fmt(cur / 100.0 * denom)} {_absUnit})"
+                    : $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
                 legendText += $" [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]"; // T15: one space (was two)
             _legend.Children.Add(new TextBlock

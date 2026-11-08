@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-10-30 12:19:00
-git_head: 869ddb6fb636e257f4e1fdc417182b9485375aff
+last_indexed: 2026-11-08 22:59:08
+git_head: 4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -17,11 +17,15 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   charts), polling ~1 Hz. It opens on the **Charts** tab at a **calculated
   fit-to-content window size** (never maximized; sized so no scrollbar is needed at
   first launch — and every scrollbar's 13 px is reserved from the first layout, so the
-  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name, with a colour
-  swatch matching each GPU's chart series) sits at the **top-right of the header
+  window never grows when data arrives); a **per-device list** (CUDA ordinal + card name
+  **plus that card's own max memory in MiB**, with a colour swatch matching each GPU's
+  chart series) sits at the **top-right of the header
   row**; the **Processes** and
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
-  but is no longer surfaced as a tab).
+  but is no longer surfaced as a tab). Every chart card also carries a **chevron
+  "dropbox" at its top-left** that collapses the card down to just its header row, and
+  **only GPU Utilization and Memory Used open expanded — the other seven cards start
+  collapsed** (T20 + T21), which is what keeps the calculated fit-to-content window short.
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
@@ -132,8 +136,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                                   driving 9 MetricChart cards (GPU-util, mem-util, mem-used, temp, SM-util,
-                                   power, PCIe-bandwidth [log Y], GPU-clock, mem-clock) — native WPF shapes
+                                   driving 9 MetricChart cards (mem-used [% of that card's own memory → FIRST], GPU-util,
+                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y], GPU-clock, mem-clock — all but mem-used and GPU-util start collapsed, see T20/T21) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -148,7 +152,9 @@ implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
 - `GpuMetricSample` — one timestamped sample of every metric (feeds history); it also
   carries the per-GPU `MemoryTotalBytes` and `PowerCapWatts` (the denominators behind
   the charts' percentage readouts) — plus `SmUtilizationPct` and `MemoryClockMhz`
-  (the SM and memory-clock charts).
+  (the SM and memory-clock charts). Since T20 the **Memory Used** chart plots
+  `MemoryUsedBytes / MemoryTotalBytes × 100` itself, so that card's own total is also
+  the fixed 0-100 % axis behind it.
 - `GpuHistory` — per-GPU **ring buffer** (`new GpuHistory(capacity)`; the dashboard
   uses 720 ≈ 12 min @ 1 Hz). `GetSeries(gpu) → IReadOnlyList<GpuMetricSample>`
   (oldest→newest), `GetSampleTimestamps(gpu)`, `GpuIndices`. The charts plot over the
@@ -233,6 +239,32 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   fit-to-content size** (T12 superseded "opens maximized"; T13 fixed the height so
   no scrollbar appears at first launch; T14 reserved every scrollbar's 13 px from the
   first layout — `Visible`, not `Auto` — so the window never grows when data arrives).
+  **Collapsible cards (T20)**: each `MetricChart` owns a chevron button (`_toggle`, a
+  16 px `Border` over a `Canvas` holding two `Line`s that share a pivot) added as the
+  **first `Dock.Left` child of its header row**, so it sits at the card's top-left;
+  `SetCollapsed(true)` pins `_inner` row 1 to `GridLength(0)` **and** hides `_body`
+  (hiding alone still participates in layout, and `Grid` never clips cell content),
+  tightens the card's bottom margin, flips the chevron down→right, and takes the cheap
+  `Redraw()` path that refreshes only the legend + "max" and clears the red crosshair
+  readout (the line itself lives in the hidden plot). `MainWindow` opens Temperature,
+  SM Utilization, GPU Clock and Memory Clock collapsed; the card's drag handler
+  ignores presses inside the chevron box, so toggling never starts a reorder drag.
+  **Memory Used is a percentage chart (T20)**: it plots `used / total × 100` with that
+  card's **own** `MemoryTotalBytes` (from `nvmlDeviceGetMemoryInfo`) using a **double**
+  division — `long/long` would truncate to 0/1 — on the fixed 0-100 axis, and
+  `MetricChart._pctValue` (set through `ChartSpec.PctValue`) makes its legend/hover
+  readout **`NN% (MMMM MiB)`** — percent first (no space before `%`, T21), the absolute
+  amount in parentheses; the Power chart keeps the old `NN.N W (NN %)` shape.
+  **T21 chart tweaks (all in `MainWindow.cs`)**: the Memory-Used spec's `Unit` is `"%"`
+  (not `" %"`) so legend/hover read `80% (19739 MiB)`; **Memory Used is spec index 0**
+  (heads the stack) and `_runningMax`'s order comment was rewritten to match — memUsed,
+  util, memUtil, temp, smUtil, power, pcieBw, clock, memClock (the literal itself stayed
+  `{100,100,100,100,100,400,32,2100,1600}`); Memory Utilization, PCIe Bandwidth and
+  Power also start `Collapsed: true`, so **7 of 9 cards open collapsed** (only GPU
+  Utilization + Memory Used expanded ≈ 672 px of chart stack); and the top-right
+  **device list now prints each card's own max memory** after its name —
+  `cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)` (muted `Run`, `Theme.Mb(g.MemoryTotalBytes)`,
+  `" (N/A)"` when unknown) — i.e. exactly the denominator that card's percent series divides by.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -240,6 +272,40 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-08 — **T21: chart tweaks — tight percent readout, more collapsed cards, Memory
+  Used first, device max memory** (`MainWindow.cs` only): the Memory-Used `ChartSpec.Unit`
+  became `"%"` (was `" %"`) so the legend/hover read **`80% (19739 MiB)`** with no gap
+  before the sign; Memory Utilization, PCIe Bandwidth and Power also start
+  `Collapsed: true` → only GPU Utilization + Memory Used open expanded, which trims the
+  chart stack to ≈ 672 px and the fit-to-content window accordingly; **Memory Used moved
+  to spec index 0** (heads the Charts tab) with the `_runningMax` index-order comment
+  rewritten to memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock
+  (the values stay all-100 for the percent charts then 400/32/2100/1600); and
+  `UpdateDevicesPanel` appends each card's own max memory right after its name in muted
+  text — `cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)` (`" (N/A)"` if NVML reports no
+  total), the same number the Memory-Used percentage chart divides by.
+- 2026-11-08 — **T20: collapsible chart cards (top-left dropbox chevron) + Memory-Used
+  percent axis** (`ChartController.cs`, `MainWindow.cs`): every `MetricChart` card grew a
+  chevron "dropbox" at its **top-left** (first `Dock.Left` header child: a 16 px
+  `Border` over a `Canvas` with two pivot-sharing `Line`s, `Theme.Muted` → `Theme.Accent`
+  on hover, toggled on `MouseLeftButtonUp`). Collapsing pins the plot body row to
+  `GridLength(0)` and hides it, so the card keeps only its header row (title + legend +
+  "max") ≈ 38 px instead of ≈ 190 px; `MainWindow` starts **Temperature, SM Utilization,
+  GPU Clock and Memory Clock** collapsed, and because the one-shot fit-to-content sizing
+  measures the real chart stack, the window opens ~600 px shorter. Collapsed cards keep
+  their legend/"max" live through a cheap `Redraw()` branch and suppress the crosshair
+  readout; the card's drag handler ignores presses on the chevron. The **Memory Used**
+  chart now plots **percent of that card's own memory** (`used / MemoryTotalBytes × 100`
+  from `nvmlDeviceGetMemoryInfo`, double division, `Percent: true` fixed 0-100 axis)
+  instead of MiB, and its legend/hover readout leads with the percentage and puts the
+  absolute amount in parentheses (`NN % (MMMM MiB)`) — the reverse of the old
+  `MMMM MiB (NN %)`; the Power chart keeps `NN.N W (NN %)`. Also dropped the dead
+  `_lastMinute` field (left over from the T18 perf pass) so the build is warning-free.
+- 2026-10-30 — **T19: build timestamp under the title + white Y-axis line & ticks**
+  (`MainWindow.cs`, `ChartController.cs`): the build time `[yyyy-MM-dd HH:mm]` (white,
+  same mono font) sits under the "NVIDIA GPU Monitor" title; the fixed right-hand Y-axis
+  now draws a **white** vertical axis line plus a **white** tick mark at every value
+  label, so a right-side value visually maps across the plot.
 - 2026-10-20 — **T16: SM utilization (clamped at 100) + memory-clock chart + chart reorder** (`GpuSnapshot`/`GpuMetricSample`/`NvmlCoreService`/`MainWindow`/`App`/`NvmlProbe`/`SmiFormatter`): per-GPU **SM utilization** = `min(100, Σ per-process smUtil)` read from the two NVML process-utilization APIs — the legacy two-phase `nvmlDeviceGetProcessUtilization` is **primary** (the old batch-first order died on `rc=25` before ever reaching it); the batched `nvmlDeviceGetProcessesUtilizationInfo` (version `24 | (1 << 24)`) is the fallback; the read loop counts the driver-**written** records. The dashboard now drives **9 charts**: GPU-util, mem-util, mem-used, temp, **SM-util** (new; `ChartSpec.Percent` 0–100 axis), power, **PCIe** (moved down), GPU-clock, **mem-clock** (new); the headless `--print` line prints `sm=`. NvmlTest gained `NvmlProbe.cs` (`--probe`) and an `SM` column. `NvmlTypes.ProcessesUtilizationVersion` corrected 16777264 → 16777240. Verified: SM 73 % under load, 0–4 % idle.
 - 2026-10-24 — **Build .bat (T17)**: new root script `build_executables.bat` — one-click
   `dotnet build` of the whole solution (Release) followed by `dotnet publish` of
