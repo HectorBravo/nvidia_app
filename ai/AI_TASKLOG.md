@@ -4,8 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 5m | none |
-| 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 9/9 | 11m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -17,21 +15,22 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 16 completed task(s) - [View completed tasks](#completed-tasks)
+> 18 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 
 ## Task T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-11-2026 22:56:30
-- **Last Updated**: 08-11-2026 23:01:17
-- **Time Spent**: 5m
-- **Branch**: [`feat/ai-chart-collapse-tweaks`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-collapse-tweaks)
-- **Commit(s)**: [c9bb819](https://github.com/HectorBravo/nvidia_app/commit/c9bb819113de9dd2a91b6f671b837195739a7c2e) (T21 plan, on `main`) · [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) (code, branch) · [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) (index refresh, branch)
+- **Last Updated**: 08-11-2026 23:10:00
+- **Time Spent**: 11m
+- **Branch**: [`feat/ai-chart-collapse-tweaks`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-chart-collapse-tweaks) — **merged into `main`**
+- **Commit(s)**: [c9bb819](https://github.com/HectorBravo/nvidia_app/commit/c9bb819113de9dd2a91b6f671b837195739a7c2e) (plan, `main`) · [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) (code) · [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) (index refresh) · [daaa98b](https://github.com/HectorBravo/nvidia_app/commit/daaa98b) (branch log) · **merged** by [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) into `main`
 - **Blockers**: none
 - **Findings & Notes**:
+  - **Close-out (08-11-2026 23:04–23:10)**: merged `feat/ai-chart-collapse-tweaks` (superset of the T20 branch) into `main` as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) — the only conflict was `ai/AI_TASKLOG.md`, resolved to the branch copy (it carries both the T20 completion update and this T21 entry) and then finalized here. Both AI branches were then fast-forwarded onto `origin/main` and re-pushed. Close-out minutes are counted in **both** this task and [T20](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis).
   - Four follow-ups to [T20](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis), **all inside `MainWindow.cs`** — `ChartController.cs` untouched:
     - (a) the Memory-Used legend read `80 %` because `ChartSpec.Unit` was `" %"`; it is now `"%"` → **`80% (19739 MiB)`** (the other percent charts already used `"%"`).
     - (b) Memory Utilization, PCIe Bandwidth and Power also start **collapsed** → 7 of 9 cards collapsed, so only GPU Utilization + Memory Used are expanded (chart stack ≈ 672 px; the fit-to-content window shrinks with it).
@@ -44,11 +43,12 @@
 
 **Pending (awaiting user response):**
 
-- [ ] (08-11-2026 22:56:30) After the branch is pushed: please merge `feat/ai-chart-collapse-tweaks` (superset of the T20 branch) into `main` so the final `done` log + the `merge --ff-only` / `--force-with-lease` re-push of both AI branches can happen.
+None.
 
 **Confirmed (user provided):**
 
-- (08-11-2026 22:56:30) "the memory used graph, on the top legent you are separateing the value from the percentage sign. Remove the space between. Make the memory utilization graph, the pcie bandwidth and the power graphs also collapsed by default. Move the memory used % graph to the first graph position. Also, on the top right of the aplication where you show the graphic cards, show the maximum memory they have righa after each card, for instance 'NVIDIA Geforce RTX 3090 (XXXX MiB)'"
+- (08-11-2026 23:04:23) "merge both ai branches into main and update the tasklog" → merged `feat/ai-chart-collapse-tweaks` (a superset that already contains `feat/ai-collapsible-chart-cards`, so both AI branches are in `main` with one merge) as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea); task log finalized on `main`; both AI branches fast-forwarded onto `origin/main` and re-pushed with `--force-with-lease`.
+- (08-11-2026 22:56:30) "the memory used graph, on the top legent you are separateing the value from the percentage sign…" → unit `"%"` (no space), Memory Utilization + PCIe + Power also `Collapsed: true` (7 of 9 collapsed), Memory Used moved to spec index 0, and ` (24576 MiB)` appended to each device-list row.
 
 ### Subtasks / Plan
 
@@ -60,7 +60,8 @@
 - [x] Subtask 6 — Memory Used spec moved to index 0; `_runningMax` order comment rewritten (values unchanged)
 - [x] Subtask 7 — `UpdateDevicesPanel`: third muted `Run` with ` (NNNN MiB)` (`" (N/A)"` when `MemoryTotalBytes <= 0`)
 - [x] Subtask 8 — Stopped the running dashboard, `dotnet build` → 0/0, `dotnet publish` both exes → `bin/`, `--print` sanity check, relaunched (alive, PID 46156)
-- [x] Subtask 9 — Code committed as [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) and the index refresh as [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) on the branch; branch pushed with `-u`. **Still open:** the `done` log + merge-triggered fast-forward of both AI branches once the user merges.
+- [x] Subtask 9 — Code committed as [4c73f52](https://github.com/HectorBravo/nvidia_app/commit/4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f) and the index refresh as [232f205](https://github.com/HectorBravo/nvidia_app/commit/232f205ffaecb9a1be80f92dc775d7ea6e34f8a6) on the branch; branch pushed with `-u`
+- [x] Subtask 10 — **Close-out on user request**: merged the branch into `main` ([a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea); `ai/AI_TASKLOG.md` was the only conflict → resolved to this fuller branch copy), finalized this entry as `done` on `main`, then fast-forwarded **both** AI branches onto `origin/main` and re-pushed with `--force-with-lease` (`git diff main feat/ai-chart-collapse-tweaks` is empty ⇒ `main` carries T20 + T21)
 
 ### Full Context Notes for AI Agents
 
@@ -73,24 +74,23 @@
 - `UpdateDevicesPanel(SystemSnapshot)` (~L334-370): swatch + `TextBlock` Inlines — `Run("cuda:{i}")` muted, `Run("  {name}")` foreground, and the new `maxMemLabel = g.MemoryTotalBytes > 0 ? $" ({Theme.Mb(g.MemoryTotalBytes)} MiB)" : " (N/A)"` muted.
 - The unit string is consumed in `MetricChart.UpdateLegend()` **and** `UpdateCrosshair()` as `Fmt(cur) + _unit`, which is why `"%"` alone produced the requested tight `80%`; the MiB parenthetical (`_absUnit = "MiB"`) keeps its own leading space.
 
-**Git state after T21 (verify before resuming)**
-- `main`: `c9bb819` (T21 plan log, pushed) — does **not** contain T20/T21 code.
-- `feat/ai-collapsible-chart-cards`: `fa562ba` (T20 code + index + log) — pushed with `-u`.
-- `feat/ai-chart-collapse-tweaks`: `232f205` (code `4c73f52` + index refresh) + the T21 log entry committed on the branch — **superset**, so merging it into `main` brings T20 and T21 at once.
-- After that merge: write the final `done` entries for T20 + T21 on `main`, then fast-forward both AI branches onto it (`fetch` → `checkout` → `merge --ff-only origin/main` → `push --force-with-lease`).
-- Gotchas: the user's lazygit periodically leaves `.git/index.lock` → retry the git command rather than deleting the lock; a running `NvidiaMonitor.exe` locks its `bin/` DLLs, so stop it before `dotnet publish`; `git commit -m` payloads with `%`/parens/escaped quotes get split by PowerShell → keep commit messages simple or split `-m` args.
+**Git state after T21 (final — verified 08-11-2026 23:10)**
+- `main`: [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) **merge commit carrying all T20 + T21 code** (parents `c9bb819` = plan logs on `main`, `daaa98b` = branch tip), with the final `done` log entries committed right on top of it. `git diff main feat/ai-chart-collapse-tweaks` is empty ⇒ `main` is the single source of truth for the code.
+- `feat/ai-chart-collapse-tweaks` and `feat/ai-collapsible-chart-cards`: both **fast-forwarded onto `origin/main`** (`merge --ff-only`, no merge commit) and re-pushed with `--force-with-lease`, so all three refs and the remote agree — `git branch -vv` shows `-> origin/main` for both.
+- Historical: plans were `6c63ac1` (T20) / `c9bb819` (T21) on `main`; code was `a8ca26b` + `4c73f52`, index refreshes `f284faf` + `232f205`, branch log follow-ups `fa562ba` + `daaa98b`.
+- Gotchas: the user's lazygit periodically leaves `.git/index.lock` → retry the git command rather than deleting the lock; a running `NvidiaMonitor.exe` locks its `bin/` DLLs, so stop it before `dotnet publish`; `git commit -m` payloads with `%`/parens/escaped quotes get split by PowerShell → keep commit messages simple or split `-m` args; `git merge` reports a conflict **only** in `ai/AI_TASKLOG.md` when the log was updated on both sides → `git checkout --theirs` (the branch copy is the fuller one) then finish the entry on `main`.
 
 ---
 
 ## Task T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 08-11-2026 22:29:12
-- **Last Updated**: 08-11-2026 22:40:29
-- **Time Spent**: 11m
-- **Branch**: [`feat/ai-collapsible-chart-cards`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-collapsible-chart-cards)
-- **Commit(s)**: [6c63ac1](https://github.com/HectorBravo/nvidia_app/commit/6c63ac188ef1a980f468f990b4ea74146aaa13b4) (log, on `main`) · [a8ca26b](https://github.com/HectorBravo/nvidia_app/commit/a8ca26b05f5598104691b24d08953555a1f6095d) (code, on branch) · [f284faf](https://github.com/HectorBravo/nvidia_app/commit/f284fafeaf948f254b4ddd1becdfca9ea4a778d5) (index refresh, on branch)
+- **Last Updated**: 08-11-2026 23:10:00
+- **Time Spent**: 17m
+- **Branch**: [`feat/ai-collapsible-chart-cards`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-collapsible-chart-cards) — **merged into `main`** (its commits are ancestors of [daaa98b](https://github.com/HectorBravo/nvidia_app/commit/daaa98b) → [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea), so one merge covered both AI branches)
+- **Commit(s)**: [6c63ac1](https://github.com/HectorBravo/nvidia_app/commit/6c63ac188ef1a980f468f990b4ea74146aaa13b4) (log, on `main`) · [a8ca26b](https://github.com/HectorBravo/nvidia_app/commit/a8ca26b05f5598104691b24d08953555a1f6095d) (code, on branch) · [f284faf](https://github.com/HectorBravo/nvidia_app/commit/f284fafeaf948f254b4ddd1becdfca9ea4a778d5) (index refresh, on branch) · **merged** by [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) into `main`
 - **Blockers**: none
 - **Findings & Notes**:
   - **User request (two parts)**: (1) every graph gets a **dropbox/collapse toggle at its top-left**; clicking it compacts that card. On start-up **Temperature, SM Utilization, GPU Clock and Memory Clock are collapsed**, so the (now too tall) window is much shorter. (2) The **Memory Used** chart must plot **0-100 % of that card's own memory** (the real `MemoryTotalBytes` from the card, not an auto-grown MiB ceiling), and its readout must lead with the **percentage** and show the **MiB amount in parentheses** (today it is the opposite).
@@ -107,10 +107,11 @@
 
 **Pending (awaiting user response):**
 
-- [ ] (08-11-2026 22:29:12) After the branch is pushed: please merge `feat/ai-collapsible-chart-cards` into `main` so the final log commit (status `done`, real hashes) can land on `main` and the branch be fast-forwarded onto it.
+None.
 
 **Confirmed (user provided):**
 
+- (08-11-2026 23:04:23) "merge both ai branches into main and update the tasklog" → `feat/ai-chart-collapse-tweaks` (which already contained `feat/ai-collapsible-chart-cards`) merged into `main` as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea); this entry finalized as `done` on `main`; both AI branches fast-forwarded onto `origin/main` and re-pushed with `--force-with-lease`.
 - (08-11-2026 22:29:12) "A `NvidiaMonitor.exe` is running (PID 34296) — how should I rebuild?" → "Kill/stop PID 34296 for me, then build + publish to bin/"
 - (08-11-2026 22:29:12) Original request: "add a dropbox that lets me compact every graph, that icon should be on the top left of each graph. Upon start, temperature, sm utilization, gpu clock and memory clock should be collapsed… make the window a bit shorter… the memory used should graph a percentage between 0 and 100%… Read the 100% from the card itself… instead of showing the value in MiB you show the first value as the percentage, and between parenthesis the amount of memory"
 
@@ -124,7 +125,8 @@
 - [x] Subtask 6 — `MainWindow.cs`: `ChartSpec` gained `PctValue` + `Collapsed`; Memory Used spec → `"Memory Used (%)"`, `(double)used / total × 100` per sample, `Percent: true`, `PctBase` in MiB, `PctValue: true`; Temp/SM/GPU-Clock/Mem-Clock specs `Collapsed: true`; `_runningMax` seed 16384 → 100; build loop binds before applying the flags
 - [x] Subtask 7 — Stopped the running `NvidiaMonitor.exe` (PID 34296), `dotnet build nvidia_app.sln -c Release` → 0/0, `dotnet publish` both exes → `bin/`, `--print` sanity check + fresh dashboard launched (alive 9 s)
 - [x] Subtask 8 — Code committed on the branch as [a8ca26b](https://github.com/HectorBravo/nvidia_app/commit/a8ca26b05f5598104691b24d08953555a1f6095d); `ai/PROJECT_DESCRIPTION.md` refreshed (metadata + sections 1/7/10/11) as [f284faf](https://github.com/HectorBravo/nvidia_app/commit/f284fafeaf948f254b4ddd1becdfca9ea4a778d5)
-- [x] Subtask 9 — Branch pushed with `-u` (`origin/feat/ai-collapsible-chart-cards` @ `f284faf`, upstream tracking set); **final** log (status `done`, merge hash) + the `merge --ff-only` / `--force-with-lease` re-push still wait for the user's merge into `main`
+- [x] Subtask 9 — Branch pushed with `-u` (`origin/feat/ai-collapsible-chart-cards` @ `f284faf`, upstream tracking set)
+- [x] Subtask 10 — **Close-out on user request**: the T21 branch (built on top of this one, so it is a superset) was merged into `main` as [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea) — one merge therefore landed **both** AI branches; this entry finalized as `done` on `main`, and both AI branches fast-forwarded onto `origin/main` and re-pushed with `--force-with-lease`
 
 ### Full Context Notes for AI Agents
 
@@ -158,9 +160,8 @@
 - `ChartController` needs no collapse-awareness: `RaiseRedraw`/`AutoFollow`/`SetScrolled` still run for collapsed cards (their `PlotScroll` is 0-height; a `ScrollChanged` fired while collapsing lands in the else-branch and re-pins each chart to its own max — harmless).
 
 **Current state / next step**
-- Done: pre-flight + this log entry (committed on `main`); branch creation.
-- Next: subtask 4-6 edits, then build/publish (subtask 7), then the branch commit + index refresh + `git push -u`.
-- Gotchas: (1) WPF `Grid` does not clip cell content, hence the explicit `Visibility.Hidden` on `_body`; (2) `Visibility.Hidden` still participates in layout, so the row must be forced to 0 px; (3) the chevron's `Canvas` needs explicit `Width`/`Height`; (4) `Background = Transparent` (not null) is what makes the button hit-testable; (5) do NOT use `SizeToContent`; (6) `_pctBase` denominators are per-card constants taken from the newest sample only; (7) the `bin/` DLLs are locked while the dashboard runs.
+- **DONE (08-11-2026 23:10)** — all 10 subtasks complete; code is live on `main` via [a680099](https://github.com/HectorBravo/nvidia_app/commit/a680099d57216c6e4f076aad28393ce88108bdea), and `feat/ai-collapsible-chart-cards` + `feat/ai-chart-collapse-tweaks` both point at `origin/main` (fast-forwarded, `--force-with-lease`). Nothing pending for a resumed session: T20 was immediately superseded/refined by [T21](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list), which is also merged — read T21's notes for the current shape of the code (`Unit "%"`, 7 collapsed specs, Memory Used at spec index 0, device-list MiB).
+- Historical (kept for context): the plan was committed on `main`, then all edits landed on `feat/ai-collapsible-chart-cards`; gotchas encountered: (1) WPF `Grid` does not clip cell content → explicit `Visibility.Hidden` on `_body`; (2) `Visibility.Hidden` still participates in layout → row must be forced to 0 px; (3) chevron `Canvas` needs explicit `Width`/`Height`; (4) `Background = Transparent` (not null) is what makes the button hit-testable; (5) do NOT use `SizeToContent`; (6) `_pctBase` denominators are per-card constants from the newest sample; (7) `bin/` DLLs are locked while the dashboard runs.
 
 ---
 
@@ -1476,6 +1477,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | feat | 9/9 | 11m |
+| 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | feat | 9/9 | 17m |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | feat | 4/4 | 4m |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | fix | 13/13 | 50m |
 | 19-10-2026 10:53:30 | [T14: Reserve scrollbar space from first layout (window must not grow when data arrives)](#task-t14-reserve-scrollbar-space-from-first-layout-window-must-not-grow-when-data-arrives) | fix | 6/6 | 28m |
