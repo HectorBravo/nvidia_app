@@ -43,8 +43,8 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: util, memUtil, memUsed (now a 0-100 % axis),
-    // temp, smUtil, power, pcieBw, clock, memClock.
+    // Index order matches _charts/_specs: memUsed (0-100 % axis), util, memUtil, temp,
+    // smUtil, power, pcieBw, clock, memClock — the percent charts all seed at 100.
     private readonly double[] _runningMax = { 100, 100, 100, 100, 100, 400, 32, 2100, 1600 };
 
     // One-shot fit-to-content startup sizing (see OnContentRendered).
@@ -355,6 +355,11 @@ public class MainWindow : Window
             };
             text.Inlines.Add(new System.Windows.Documents.Run($"cuda:{i}") { Foreground = Theme.Muted });
             text.Inlines.Add(new System.Windows.Documents.Run($"  {name}"));
+            // The card's own max memory right after its name — this is exactly the
+            // denominator the Memory-Used percentage chart divides by, and it differs
+            // from card to card, so the user can see which 100 % each series means.
+            var maxMemLabel = g.MemoryTotalBytes > 0 ? $" ({Theme.Mb(g.MemoryTotalBytes)} MiB)" : " (N/A)";
+            text.Inlines.Add(new System.Windows.Documents.Run(maxMemLabel) { Foreground = Theme.Muted });
             _devices.Children.Add(new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -616,18 +621,13 @@ public class MainWindow : Window
 
         // ── Charts ──────────────────────────────────────────────
         var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
-        _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
-            Percent: true));
-        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
-            Percent: true));
-        // Memory Used is plotted as a percentage of *this card's own* memory (the total
-        // NVML reports for it), so cards with different VRAM sizes share one 0-100 %
-        // axis. The same denominator (in MiB) feeds the readout's "(NN MiB)" amount,
-        // which now goes *after* the percentage (PctValue). The cast is mandatory:
-        // used/total are longs, so long/long would truncate to 0/1.
-        _specs.Add(new ChartSpec("Memory Used (%)", " %", 0,
+        // Memory Used heads the stack: it is a percentage of *this card's own* memory
+        // (the total NVML reports for it), so cards with different VRAM sizes share one
+        // 0-100 % axis. The same denominator (in MiB) feeds the readout's "(NNNN MiB)"
+        // amount, which goes *after* the percentage (PctValue); the unit is "%" with no
+        // space so the legend reads "80% (19739 MiB)". The cast is mandatory: used/total
+        // are longs, so long/long would truncate to 0/1.
+        _specs.Add(new ChartSpec("Memory Used (%)", "%", 0,
             s => s.Select(x => x.MemoryTotalBytes > 0
                 ? (double)x.MemoryUsedBytes / x.MemoryTotalBytes * 100.0
                 : 0.0).ToList(),
@@ -635,8 +635,16 @@ public class MainWindow : Window
             Percent: true,
             PctBase: s => s.MemoryTotalBytes / 1048576.0,
             PctValue: true));
-        // These four cards start collapsed (header row only, chevron at the top-left
-        // expands them) so the fit-to-content window opens much shorter.
+        // Only GPU Utilization and Memory Used open expanded; the other seven cards start
+        // collapsed (header row only, the top-left chevron expands them), so the
+        // fit-to-content window opens as short as it can.
+        _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
+            s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
+            Percent: true));
+        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
+            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
+            Percent: true,
+            Collapsed: true));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
             MinCeiling: 100,
@@ -649,11 +657,13 @@ public class MainWindow : Window
         _specs.Add(new ChartSpec("Power (W)", " W", 1,
             s => s.Select(x => x.PowerWatts).ToList(),
             Pct: true,
-            PctBase: s => s.PowerCapWatts));
+            PctBase: s => s.PowerCapWatts,
+            Collapsed: true));
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
             LogScale: true,
-            Pcie: true));
+            Pcie: true,
+            Collapsed: true));
         _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
             s => s.Select(x => (double)x.GpuClockMhz).ToList(),
             Collapsed: true));
