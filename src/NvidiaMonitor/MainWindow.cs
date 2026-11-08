@@ -635,16 +635,16 @@ public class MainWindow : Window
             Percent: true,
             PctBase: s => s.MemoryTotalBytes / 1048576.0,
             PctValue: true));
-        // Only GPU Utilization and Memory Used open expanded; the other seven cards start
+        // Only Memory Utilization and Memory Used open expanded; the other seven cards start
         // collapsed (header row only, the top-left chevron expands them), so the
         // fit-to-content window opens as short as it can.
         _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
-            Percent: true));
-        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
-            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
             Percent: true,
             Collapsed: true));
+        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
+            s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
+            Percent: true));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
             MinCeiling: 100,
