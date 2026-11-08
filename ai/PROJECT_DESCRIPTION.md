@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-08 22:59:08
-git_head: 4c73f52fde3ca2cdebd3f39af1db7e5b3d29fc6f
+last_indexed: 2026-11-08 23:56:30
+git_head: 945e82c94e15607e8d4672df5db3a8705a6a22c7
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -24,8 +24,8 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab). Every chart card also carries a **chevron
   "dropbox" at its top-left** that collapses the card down to just its header row, and
-  **only GPU Utilization and Memory Used open expanded — the other seven cards start
-  collapsed** (T20 + T21), which is what keeps the calculated fit-to-content window short.
+  **only Memory Utilization and Memory Used open expanded — the other seven cards start
+  collapsed** (T20 + T21, refined by T22), which is what keeps the calculated fit-to-content window short.
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
@@ -137,7 +137,7 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
                                    driving 9 MetricChart cards (mem-used [% of that card's own memory → FIRST], GPU-util,
-                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y], GPU-clock, mem-clock — all but mem-used and GPU-util start collapsed, see T20/T21) — native WPF shapes
+                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y], GPU-clock, mem-clock — all but mem-used and mem-util start collapsed, see T20/T21/T22) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -265,6 +265,11 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   **device list now prints each card's own max memory** after its name —
   `cuda:0  NVIDIA GeForce RTX 3090 (24576 MiB)` (muted `Run`, `Theme.Mb(g.MemoryTotalBytes)`,
   `" (N/A)"` when unknown) — i.e. exactly the denominator that card's percent series divides by.
+  **T22 corrected which card is collapsed**: the `Collapsed: true` flag moved **off**
+  Memory Utilization and **onto** GPU Utilization, so the Charts tab opens with **Memory Used
+  + Memory Utilization** expanded and every other card (GPU Utilization included) at its
+  header row — still 7 of 9 collapsed, so the ≈ 672 px stack and the fit-to-content window
+  are unchanged, and spec order / `_runningMax` were not touched.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -272,6 +277,12 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-08 — **T22: GPU Utilization collapsed, not Memory Utilization** (fix of the T21
+  collapsed set, `MainWindow.cs` only): `Collapsed: true` moved from the Memory Utilization
+  spec to the GPU Utilization spec (and the "expanded pair" comment reworded), so the Charts
+  tab now opens with **Memory Used + Memory Utilization** expanded and every other card —
+  GPU Utilization included — collapsed to its header row. Card count, order, ceilings and
+  window height are unchanged; `ChartController.cs` untouched.
 - 2026-11-08 — **T21: chart tweaks — tight percent readout, more collapsed cards, Memory
   Used first, device max memory** (`MainWindow.cs` only): the Memory-Used `ChartSpec.Unit`
   became `"%"` (was `" %"`) so the legend/hover read **`80% (19739 MiB)`** with no gap
