@@ -1,5 +1,7 @@
 # nvidia_app
 
+![Screenshot](screenshot.png)
+
 A **Windows-native** application (C# / .NET 8) that reads NVIDIA GPUs by talking **directly**
 to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not** shell out to
 `nvidia-smi`. There are two front-ends over the same NVML engine:
