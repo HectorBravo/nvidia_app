@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-08 23:56:30
-git_head: 945e82c94e15607e8d4672df5db3a8705a6a22c7
+last_indexed: 2026-11-10 02:27:17
+git_head: b6bc1851dda65021b0aee4d412764b7cb60617d5
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -53,7 +53,7 @@ unavailable it degrades to a friendly message (UI) or a non-zero exit code (CLI)
 Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
 `build_executables.bat` (one-click: `dotnet build` the solution, then `dotnet publish`
 both apps into the git-ignored `bin\`; aborts if the dashboard is still running,
-because it locks its own DLLs), `build_release.ps1`, `.gitignore`, and the
+because it locks its own DLLs), `build_release.ps1`, `.gitignore`, `.gitattributes` (Git LFS for `*.png`), and the
 git-ignored `bin/` (publish output).
 
 | Path | TFM | Output | Namespace | Project refs |
@@ -169,6 +169,12 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - **Polling rate** — `GpuPollingService` (~1 Hz, constant).
 - **Chart window** — `ChartController.WindowMinutes` (2–60, default 10); `Ctrl+wheel`
   rescales it; history ring-buffer capacity 720.
+- **Repo asset storage (VCS, not runtime)** — `.gitattributes` routes `*.png` through **Git LFS**
+  (`filter=lfs diff=lfs merge=lfs -text`): `screenshot.png` is stored as a 3-line pointer, so
+  fetching its bytes requires git-lfs (`git lfs install` + the repo `pre-push` hook); clients
+  without git-lfs get the pointer text, never the image. No `.gitattributes` rule exists for any
+  other binary type yet.
+
 
 ## 9. Dependencies
 - **No third-party NuGet packages.** The only external dependency is the OS
@@ -277,6 +283,18 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-10 — **T23: Git LFS for PNG images + README screenshot** (repo VCS config only, no
+  source/`bin` change): new root **`.gitattributes`** (`*.png filter=lfs diff=lfs merge=lfs -text`)
+  makes every PNG an LFS pointer, so the new `screenshot.png` (113,831 B, oid
+  `sha256:c55b91a7…`) committed as 3 pointer lines instead of raw bytes, and `README.md` gained
+  `![Screenshot](screenshot.png)` under the H1. `git lfs install` was required first — the repo had
+  only `.sample` hooks, so without git-lfs's **`pre-push` hook** the pointer would push but the
+  object would never upload and the GitHub image would 404. No PNG was tracked before
+  (`git ls-tree -r HEAD` had zero), so no existing blob needed migration; but because
+  `screenshot.png` + `README.md` were already **staged before the attribute existed**, the PNG had
+  to be forced through the clean filter with `git rm --cached screenshot.png` + `git add` (git does
+  not re-read a file whose stat already matches the index). `git lfs ls-files -l` now lists it.
+
 - 2026-11-08 — **T22: GPU Utilization collapsed, not Memory Utilization** (fix of the T21
   collapsed set, `MainWindow.cs` only): `Collapsed: true` moved from the Memory Utilization
   spec to the GPU Utilization spec (and the "expanded pair" comment reworded), so the Charts
