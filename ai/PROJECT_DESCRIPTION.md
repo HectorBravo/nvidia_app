@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-10 02:27:17
-git_head: b6bc1851dda65021b0aee4d412764b7cb60617d5
+last_indexed: 2026-11-10 02:35:00
+git_head: adca94ab2dd0cdaaaa9e875643416dfff9ae9719
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -170,7 +170,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - **Chart window** — `ChartController.WindowMinutes` (2–60, default 10); `Ctrl+wheel`
   rescales it; history ring-buffer capacity 720.
 - **Repo asset storage (VCS, not runtime)** — `.gitattributes` routes `*.png` through **Git LFS**
-  (`filter=lfs diff=lfs merge=lfs -text`): `screenshot.png` is stored as a 3-line pointer, so
+  (`filter=lfs diff=lfs merge=lfs -text`): `screenshot.png` (113,831 B) and `screenshot2.png` (31,190 B) are stored as 3-line pointers, so
   fetching its bytes requires git-lfs (`git lfs install` + the repo `pre-push` hook); clients
   without git-lfs get the pointer text, never the image. No `.gitattributes` rule exists for any
   other binary type yet.
@@ -293,7 +293,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   (`git ls-tree -r HEAD` had zero), so no existing blob needed migration; but because
   `screenshot.png` + `README.md` were already **staged before the attribute existed**, the PNG had
   to be forced through the clean filter with `git rm --cached screenshot.png` + `git add` (git does
-  not re-read a file whose stat already matches the index). `git lfs ls-files -l` now lists it.
+  not re-read a file whose stat already matches the index). `git lfs ls-files -l` now lists it. **Same-task follow-up** (user: "add the
+  second screenshot (screenshot2.png) just below the first one"): `screenshot2.png` (31,190 B) was
+  added with `![Screenshot 2](screenshot2.png)` on **README line 5**, right under the first image, and
+  needed **no new attribute** — the same `*.png` rule auto-converted it (`oid sha256:0f6ebfb…`,
+  commit `9974feb` on the AI branch). The branch was then merged into `main` (`18739a4`) and deleted
+  locally + remotely, after which `git lfs ls-files -l` lists **both** PNGs with local objects and
+  both working-tree files are their real byte sizes.
 
 - 2026-11-08 — **T22: GPU Utilization collapsed, not Memory Utilization** (fix of the T21
   collapsed set, `MainWindow.cs` only): `Collapsed: true` moved from the Memory Utilization
