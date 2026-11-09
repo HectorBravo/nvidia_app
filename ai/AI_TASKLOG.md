@@ -4,6 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 0/7 | 0m | none |
+
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -19,6 +21,73 @@
 
 ---
 ---
+
+## Task T23: Add Git LFS for PNG images, commit screenshot.png + README image reference
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
+- **Created**: 10-11-2026 02:25:25
+- **Last Updated**: 10-11-2026 02:25:25
+- **Time Spent**: 0m
+- **Branch**: [`chore/ai-add-lfs-png`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-add-lfs-png)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - `git-lfs/3.8.1` is on PATH; `filter.lfs.*` macros already in the user's **global** config, but the repo had **no** LFS `pre-push` hook (only `.sample` files in `.git/hooks`) → ran `git lfs install` so the PNG object is actually uploaded on push (a bare pointer push would leave the GitHub image broken).
+  - No `.gitattributes` existed; no PNG (or jpg/gif/ico/ttf/dll) is tracked at `HEAD` → **no migration** of existing blobs needed, only the new `screenshot.png` has to be converted.
+  - `screenshot.png` (113,831 bytes) and the README line `![Screenshot](screenshot.png)` were already **staged in the index before the attribute existed** → git skips re-reading a file whose stat matches the index, so the raw blob had to be forced through the clean filter with `git rm --cached screenshot.png` + `git add screenshot.png`.
+  - `.gitattributes` rule kept minimal per the request: `*.png filter=lfs diff=lfs merge=lfs -text`.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- [ ] (10-11-2026 02:25:25) Merge `chore/ai-add-lfs-png` into `main` (squash/FF) so the final task-log commit can be written on `main`?
+
+**Confirmed (user provided):**
+
+None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Install LFS filters + `pre-push` hook in this repo (`git lfs install`)
+- [ ] Subtask 2 — Create `.gitattributes` with `*.png filter=lfs diff=lfs merge=lfs -text`
+- [ ] Subtask 3 — Re-index `screenshot.png` so it is stored as an LFS pointer (not the raw 113 KB blob)
+- [ ] Subtask 4 — Commit `.gitattributes` + `screenshot.png` + `README.md` on `chore/ai-add-lfs-png`
+- [ ] Subtask 5 — Push the branch to `origin` with `-u` (upstream set)
+- [ ] Subtask 6 — Verify: `git lfs ls-files`, `git check-attr`, pointer text in the committed blob
+- [ ] Subtask 7 — Refresh `ai/PROJECT_DESCRIPTION.md` (`.gitattributes` is a repo config file → map must be re-pointed)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained notes so a fresh session can resume T23 without other context.
+
+**Repo state at task start**
+- HEAD `f73c35d` on `main`; `git status --short` = `M  README.md`, `A  screenshot.png` (both **staged**, raw, un-LFS-filtered).
+- Remote: `https://github.com/HectorBravo/nvidia_app` (GitHub → LFS supported).
+- No `.gitattributes`; `.gitignore` has no PNG rule.
+- `git lfs version` → `git-lfs/3.8.1`; global config already has `filter.lfs.smudge`/`clean`/`diff`/`merge`.
+- `git ls-tree -r HEAD` contains **zero** `.png` files → nothing to migrate; only the newly added file matters.
+
+**Why the re-add is mandatory**
+- `.gitattributes` is read at **index-write time** (clean filter). A path already in the index whose stat is unchanged is not re-read by `git add`, so the committed blob would stay raw PNG bytes instead of a 130-byte LFS pointer. `git rm --cached` + `git add` forces conversion.
+- The committed blob for an LFS path is text: `version https://git-lfs.github.com/spec/v1 / oid sha256:... / size 113831`.
+
+**Verification commands used**
+- `git check-attr -a screenshot.png` → expect `filter: lfs`, `diff: lfs`, `merge: lfs`, `text: unset`
+- `git ls-files -v -- screenshot.png` → `U` (update-filter) once the attribute applies, was `H` before
+- `git lfs ls-files -l` and `git cat-file text $(git rev-parse HEAD:screenshot.png)`
+
+**Gotchas**
+- Dedicated `docs(ai)` log commit must not sweep the staged README/screenshot into it → commit with a path restriction (`git commit -m ... -- ai/AI_TASKLOG.md`).
+- LFS filter macros live in **user config**; `git lfs install` is the sanctioned way to set them/hook — the "never touch git config" rule only protects `user.name`/`user.email`.
+
+**Current state / next step**
+- Nothing changed yet (log only). Next: Subtask 1 (`git lfs install`) then Subtasks 2-7.
+- Task ends **blocked on the user merge** for the final `done` log commit (fast-forward of the AI branch onto it per Rule 3).
+
+**Assumptions**
+- Single-platform Windows checkout: global `core.filemode=true` but repo-local `core.filemode=false` observed — **not** touched (Rule 5 applies to freshly cloned shared repos; confirm with the user before any change).
 
 ## Task T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)
 
