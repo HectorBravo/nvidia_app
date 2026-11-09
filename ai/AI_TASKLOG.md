@@ -4,7 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 7/7 | 4m | none |
 
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -17,20 +16,20 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 19 completed task(s) - [View completed tasks](#completed-tasks)
+> 20 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
 
 ## Task T23: Add Git LFS for PNG images, commit screenshot.png + README image reference
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
 - **Created**: 10-11-2026 02:25:25
-- **Last Updated**: 10-11-2026 02:29:00
-- **Time Spent**: 4m
-- **Branch**: [`chore/ai-add-lfs-png`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-add-lfs-png)
-- **Commit(s)**: [50037e9](https://github.com/HectorBravo/nvidia_app/commit/50037e989844c7b549ab00bbad2d23c3aa5e91b1) (log plan, on `main`) · [b6bc185](https://github.com/HectorBravo/nvidia_app/commit/b6bc1851dda65021b0aee4d412764b7cb60617d5) (`.gitattributes` + `screenshot.png` + `README.md`) · [9459d14](https://github.com/HectorBravo/nvidia_app/commit/9459d1414663f988a61d39e171b28f349efc5aaf) (project-index refresh) — both on the branch, pushed to `origin`
+- **Last Updated**: 10-11-2026 02:34:30
+- **Time Spent**: 8m
+- **Branch**: ~~`chore/ai-add-lfs-png`~~ — **merged into `main`** (merge commit `18739a4`), then **deleted locally + remotely** at 10-11-2026 02:34 at the user's request; all its commits now live on `main`.
+- **Commit(s)**: log plan [50037e9](https://github.com/HectorBravo/nvidia_app/commit/50037e989844c7b549ab00bbad2d23c3aa5e91b1) + record [db59a29](https://github.com/HectorBravo/nvidia_app/commit/db59a29502a1dd27d13edbabb4c37570ee9e0327) (both on `main`) · branch: [b6bc185](https://github.com/HectorBravo/nvidia_app/commit/b6bc1851dda65021b0aee4d412764b7cb60617d5) (`.gitattributes` + `screenshot.png` + `README.md`) · [9459d14](https://github.com/HectorBravo/nvidia_app/commit/9459d1414663f988a61d39e171b28f349efc5aaf) (project-index refresh) · [9974feb](https://github.com/HectorBravo/nvidia_app/commit/9974feb0ae05ffe0efb71069e6e8c0d2a597d0a7) (`screenshot2.png` + README line 5) · [18739a4](https://github.com/HectorBravo/nvidia_app/commit/18739a4bcbfcdc28550004764fceb68d89940fa5) (merge into `main`) — the finalize `docs(ai)` log commit (this one) is recorded in a follow-up log edit.
 - **Blockers**: none
 - **Findings & Notes**:
   - `git-lfs/3.8.1` is on PATH; `filter.lfs.*` macros already in the user's **global** config, but the repo had **no** LFS `pre-push` hook (only `.sample` files in `.git/hooks`) → ran `git lfs install` so the PNG object is actually uploaded on push (a bare pointer push would leave the GitHub image broken).
@@ -40,16 +39,19 @@
   - Verified after re-adding: `git check-attr -a screenshot.png` → `filter/diff/merge: lfs`, `text: unset`; the staged blob `91561aa` is the 3-line pointer (`version …/spec/v1`, `oid sha256:c55b91a7…`, `size 113831`), and `git lfs ls-files -l` lists `c55b91a7… * screenshot.png` (local object present).
   - The push printed `Uploading LFS objects: 100% (1/1), 114 KB | 0 B/s, done.` → the PNG really is on GitHub's LFS storage, so the README image renders.
   - Tooling gotcha: git commands issued **in parallel** in one call collide on `.git/index.lock` (`fatal: Unable to create … index.lock`) and their reported state can lag; run one git command per call and re-query to confirm.
+  - `screenshot2.png` (31,190 B, user-provided, PNG magic `\x89PNG`) needed **no new rule** — the single `*.png` attribute already covered it; it landed as an LFS pointer (`oid sha256:0f6ebfb…`) in commit `9974feb`.
+  - Remote-object proof: `git lfs fetch origin chore/ai-add-lfs-png --include 'screenshot2.png'` completed without error and `git lfs status` reported **no** "objects to be pushed" → both PNG objects are on GitHub's LFS store, not just local.
+  - After merging into `main` (`18739a4`) the working tree re-smudged both PNGs to real bytes (`screenshot.png` 113,831 B, `screenshot2.png` 31,190 B) and `git lfs ls-files -l` lists both with `*` → the README renders both images on GitHub.
 
 ### User Confirmations
 
 **Pending (awaiting user response):**
 
-- [ ] (10-11-2026 02:25:25) Merge `chore/ai-add-lfs-png` into `main` (squash/FF) so the final task-log commit can be written on `main`?
+None — the merge-into-`main` + branch-delete decision was answered below and carried out.
 
 **Confirmed (user provided):**
 
-None yet.
+- (10-11-2026 02:25:25) "Merge `chore/ai-add-lfs-png` into `main` … how do you want the branch merged?" → "add the second screenshot (screenshot2.png) just below the first one on the readme.md so both are visible. Work on the ai branch, and after he edits merge into main and delete the ai branch" → **done as**: second README image line + `screenshot2.png` committed on the AI branch (`9974feb`), then branch merged into `main` (`18739a4`) and the AI branch deleted locally + remotely.
 
 ### Subtasks / Plan
 
@@ -60,6 +62,9 @@ None yet.
 - [x] Subtask 5 — Push the branch to `origin` with `-u` (upstream tracking set; LFS object uploaded)
 - [x] Subtask 6 — Verify: `git check-attr`, index blob = pointer text, `git lfs ls-files -l` lists the object
 - [x] Subtask 7 — Refresh `ai/PROJECT_DESCRIPTION.md` (`.gitattributes` documented; `git_head`/`last_indexed` re-pointed) (`9459d14`)
+- [x] Subtask 8 — Add `![Screenshot 2](screenshot2.png)` to `README.md` directly below the first image line (README lines 3 + 5)
+- [x] Subtask 9 — Stage/commit `screenshot2.png` (31,190 B) — auto-converted to an LFS pointer (`oid sha256:0f6ebfb…`) by the existing `*.png` rule (`9974feb`), pushed to `origin`
+- [x] Subtask 10 — Merge the branch into `main` (`18739a4`, merge commit) + push, then delete the AI branch locally + remotely; verify `git lfs ls-files -l` shows both PNGs and both working-tree files are real bytes
 
 ### Full Context Notes for AI Agents
 
@@ -85,10 +90,10 @@ None yet.
 - Dedicated `docs(ai)` log commit must not sweep the staged README/screenshot into it → commit with a path restriction (`git commit -m ... -- ai/AI_TASKLOG.md`).
 - LFS filter macros live in **user config**; `git lfs install` is the sanctioned way to set them/hook — the "never touch git config" rule only protects `user.name`/`user.email`.
 
-**Current state / next step**
-- **Done and pushed**: `chore/ai-add-lfs-png` → `origin` carries `b6bc185` (`.gitattributes` + LFS-pointer `screenshot.png` + `README.md` image line) and `9459d14` (project-map refresh); `main` = `50037e9` (log plan commit) and the working tree is clean.
-- Remaining: the user merges `chore/ai-add-lfs-png` into `main`; then the final `done` log commit goes on `main` (next commit after the merge) and the branch is fast-forwarded onto it (`git merge --ff-only origin/main` + `git push --force-with-lease`) so the branch also carries the complete log.
-- Task ends **blocked on the user merge** for the final `done` log commit (fast-forward of the AI branch onto it per Rule 3).
+**Current state (task complete)**
+- `main` tip = the finalize `docs(ai)` log commit; underneath it the merge commit `18739a4` brings `.gitattributes`, `screenshot.png`, `screenshot2.png` and the two README image lines (README lines 3 and 5) into `main`. `origin/main` in sync, working tree clean, `git lfs ls-files -l` = both PNGs with local objects present.
+- The AI branch `chore/ai-add-lfs-png` was **deleted locally + remotely** immediately after the merge (the user's request), so Rule 3's final-log fast-forward + `--force-with-lease` re-push step was intentionally skipped — nothing is lost, `main` carries the complete log **and** the code.
+- Nothing left to do; any future PNG dropped into the repo is already covered by the existing `*.png` LFS rule (no `.gitattributes` edit needed), as long as `git lfs install` hooks exist in the clone.
 
 **Assumptions**
 - Single-platform Windows checkout: global `core.filemode=true` but repo-local `core.filemode=false` observed — **not** touched (Rule 5 applies to freshly cloned shared repos; confirm with the user before any change).
@@ -1651,6 +1656,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | chore | 10/10 | 8m |
 | 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | fix | 9/9 | 4m |
 | 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | feat | 9/9 | 11m |
 | 08-11-2026 22:29:12 | [T20: Collapsible chart cards (top-left dropbox chevron) and Memory Used percent axis](#task-t20-collapsible-chart-cards-top-left-dropbox-chevron-and-memory-used-percent-axis) | feat | 9/9 | 17m |
