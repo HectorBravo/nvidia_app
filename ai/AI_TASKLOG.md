@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 11-11-2026 03:03:57 | [T24: Enforce per-app compile-date releases on GitHub after each merge into main](#task-t24-enforce-per-app-compile-date-releases-on-github-after-each-merge-into-main) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 0/9 | 0m | none |
 
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -21,7 +22,74 @@
 ---
 ---
 
-## Task T23: Add Git LFS for PNG images, commit screenshot.png + README image reference
+## Task T24: Enforce per-app compile-date releases on GitHub after each merge into main
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
+- **Created**: 11-11-2026 03:03:57
+- **Last Updated**: 11-11-2026 03:03:57
+- **Time Spent**: 0m
+- **Branch**: `chore/ai-compile-date-releases` (created from `main`)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - GUI app already shows its compile date in the header (`MainWindow.cs` line 88: `LastWriteTime` of the executing assembly, format `yyyy-MM-dd HH:mm`). The console app did **not** — added an equivalent stamp line to `NvmlTest/Program.cs`.
+  - Two independent apps ⇒ two release streams: `gui/<date>` (NvidiaMonitor) and `cli/<date>` (NvmlTest). A new release per app only when that app's code changed in the merge.
+  - Change detection = diff each app's **dependency closure** between pre-merge and post-merge commits: GUI = `src/NvidiaMonitor|NvmlCore|HectorBravo.Nvidia.Contracts`, CLI = `src/NvmlTest|NvmlCore|HectorBravo.Nvidia.Contracts`. Shared-lib change bumps both (both binaries recompile) — correct behaviour.
+  - Release date is taken from the **publish timestamp of each app's own exe** (same value the apps print), so tag name == what the binary shows.
+  - Assets: per-app zip of `bin/<App>/` (exe + DLLs + `.deps.json` + `.runtimeconfig.json`), **no `.pdb`** (user confirmed). Framework-dependent: runner needs .NET 8 runtime — stated in release notes.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+- (11-11-2026 ~03:05) "How should releases be published?" → publish only the executables (+ required dependencies, no `.pdb`); **two independent apps ⇒ one release per app only if that app's code changed while merging into main** (e.g. console app untouched → only GUI gets a new release).
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Add compile-date header line to `NvmlTest/Program.cs` (both apps now show it)
+- [ ] Subtask 2 — Create `release.ps1`: per-app change detection, build+publish, zip assets, `gh release create gui|cli/<date>`
+- [ ] Subtask 3 — Enforce the rule in `AGENTS.md` (mandatory post-merge step for AI agents)
+- [ ] Subtask 4 — Document the release flow in `README.md`
+- [ ] Subtask 5 — Dedicated `docs(ai)` task-log commit before code push
+- [ ] Subtask 6 — Push branch `chore/ai-compile-date-releases` (`-u`)
+- [ ] Subtask 7 — User merges into `main`; run `release.ps1 --merge <pre> <post>` → first real releases on GitHub
+- [ ] Subtask 8 — Final task-log commit on `main` (done, real hashes)
+- [ ] Subtask 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer Steps 2–4)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: Self-contained recovery context. Current state: nothing done yet; subtask 1 is next.
+>
+> **Environment**: Windows, PowerShell. Repo `D:\Repos\nvidia_app`, remote `https://github.com/HectorBravo/nvidia_app.git`, branch `main`, HEAD `9f762d6`. `gh` CLI authenticated as HectorBravo (scopes repo/read:org/gist — enough for releases on this repo). No releases exist yet (`gh release list` empty), no tags.
+>
+> **Apps & closures**:
+> - GUI: `src/NvidiaMonitor` (WinExe, net8.0-windows, WPF) → NvmlCore → Contracts. Publish output `bin/NvidiaMonitor/`: `NvidiaMonitor.exe`, `NvidiaMonitor.dll`, `HectorBravo.Nvidia.Contracts.dll`, `NvmlCore.dll`, `.deps.json`, `.runtimeconfig.json` (+`.pdb` excluded).
+> - CLI: `src/NvmlTest` (Exe, net8.0) → NvmlCore → Contracts. Publish output `bin/NvmlTest/`: same shape with `NvmlTest.*`.
+> - Shared libs: `src/NvmlCore`, `src/HectorBravo.Nvidia.Contracts` (in both closures).
+>
+> **Compile-date display**: GUI header built in `MainWindow.cs` ~line 86-92 (`buildTime` TextBlock, `$"[{new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).LastWriteTime:yyyy-MM-dd HH:mm}]"`). CLI: add after svc init in `Program.cs` (around line 77-90) an analogous `Console.WriteLine` of the assembly's LastWriteTime.
+>
+> **Build commands** (existing): `dotnet build nvidia_app.sln -c Release --nologo`; publish via `build_executables.bat` or `dotnet publish src/<App> -c Release -o bin\<App>`. `bin/` is git-ignored. NOTE: `build_executables.bat` aborts if NvidiaMonitor.exe is running (locks DLLs).
+>
+> **release.ps1 design** (repo root):
+> 1. Modes: `--merge <base> <head>` (diff closures, only release changed apps; default post-merge) and `--force [gui|cli]`.
+> 2. Closure diff: `git log --name-only <base>..<head> -- <paths>` per app → non-empty ⇒ changed.
+> 3. Build solution (Release), publish both apps into `bin/`, then for each changed app: date = that exe's LastWriteTime formatted `yyyy-MM-dd-HHmm` (tag suffix; display form keeps spaces in title/notes), Compress-Archive the app's bin folder (exe/dll/json only) → zip asset, then `gh release create <stream>/<date> <zip> --title ... --notes ...`.
+> 4. Idempotency: skip if tag `<stream>/<date>` already exists (`gh release view` / `git tag -l`).
+> 5. Tag is created by gh itself at current HEAD — no pre-existing tag needed.
+>
+> **Git workflow rules apply**: AI branch `chore/ai-compile-date-releases`, push `-u`, task-log commits before/after, fast-forward after merge. User merges into `main` themselves (they did so in prior tasks; ask if unsure).
+>
+> **Enforcement docs**: AGENTS.md user-managed section gets a "Release Policy" rule: after any merge into `main` that changed an app's closure, `release.ps1 --merge <pre-merge> <post-merge>` MUST be run and releases verified. Also document in README.
+>
+> **Gotchas**: gh token has `repo` scope for own repos — fine. Zip via `Compress-Archive` (PowerShell 5 OK). Avoid releasing when nothing changed (`--merge` mode exits cleanly). Same-minute date collision: if tag exists, abort that app with a clear message rather than double-releasing.
+
+
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
