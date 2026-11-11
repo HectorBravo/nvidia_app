@@ -29,7 +29,7 @@
 - **Last Updated**: 11-11-2026 23:59:00
 - **Time Spent**: 40m
 - **Branch**: [`feat/ai-release-changelog-notes`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-changelog-notes) — merged into `main` (fast-forward), branch deleted locally + remotely
-- **Commit(s)**: [cdf3b18](https://github.com/HectorBravo/nvidia_app/commit/cdf3b18) (plan log, AI branch) · [4d39f1d](https://github.com/HectorBravo/nvidia_app/commit/4d39f1d) (log update, AI branch) · [c92fb6e](https://github.com/HectorBravo/nvidia_app/commit/c92fb6e) (code, merged to `main`)
+- **Commit(s)**: [cdf3b18](https://github.com/HectorBravo/nvidia_app/commit/cdf3b18) (plan log, AI branch) · [4d39f1d](https://github.com/HectorBravo/nvidia_app/commit/4d39f1d) (log update, AI branch) · [c92fb6e](https://github.com/HectorBravo/nvidia_app/commit/c92fb6e) (code, merged to `main`) · [0184540](https://github.com/HectorBravo/nvidia_app/commit/0184540) (final log, `main`)
 - **Blockers**: none
 - **Findings & Notes**:
   - User wants every GitHub Release created by `release.ps1` to carry a **changelog** in its release text, derived from the commits that produced that compilation.

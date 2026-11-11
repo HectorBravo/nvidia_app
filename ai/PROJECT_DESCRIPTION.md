@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-11 18:15:00
-git_head: b2c2e10c5d6c2a77ef671d8a8a5f167036eb5ae5
+last_indexed: 2026-11-11 23:59:00
+git_head: 01845403ec601ef54deac7bf113df09911dc6afd
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -114,8 +114,9 @@ dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # → bin\NvmlT
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # → bin\NvidiaMonitor\NvidiaMonitor.exe
 
 # After every merge into main: per-app compile-date GitHub Releases (mandatory, see AGENTS.md)
-.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>   # releases only apps whose closure changed
+.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>   # releases only apps whose closure changed; notes get an auto "## What's changed" changelog
 .\release.ps1 --force gui|cli                                  # force one/both streams (e.g. first-ever release)
+.\release.ps1 --changelog <base> [<head>] [gui|cli]            # patch notes of newest release with a changelog, no rebuild (head defaults to HEAD)
 
 # Run
 .\bin\NvidiaMonitor\NvidiaMonitor.exe             # WPF dashboard (~1 Hz)
@@ -296,6 +297,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-11 — **T26: changelog in GitHub release notes**: `release.ps1` gains `Get-AppChangelog` (conventional-commit subjects touching each app's closure, docs/`ai/` commits excluded, `[ai]` tag stripped) and a third mode `--changelog <base> [<head>] [gui|cli]` that patches the newest release's notes without rebuilding. `--merge` now auto-prepends a `## What's changed` section to every release body; static footer no longer duplicates "Framework-dependent:". `AGENTS.md` + `README.md` document the mandate. Latest gui release `gui/2026-11-11-1812` patched with its T25 changelog.
 - 2026-11-11 — **T25: single-instance GUI guard**: `App.cs` adds a lockfile-heartbeat guard so only one `NvidiaMonitor` window may run at a time (refusal message + exit code 0 on a second concurrent launch; headless `--print` unaffected). `MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()` each poll tick. No shared-lib change → only the `gui` release stream bumped (`gui/2026-11-11-1812`).
 - 2026-11-11 — **T24: compile-date GitHub Releases enforcement**: `NvmlTest/Program.cs` now prints a
   `Build: yyyy-MM-dd HH:mm` stamp (`LastWriteTime` of the executing assembly, same as the GUI header in
