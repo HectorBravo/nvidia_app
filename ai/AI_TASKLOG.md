@@ -4,7 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 3/8 | 45m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -16,20 +15,20 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 20 completed task(s) - [View completed tasks](#completed-tasks)
+> 21 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
 
 ## Task T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 11-11-2026 15:27:17
-- **Last Updated**: 11-11-2026 18:12:00
-- **Time Spent**: 45m
-- **Branch**: [`feat/ai-single-instance-gui-guard`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-single-instance-gui-guard) — created from `main` (user confirmed: no `develop` exists; `main` is the merge target)
-- **Commit(s)**: pending
+- **Last Updated**: 11-11-2026 18:14:00
+- **Time Spent**: 47m
+- **Branch**: [`feat/ai-single-instance-gui-guard`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-single-instance-gui-guard) — merged into `main` (fast-forward), branch deleted locally + remotely
+- **Commit(s)**: [b78560a](https://github.com/HectorBravo/nvidia_app/commit/b78560a7f544ad92a8e5777b355ec9c2833023d6) (plan log, AI branch) · [2c8dc2f](https://github.com/HectorBravo/nvidia_app/commit/2c8dc2fc84602fc85f36910bd471f614ea29985f) (code, merged to `main`)
 - **Blockers**: none
 - **Findings & Notes**:
   - User said "merge into develop" but the repo has **only `main`** locally and remotely → user confirmed to treat `main` as the target branch (merge + delete AI branch).
@@ -53,11 +52,11 @@ None yet.
 - [x] Subtask 1 — Implement the single-instance guard in `App.cs` (Windows named shared-memory segment held for process lifetime; friendly refusal message + exit when a GUI instance is already running; headless `--print` unaffected)
 - [x] Subtask 2 — Build solution clean (`dotnet build nvidia_app.sln -c Release`, TreatWarningsAsErrors)
 - [x] Subtask 3 — Verify live: launch two GUI instances concurrently → second refuses and exits; verify with process checks
-- [ ] Subtask 4 — Dedicated `docs(ai)` task-log commit before code push (on the AI branch after its creation)
-- [ ] Subtask 5 — Create + push `feat/ai-single-instance-gui-guard` with `-u`
-- [ ] Subtask 6 — Merge into `main` (user asked for it in this same message ⇒ agent performs merge), then delete the branch locally + remotely
-- [ ] Subtask 7 — Run `release.ps1 --merge <pre> <post>` → publish `gui/<compile-date>` release (GUI closure changed)
-- [ ] Subtask 8 — Final task-log commit on `main` (done, real hashes) + refresh `ai/PROJECT_DESCRIPTION.md`
+- [x] Subtask 4 — Dedicated `docs(ai)` task-log commit before code push (on the AI branch after its creation)
+- [x] Subtask 5 — Create + push `feat/ai-single-instance-gui-guard` with `-u`
+- [x] Subtask 6 — Merge into `main` (user asked for it in this same message ⇒ agent performs merge), then delete the branch locally + remotely
+- [x] Subtask 7 — Run `release.ps1 --merge <pre> <post>` → publish `gui/<compile-date>` release (GUI closure changed)
+- [x] Subtask 8 — Final task-log commit on `main` (done, real hashes) + refresh `ai/PROJECT_DESCRIPTION.md`
 
 ### Full Context Notes for AI Agents
 
@@ -1780,6 +1779,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 47m |
 | 11-11-2026 03:03:57 | [T24: Enforce per-app compile-date releases on GitHub after each merge into main](#task-t24-enforce-per-app-compile-date-releases-on-github-after-each-merge-into-main) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 1h 20m |
 | 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | chore | 10/10 | 8m |
 | 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | fix | 9/9 | 4m |
