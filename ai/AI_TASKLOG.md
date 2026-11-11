@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/5 | 0m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -18,6 +19,53 @@
 > 21 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+---
+
+## Task T26: Add changelog to GitHub release notes + patch latest gui release
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 11-11-2026 23:39:00
+- **Last Updated**: 11-11-2026 23:41:00
+- **Time Spent**: 2m
+- **Branch**: [`feat/ai-release-changelog-notes`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-changelog-notes)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - User wants every GitHub Release created by `release.ps1` to carry a **changelog** in its release text, derived from the commits that produced that compilation.
+  - Latest release is `gui/2026-11-11-1812` (T25 single-instance GUI guard); its body is currently only the static compile-date blurb → must be updated with the changelog of that merge.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Add `--changelog <base> [<head>]` to `release.ps1`: per-app changelog from conventional commits touching the app's closure; notes = Changelog + static footer.
+- [ ] Subtask 2 — Update the AGENTS.md Compile-Date Releases rule to mandate `--changelog`.
+- [ ] Subtask 3 — Update README.md release policy section accordingly.
+- [ ] Subtask 4 — Patch latest release `gui/2026-11-11-1812` body with the real changelog (T25 merge).
+- [ ] Subtask 5 — Verify: run changelog generation dry, confirm patched release body via `gh release view`.
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: Self-contained recovery context.
+
+- Repo: `HectorBravo/nvidia_app` (remote `https://github.com/HectorBravo/nvidia_app`). User branch: `main`. HEAD before this task: `4785ed0`.
+- `release.ps1` (repo root): builds/publishes apps, creates `gui|cli/<yyyy-MM-dd-HHmm>` releases via `gh release create … --notes "Compile date: …"`. Modes: `--merge <base> <head>` (closure diff decides apps) and `--force [gui|cli]`. Idempotent via `gh release view $tag`.
+- App closures defined in `$apps` ordered map: gui = src/NvidiaMonitor + src/NvmlCore + src/HectorBravo.Nvidia.Contracts; cli = src/NvmlTest + same shared libs.
+- Changelog source: commit messages are conventional (`feat(scope): [ai] …`). For a merge, the app's changelog = non-`ai/` doc commits whose touched files intersect the closure, between base..head. `--changelog <base> [<head>]` (head defaults to HEAD) lets callers state the range explicitly; in `--merge` mode it reuses mergeBase/mergeHead automatically.
+- Latest release facts: tag `gui/2026-11-11-1812`, title "NvidiaMonitor - built 2026-11-11 18:12", asset `NvidiaMonitor-2026-11-11-1812.zip`. Its merge = T25 (guard): pre-merge commit `18739a4` (chore(assets) LFS PNGs), post-merge `4785ed0`; code commit touching gui closure = `2c8dc2f feat(monitor): [ai] single-instance GUI guard via lockfile heartbeat`.
+- gh CLI available and authenticated. Patch body with `gh release edit gui/2026-11-11-1812 --notes-file <file>` (write UTF-8, avoid quoting issues).
+- Git workflow: AI branch `feat/ai-release-changelog-notes` created off main; dedicated `docs(ai):` log commit before push; push with `-u`; after user merges to main → final log commit on main + `merge --ff-only` + `--force-with-lease` re-push of the AI branch.
+- PS 5.1 compat gotchas already fixed in release.ps1 (T24): Join-Path paths, ext filter via `$_.Extension.TrimStart('.')`, gh view guard with ErrorActionPreference swap. Keep new code PS 5.1-safe: no `??`, avoid complex nested quoting; write notes to a temp file and pass via `--notes-file`.
+
 ---
 
 ## Task T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)
