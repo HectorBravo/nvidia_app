@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/8 | 0m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -20,7 +21,60 @@
 ---
 ---
 
-## Task T24: Enforce per-app compile-date releases on GitHub after each merge into main
+## Task T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 11-11-2026 15:27:17
+- **Last Updated**: 11-11-2026 15:35:00
+- **Time Spent**: 8m
+- **Branch**: [`feat/ai-single-instance-gui-guard`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-single-instance-gui-guard) — created from `main` (user confirmed: no `develop` exists; `main` is the merge target)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - User said "merge into develop" but the repo has **only `main`** locally and remotely → user confirmed to treat `main` as the target branch (merge + delete AI branch).
+  - Guard implemented in `src/NvidiaMonitor/App.cs` only — no shared-lib changes, so per T24's release rule only the **gui** stream gets a new release after the merge.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+None yet.
+
+**Confirmed (user provided):**
+
+- (11-11-2026 15:26) "No `develop` branch exists — how to handle the merge target?" → "Treat `main` as the target: create the AI branch from `main`, merge into `main`, delete the AI branch."
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Implement the single-instance guard in `App.cs` (Windows named shared-memory segment held for process lifetime; friendly refusal message + exit when a GUI instance is already running; headless `--print` unaffected)
+- [ ] Subtask 2 — Build solution clean (`dotnet build nvidia_app.sln -c Release`, TreatWarningsAsErrors)
+- [ ] Subtask 3 — Verify live: launch two GUI instances concurrently → second refuses and exits; verify with process checks
+- [ ] Subtask 4 — Dedicated `docs(ai)` task-log commit before code push (on the AI branch after its creation)
+- [ ] Subtask 5 — Create + push `feat/ai-single-instance-gui-guard` with `-u`
+- [ ] Subtask 6 — Merge into `main` (user asked for it in this same message ⇒ agent performs merge), then delete the branch locally + remotely
+- [ ] Subtask 7 — Run `release.ps1 --merge <pre> <post>` → publish `gui/<compile-date>` release (GUI closure changed)
+- [ ] Subtask 8 — Final task-log commit on `main` (done, real hashes) + refresh `ai/PROJECT_DESCRIPTION.md`
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: Self-contained recovery context. Current state: T25 log entry written on `main`; nothing else done yet; subtask 1 is next.
+>
+> **Environment**: Windows PowerShell 5.1 (build 26100), repo `D:\Repos\nvidia_app`, remote `https://github.com/HectorBravo/nvidia_app.git`, branch `main`, HEAD `58f01c14f6f41089fbf37cf3067181aff5bc7741`. `gh` CLI authenticated as HectorBravo. No `develop` branch exists (local or remote) — user confirmed `main` is the merge target and that the AI branch must be **deleted** after merging (matches T22/T23 close-out pattern: finalize log on `main` → `merge --ff-only origin/main` onto AI branch → `--force-with-lease` re-push → `git branch -d` + `git push origin --delete`).
+>
+> **Requirement**: "make the gui in a way that only one instance can be executed at a time" — launching `NvidiaMonitor.exe` while another GUI instance is running must not open a second window; the second launch should exit cleanly with an explanation. Headless `--print` mode must stay allowed (it never opens a window).
+>
+> **Design chosen**: Windows named shared-memory segment via `CreateFileMappingW` on handle `0xFFFFFFFF` (anonymous file mapping) with name `NvidiaMonitor_v1`. The OS guarantees only one process per pagefile can own a given named segment, so acquiring it = atomic single-instance claim. The returned handle is kept in a static field for the whole process lifetime → released automatically at process exit (crash included). Robust to kill/crash of an instance (segment dies with the process), unlike PID-scan or lockfile approaches. Name carries `_v1` so an old build's segment never blocks a new build.
+>
+> **Files**: `src/NvidiaMonitor/App.cs` — `Main` currently: `--print` branch → `Environment.Exit(RunHeadless())`, else `app.Run(new MainWindow())`. Guard inserted before `app.Run`: try acquire; if taken, print `[NvidiaMonitor] Another NvidiaMonitor instance is already running — only one may run at a time.` to stdout and return without opening a window (exit 0). New members: nested `private static` Win32 delegate block (`CreateFileMappingW`, `GetSystemTimeAsFileTime`) + `AcquireInstanceLock()` helper. `MainWindow.cs`, `ChartController.cs`, shared libs untouched.
+>
+> **Build/verify commands**: `dotnet build nvidia_app.sln -c Release --nologo` (must be 0 warnings — TreatWarningsAsErrors only on Contracts/NvmlCore but keep clean anyway). Publish: `dotnet publish src/NvidiaMonitor -c Release -o bin\NvidiaMonitor` (bin/ git-ignored; aborts if a dashboard is running — close it first). Live test: `Start-Process bin\NvidiaMonitor\NvidiaMonitor.exe` twice, check process count / second instance's behaviour.
+>
+> **Post-merge mandatory (AGENTS.md)**: run `.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>` — only `gui/<yyyy-MM-dd-HHmm>` should publish (CLI closure untouched). Script builds+publishes both apps, zips `bin\<App>\` (no .pdb), idempotent by tag.
+>
+> **Git identity**: every git command with `$env:GIT_AUTHOR_NAME="AI_bot"; $env:GIT_COMMITTER_NAME="AI_bot"` (never override email, never touch git config). `[ai]` tag after colon in every commit message.
+
+
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
