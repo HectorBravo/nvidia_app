@@ -26,6 +26,7 @@
 #   release notes).
 # -----------------------------------------------------------------------------
 
+$ErrorActionPreference = 'Stop'
 
 # ── argument parsing ($ARGS is PowerShell's automatic script-arg array) ─
 $mode = $null          # 'merge' | 'force'
@@ -34,7 +35,7 @@ $mergeHead = $null
 $forceApps = @('gui', 'cli')   # --force default = both
 
 $a = $ARGS
-for ($i = 0; $i -lt $a.Count; i++) {
+for ($i = 0; $i -lt $a.Count; $i += 1) {
     $t = $a[$i]
     if ($t -eq '--merge') {
         if ($i + 2 -ge $a.Count) { throw 'usage: release.ps1 --merge <base> <head>' }
@@ -61,7 +62,7 @@ if (-not $mode) {
 
 
 # ── repo constants ────────────────────────────────────────────────
-Set-Location $PSScriptHome
+if ($PS0) { Set-Location (Split-Path $PS0) }
 
 $apps = [ordered]@{
     gui = [ordered]@{
@@ -95,6 +96,10 @@ if ($mode -eq 'merge') {
     $releaseApps = $forceApps
 }
 
+if ($releaseApps.Count -eq 0) {
+    Write-Host 'Nothing to release.'
+    exit 0
+}
 
 # ── guard: dashboard must not be running (locks its DLLs) ─────────
 $running = tasklist /fi 'imagename eq NvidiaMonitor.exe' 2>$null | Select-String -Pattern 'NvidiaMonitor\.exe' -Quiet
@@ -110,17 +115,18 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'BUILD FAILED' -ForegroundColor Red; exit 
 
 foreach ($stream in $releaseApps) {
     $app = $apps[$stream]
-    Write-Host "[2/3] Publishing $($app.name) -> bin\$($app.name)"
+    $appDir = Join-Path 'bin' $app.name
+    Write-Host "[2/3] Publishing $($app.name) -> $appDir"
     # clean previous output so LastWriteTime reflects THIS compilation
-    if (Test-Path "bin\$($app.name)") { Remove-Item -LiteralPath "bin\$($app.name)" -Recurse -Force }
-    dotnet publish $app.project -c Release -o "bin\$($app.name)" --nologo
+    if (Test-Path $appDir) { Remove-Item -LiteralPath $appDir -Recurse -Force -ErrorAction Ignore }
+    dotnet publish $app.project -c Release -o $appDir --nologo
     if ($LASTEXITCODE -ne 0) { Write-Host "PUBLISH $($app.name) FAILED" -ForegroundColor Red; exit 1 }
 }
 
 # ── zip + release per app ─────────────────────────────────────────
 foreach ($stream in $releaseApps) {
     $app = $apps[$stream]
-    $exe = "bin\$($app.name)\$($app.name).exe"
+    $exe = Join-Path (Join-Path 'bin' $app.name) ($app.name + '.exe')
     if (-not (Test-Path $exe)) { Write-Host "missing $exe - cannot stamp release" -ForegroundColor Red; exit 1 }
 
     # Release date == the compile date the binary itself prints
@@ -130,8 +136,12 @@ foreach ($stream in $releaseApps) {
     $tag = "$stream/$dateTag"
 
     # Idempotency: skip if this exact release already exists
+    $prevEa = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     gh release view $tag 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    $viewRc = $LASTEXITCODE
+    $ErrorActionPreference = $prevEa
+    if ($viewRc -eq 0) {
         Write-Host "[skip] release $tag already exists" -ForegroundColor Gray
         continue
     }
@@ -140,7 +150,7 @@ foreach ($stream in $releaseApps) {
     $zipName = "$($app.name)-$dateTag"
     $tmpZip = Join-Path $env:TEMP "$zipName.zip"
     if (Test-Path $tmpZip) { Remove-Item -LiteralPath $tmpZip }
-    $files = Get-ChildItem "bin\$($app.name)" | Where-Object { $_.Extension -in @('exe', 'dll', 'json') }
+    $files = Get-ChildItem (Join-Path 'bin' $app.name) | Where-Object { $_.Extension.TrimStart('.') -in @('exe', 'dll', 'json') }
     Compress-Archive -Path $files.FullName -DestinationPath $tmpZip
 
     Write-Host "[3/3] Creating GitHub release $tag (title $($app.name) - built $dateDisp)"
@@ -154,10 +164,3 @@ foreach ($stream in $releaseApps) {
 }
 
 exit 0
-
-if ($releaseApps.Count -eq 0) {
-    Write-Host 'Nothing to release.'
-    exit 0
-}
-
-$ErrorAction = 'Stop'
