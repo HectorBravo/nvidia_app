@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/5 | 30m | none |
+| 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -23,13 +23,13 @@
 
 ## Task T26: Add changelog to GitHub release notes + patch latest gui release
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 11-11-2026 23:39:00
-- **Last Updated**: 11-11-2026 23:41:00
-- **Time Spent**: 2m
-- **Branch**: [`feat/ai-release-changelog-notes`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-changelog-notes)
-- **Commit(s)**: pending
+- **Last Updated**: 11-11-2026 23:59:00
+- **Time Spent**: 40m
+- **Branch**: [`feat/ai-release-changelog-notes`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-changelog-notes) — merged into `main` (fast-forward), branch deleted locally + remotely
+- **Commit(s)**: [cdf3b18](https://github.com/HectorBravo/nvidia_app/commit/cdf3b18) (plan log, AI branch) · [4d39f1d](https://github.com/HectorBravo/nvidia_app/commit/4d39f1d) (log update, AI branch) · [c92fb6e](https://github.com/HectorBravo/nvidia_app/commit/c92fb6e) (code, merged to `main`)
 - **Blockers**: none
 - **Findings & Notes**:
   - User wants every GitHub Release created by `release.ps1` to carry a **changelog** in its release text, derived from the commits that produced that compilation.
@@ -51,7 +51,7 @@
 - [x] Subtask 2 — Update the AGENTS.md Compile-Date Releases rule to mandate `--changelog`.
 - [x] Subtask 3 — Update README.md release policy section accordingly.
 - [x] Subtask 4 — Patch latest release `gui/2026-11-11-1812` body with the real changelog (T25 merge). Verified via `gh release view`: body = `## What's changed` + `- feat(monitor): single-instance GUI guard via lockfile heartbeat (2c8dc2f)` + original footer.
-- [ ] Subtask 5 — Verify: run changelog generation dry, confirm patched release body via `gh release view`.
+- [x] Subtask 5 — Verify: run changelog generation dry, confirm patched release body via `gh release view`. (Done: usage-path parse test passed; gui/2026-11-11-1812 body confirmed = changelog + footer.)
 
 ### Full Context Notes for AI Agents
 
