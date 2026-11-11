@@ -56,6 +56,14 @@ be listed here and read before code changes.)_
 > `gh release create gui|cli/<date> …`. It is idempotent (skips existing tags).
 > Close the running dashboard first — a running `NvidiaMonitor.exe` locks its
 > own DLLs.
+>
+> > [!IMPORTANT]
+> > **Release text must carry a changelog.** In `--merge` mode the script
+> > automatically prepends a `## What's changed` section built from the
+> > conventional commit messages that touched each app's dependency closure
+> > over the merge range (docs/`ai/` commits excluded). Never release with
+> > only the static compile-date blurb. To (re)patch the notes of the newest
+> > existing release without rebuilding: `.\release.ps1 --changelog <base> [<head>] [gui|cli]`.
 
 Do NOT conclude a merge-into-main task while this step was skipped.
 

@@ -88,6 +88,15 @@ whose code actually changed in the merge get a new release; unchanged apps are
 skipped. The script is idempotent — an existing tag is skipped. Close a running
 dashboard first (it locks its own DLLs).
 
+Every release body also carries a **`## What's changed` changelog**, generated
+automatically from the conventional commit messages that touched each app's
+dependency closure over the merge range (docs/`ai/` commits are excluded). To
+(re)patch the notes of the newest existing release without rebuilding, run:
+
+```powershell
+.\release.ps1 --changelog <base> [<head>] [gui|cli]   # head defaults to HEAD
+```
+
 ## Run
 Run the published executables directly — no `dotnet run` needed (build them first with
 `dotnet publish`, above):
