@@ -162,6 +162,10 @@ public class MainWindow : Window
             return;
         }
 
+        // Single-instance guard: claim the lock immediately so a near-simultaneous
+        // second launch sees it, even before the first snapshot arrives.
+        App.RefreshInstanceLock();
+
         // Live polling: events fire on a background thread → marshal to UI.
         _polling = new GpuPollingService(_monitor, _log, intervalMs: 1000);
         _polling.SnapshotAvailable += (_, snap) =>
@@ -271,6 +275,10 @@ public class MainWindow : Window
     /// <summary>Called on the UI thread with the latest snapshot.</summary>
     private void ApplySnapshot(SystemSnapshot snap)
     {
+        // Single-instance heartbeat: refresh the lockfile stamp every poll tick
+        // (~1 Hz) so a second launch can tell this instance is alive.
+        App.RefreshInstanceLock();
+
         _dataReceived = true;
         _driverText.Text = BuildVersionLine(snap);
         UpdateDevicesPanel(snap);
