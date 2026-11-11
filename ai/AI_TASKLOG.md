@@ -4,8 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 11-11-2026 03:03:57 | [T24: Enforce per-app compile-date releases on GitHub after each merge into main](#task-t24-enforce-per-app-compile-date-releases-on-github-after-each-merge-into-main) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 0/9 | 0m | none |
-
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -24,13 +22,13 @@
 
 ## Task T24: Enforce per-app compile-date releases on GitHub after each merge into main
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
 - **Created**: 11-11-2026 03:03:57
-- **Last Updated**: 11-11-2026 04:20:00
-- **Time Spent**: 1h 15m
-- **Branch**: `chore/ai-compile-date-releases` (created from `main`)
-- **Commit(s)**: pending
+- **Last Updated**: 11-11-2026 04:25:00
+- **Time Spent**: 1h 20m
+- **Branch**: `chore/ai-compile-date-releases` — **merged into `main`** (fast-forward, no merge commit), branch still open locally/remotely
+- **Commit(s)**: [29a5be4](https://github.com/HectorBravo/nvidia_app/commit/29a5be4c03b5571dc06a8bb46e3ce09f78be24fe) (plan log, AI branch) · [ab44679](https://github.com/HectorBravo/nvidia_app/commit/ab44679021ea57fe55e357a5bfbaa42fd484f0cc) (code, merged to `main`) · [c958a19](https://github.com/HectorBravo/nvidia_app/commit/c958a19806d886224eb2518e2664526b5c60ae8d) (PS 5.1 fixes for release.ps1, on `main`)
 - **Blockers**: none
 - **Findings & Notes**:
   - GUI app already shows its compile date in the header (`MainWindow.cs` line 88: `LastWriteTime` of the executing assembly, format `yyyy-MM-dd HH:mm`). The console app did **not** — added an equivalent stamp line to `NvmlTest/Program.cs`.
@@ -38,6 +36,7 @@
   - Change detection = diff each app's **dependency closure** between pre-merge and post-merge commits: GUI = `src/NvidiaMonitor|NvmlCore|HectorBravo.Nvidia.Contracts`, CLI = `src/NvmlTest|NvmlCore|HectorBravo.Nvidia.Contracts`. Shared-lib change bumps both (both binaries recompile) — correct behaviour.
   - Release date is taken from the **publish timestamp of each app's own exe** (same value the apps print), so tag name == what the binary shows.
   - Assets: per-app zip of `bin/<App>/` (exe + DLLs + `.deps.json` + `.runtimeconfig.json`), **no `.pdb`** (user confirmed). Framework-dependent: runner needs .NET 8 runtime — stated in release notes.
+  - **Done (11-11-2026 ~04:07–04:25)**: `release.ps1` needed several PS 5.1 fixes found by running it: `$null` not bare `null`, no prefix `++`, `Join-Path` instead of `"bin\…"` strings (trailing-backslash + quote breaks paths), `.Extension` includes the leading dot, and `gh release view` must run under `ErrorAction Continue`. Releases created: [cli/2026-11-11-0407](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/2026-11-11-0407) + [gui/2026-11-11-0407](https://github.com/HectorBravo/nvidia_app/releases/tag/gui/2026-11-11-0407). CLI verified printing `Build: 2026-11-11 04:07`.
 
 ### User Confirmations
 
@@ -55,10 +54,10 @@ None yet.
 - [x] Subtask 2 — Create `release.ps1`: per-app change detection, build+publish, zip assets, `gh release create gui|cli/<date>`
 - [x] Subtask 3 — Enforce the rule in `AGENTS.md` (mandatory post-merge step for AI agents)
 - [x] Subtask 4 — Document the release flow in `README.md`
-- [ ] Subtask 5 — Dedicated `docs(ai)` task-log commit before code push
-- [ ] Subtask 6 — Push branch `chore/ai-compile-date-releases` (`-u`)
-- [ ] Subtask 7 — User merges into `main`; run `release.ps1 --merge <pre> <post>` → first real releases on GitHub
-- [ ] Subtask 8 — Final task-log commit on `main` (done, real hashes)
+- [x] Subtask 5 — Dedicated `docs(ai)` task-log commit before code push (`29a5be4`)
+- [x] Subtask 6 — Push branch `chore/ai-compile-date-releases` (`-u`)
+- [x] Subtask 7 — Merge into `main` (fast-forward `ab44679`, user-approved) + run `release.ps1 --merge 0f5b37c ab44679` → `cli/2026-11-11-0407`; then `--force gui` → `gui/2026-11-11-0407` (first-ever releases for both apps)
+- [x] Subtask 8 — Final task-log commit on `main` (done, real hashes)
 - [ ] Subtask 9 — Refresh `ai/PROJECT_DESCRIPTION.md` (project-indexer Steps 2–4)
 
 ### Full Context Notes for AI Agents
@@ -1724,6 +1723,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 11-11-2026 03:03:57 | [T24: Enforce per-app compile-date releases on GitHub after each merge into main](#task-t24-enforce-per-app-compile-date-releases-on-github-after-each-merge-into-main) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 1h 20m |
 | 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | chore | 10/10 | 8m |
 | 08-11-2026 23:52:01 | [T22: Collapse the GPU Utilization card instead of the Memory Utilization one (T21 mistake)](#task-t22-collapse-the-gpu-utilization-card-instead-of-the-memory-utilization-one-t21-mistake) | fix | 9/9 | 4m |
 | 08-11-2026 22:56:30 | [T21: Chart tweaks: tight percent readout, more cards collapsed at start, Memory Used first, card max memory in the device list](#task-t21-chart-tweaks-tight-percent-readout-more-cards-collapsed-at-start-memory-used-first-card-max-memory-in-the-device-list) | feat | 9/9 | 11m |
