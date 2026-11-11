@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-10 02:35:00
-git_head: adca94ab2dd0cdaaaa9e875643416dfff9ae9719
+last_indexed: 2026-11-11 04:30:00
+git_head: b7a9569448e5db2986b6f2837e1fb713978bd934
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -53,7 +53,8 @@ unavailable it degrades to a friendly message (UI) or a non-zero exit code (CLI)
 Solution: `nvidia_app.sln` (4 projects). Repo root also has `README.md`,
 `build_executables.bat` (one-click: `dotnet build` the solution, then `dotnet publish`
 both apps into the git-ignored `bin\`; aborts if the dashboard is still running,
-because it locks its own DLLs), `build_release.ps1`, `.gitignore`, `.gitattributes` (Git LFS for `*.png`), and the
+because it locks its own DLLs), `build_release.ps1`, `release.ps1` (per-app compile-date
+GitHub Releases after each merge into main — see §5 and AGENTS.md), `.gitignore`, `.gitattributes` (Git LFS for `*.png`), and the
 git-ignored `bin/` (publish output).
 
 | Path | TFM | Output | Namespace | Project refs |
@@ -111,6 +112,10 @@ dotnet build nvidia_app.sln -c Release
 # build_executables.bat = the build above + these two publishes in one double-click)
 dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # → bin\NvmlTest\NvmlTest.exe
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # → bin\NvidiaMonitor\NvidiaMonitor.exe
+
+# After every merge into main: per-app compile-date GitHub Releases (mandatory, see AGENTS.md)
+.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>   # releases only apps whose closure changed
+.\release.ps1 --force gui|cli                                  # force one/both streams (e.g. first-ever release)
 
 # Run
 .\bin\NvidiaMonitor\NvidiaMonitor.exe             # WPF dashboard (~1 Hz)
@@ -283,6 +288,12 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-11 — **T24: compile-date GitHub Releases enforcement**: `NvmlTest/Program.cs` now prints a
+  `Build: yyyy-MM-dd HH:mm` stamp (`LastWriteTime` of the executing assembly, same as the GUI header in
+  `MainWindow.cs`); new root **`release.ps1`** creates per-app releases named `gui|cli/<yyyy-MM-dd-HHmm>`
+  (zip of `bin\<App>\` exe+dlls+json, no `.pdb`; `gh release create`; idempotent; PS 5.1-compatible).
+  `AGENTS.md` gained the mandatory post-merge rule; `README.md` documents the flow. First releases:
+  `cli/2026-11-11-0407` + `gui/2026-11-11-0407`.
 - 2026-11-10 — **T23: Git LFS for PNG images + README screenshot** (repo VCS config only, no
   source/`bin` change): new root **`.gitattributes`** (`*.png filter=lfs diff=lfs merge=lfs -text`)
   makes every PNG an LFS pointer, so the new `screenshot.png` (113,831 B, oid
