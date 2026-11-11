@@ -27,8 +27,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
 - **Created**: 11-11-2026 03:03:57
-- **Last Updated**: 11-11-2026 03:03:57
-- **Time Spent**: 0m
+- **Last Updated**: 11-11-2026 04:20:00
+- **Time Spent**: 1h 15m
 - **Branch**: `chore/ai-compile-date-releases` (created from `main`)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -51,10 +51,10 @@ None yet.
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Add compile-date header line to `NvmlTest/Program.cs` (both apps now show it)
-- [ ] Subtask 2 — Create `release.ps1`: per-app change detection, build+publish, zip assets, `gh release create gui|cli/<date>`
-- [ ] Subtask 3 — Enforce the rule in `AGENTS.md` (mandatory post-merge step for AI agents)
-- [ ] Subtask 4 — Document the release flow in `README.md`
+- [x] Subtask 1 — Add compile-date header line to `NvmlTest/Program.cs` (both apps now show it)
+- [x] Subtask 2 — Create `release.ps1`: per-app change detection, build+publish, zip assets, `gh release create gui|cli/<date>`
+- [x] Subtask 3 — Enforce the rule in `AGENTS.md` (mandatory post-merge step for AI agents)
+- [x] Subtask 4 — Document the release flow in `README.md`
 - [ ] Subtask 5 — Dedicated `docs(ai)` task-log commit before code push
 - [ ] Subtask 6 — Push branch `chore/ai-compile-date-releases` (`-u`)
 - [ ] Subtask 7 — User merges into `main`; run `release.ps1 --merge <pre> <post>` → first real releases on GitHub
