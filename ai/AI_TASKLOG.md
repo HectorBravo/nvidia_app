@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/5 | 0m | none |
+| 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/5 | 30m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -47,10 +47,10 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Add `--changelog <base> [<head>]` to `release.ps1`: per-app changelog from conventional commits touching the app's closure; notes = Changelog + static footer.
-- [ ] Subtask 2 — Update the AGENTS.md Compile-Date Releases rule to mandate `--changelog`.
-- [ ] Subtask 3 — Update README.md release policy section accordingly.
-- [ ] Subtask 4 — Patch latest release `gui/2026-11-11-1812` body with the real changelog (T25 merge).
+- [x] Subtask 1 — Add `--changelog <base> [<head>]` to `release.ps1`: per-app changelog from conventional commits touching the app's closure; notes = Changelog + static footer. (Also: `--merge` mode now auto-generates the changelog; fixed duplicate "Framework-dependent:" wording in footer.)
+- [x] Subtask 2 — Update the AGENTS.md Compile-Date Releases rule to mandate `--changelog`.
+- [x] Subtask 3 — Update README.md release policy section accordingly.
+- [x] Subtask 4 — Patch latest release `gui/2026-11-11-1812` body with the real changelog (T25 merge). Verified via `gh release view`: body = `## What's changed` + `- feat(monitor): single-instance GUI guard via lockfile heartbeat (2c8dc2f)` + original footer.
 - [ ] Subtask 5 — Verify: run changelog generation dry, confirm patched release body via `gh release view`.
 
 ### Full Context Notes for AI Agents
@@ -65,6 +65,14 @@
 - gh CLI available and authenticated. Patch body with `gh release edit gui/2026-11-11-1812 --notes-file <file>` (write UTF-8, avoid quoting issues).
 - Git workflow: AI branch `feat/ai-release-changelog-notes` created off main; dedicated `docs(ai):` log commit before push; push with `-u`; after user merges to main → final log commit on main + `merge --ff-only` + `--force-with-lease` re-push of the AI branch.
 - PS 5.1 compat gotchas already fixed in release.ps1 (T24): Join-Path paths, ext filter via `$_.Extension.TrimStart('.')`, gh view guard with ErrorActionPreference swap. Keep new code PS 5.1-safe: no `??`, avoid complex nested quoting; write notes to a temp file and pass via `--notes-file`.
+
+**Progress update (after subtasks 1–4):**
+- `Get-AppChangelog` uses `git log --name-only --pretty=format:"%h@#@%s" <base>..<head> -- <closure>` and keeps only non-`docs(ai):` subjects; strips the `[ai]` tag for display. Verified output: `- feat(monitor): single-instance GUI guard via lockfile heartbeat (2c8dc2f)`.
+- `--merge` mode now builds notes = `## What's changed` + changelog lines + blank line + static footer (footer no longer duplicates "Framework-dependent:" — `$app.notes` already contains it).
+- `--changelog <base> [<head>] [gui|cli]` mode: no build/publish; finds newest release tag for the stream via `gh release list --json tagName | ConvertFrom-Json`, re-generates the changelog, preserves any existing footer from the old body (regex strips a previous `## What's changed…` section), then `gh release edit <tag> --notes-file`.
+- PS gotchas hit during dev: `-eq null` is invalid syntax (use `-not $var`); `not` is not an operator (use `!`); gh `--json` output needs `| ConvertFrom-Json`; editor tool struggled with backtick-heavy lines → used a temp helper script for line surgery.
+- gui/2026-11-11-1812 body final: changelog section + restored (de-duplicated) footer. Old releases gui/2026-11-11-0407 and cli/2026-11-11-0407 intentionally untouched (user asked for the latest only).
+- NEXT: commit code on AI branch, push -u, then hand to user for merge into main; final log commit + ff-sync after merge.
 
 ---
 
