@@ -31,3 +31,31 @@ be listed here and read before code changes.)_
 <!-- PROJECT_INDEXER:END -->
 
 <!-- User-managed content below this line. The project-indexer skill never edits it. -->
+
+## Compile-Date Releases Rule (mandatory)
+
+> [!IMPORTANT]
+> Both apps print their own **compile date** (LastWriteTime of the executing
+> assembly): `NvidiaMonitor` in its header (`MainWindow.cs`), `NvmlTest` on
+> stdout (`Program.cs`). Every merge into `main` MUST be followed by a
+> **GitHub Release per changed app**, named after that compile date:
+>
+> - `gui/<yyyy-MM-dd-HHmm>` → NvidiaMonitor (only if its dependency closure
+>   changed in the merge)
+> - `cli/<yyyy-MM-dd-HHmm>` → NvmlTest (same rule)
+>
+> Closure diff = shared libs (`src/NvmlCore`, `src/HectorBravo.Nvidia.Contracts`)
+> bump BOTH apps; app-local changes bump only that app.
+>
+> **Run after every merge into `main`:**
+> ```powershell
+> .\release.ps1 --merge <pre-merge-commit> <post-merge-commit>
+> ```
+> The script builds + publishes both apps, zips each app's `bin\<App>\` output
+> (exe + dlls + json manifests, **no `.pdb`**) and runs
+> `gh release create gui|cli/<date> …`. It is idempotent (skips existing tags).
+> Close the running dashboard first — a running `NvidiaMonitor.exe` locks its
+> own DLLs.
+
+Do NOT conclude a merge-into-main task while this step was skipped.
+

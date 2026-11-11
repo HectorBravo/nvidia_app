@@ -72,6 +72,22 @@ dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # -> bin\NvmlTe
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # -> bin\NvidiaMonitor\NvidiaMonitor.exe
 ```
 
+### Release policy (compile-date GitHub Releases)
+Each app prints its own **compile date** (`LastWriteTime` of its executable —
+the GUI shows it under the title, the CLI prints a `Build: …` line). After every
+merge into `main`, run:
+
+```powershell
+.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>
+```
+
+It publishes each app and creates a GitHub Release named `gui/<yyyy-MM-dd-HHmm>`
+(NvidiaMonitor) / `cli/<yyyy-MM-dd-HHmm>` (NvmlTest), attaching a zip of that
+app's published output (exe + DLLs + runtime manifests, no `.pdb`). Only apps
+whose code actually changed in the merge get a new release; unchanged apps are
+skipped. The script is idempotent — an existing tag is skipped. Close a running
+dashboard first (it locks its own DLLs).
+
 ## Run
 Run the published executables directly — no `dotnet run` needed (build them first with
 `dotnet publish`, above):

@@ -74,6 +74,11 @@ if (probe)
     return 0;
 }
 
+// Build stamp — same compile date the WPF dashboard shows in its header
+// (LastWriteTime of the executing assembly), so releases can be matched to
+// the binary by eye.
+Console.WriteLine($"Build: {new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).LastWriteTime:yyyy-MM-dd HH:mm}");
+
 var svc = new NvmlCoreService(); // log: null (headless, no AppLog)
 await svc.InitializeAsync();
 
