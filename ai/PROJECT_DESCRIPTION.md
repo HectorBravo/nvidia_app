@@ -1,6 +1,6 @@
 <!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-11 04:30:00
-git_head: b7a9569448e5db2986b6f2837e1fb713978bd934
+last_indexed: 2026-11-11 18:15:00
+git_head: b2c2e10c5d6c2a77ef671d8a8a5f167036eb5ae5
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -190,6 +190,14 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   `NvmlTest`).
 
 ## 10. Conventions & Gotchas
+- **Single-instance GUI guard (T25):** `App.cs` keeps at most one `NvidiaMonitor` window
+  alive at a time via a lockfile heartbeat — `%TEMP%\NvidiaMonitor.lock` is created on
+  launch and refreshed every ~1 Hz poll tick (`MainWindow.OnLoaded`/`ApplySnapshot` →
+  `App.RefreshInstanceLock()`); its mtime is the liveness stamp. A new GUI launch reads
+  the stamp (`AnotherInstanceRunning()`) and prints a refusal message + exits (code 0) if
+  it was written <6 s ago. Headless `--print` never touches the lock. **Gotcha:** static
+  field init order matters — `TEMP` must be declared *before* `LockPath` (and falls back
+  to `C:\Windows\Temp` when `%TEMP%` is absent, e.g. PowerShell-launched children).
 - **No XAML** — all WPF UI is built in C# (the entry point is `App.cs`, a code-only
   `partial class App : Application` with an explicit `[STAThread] Main`; there is no
   `App.xaml`).
@@ -288,6 +296,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-11 — **T25: single-instance GUI guard**: `App.cs` adds a lockfile-heartbeat guard so only one `NvidiaMonitor` window may run at a time (refusal message + exit code 0 on a second concurrent launch; headless `--print` unaffected). `MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()` each poll tick. No shared-lib change → only the `gui` release stream bumped (`gui/2026-11-11-1812`).
 - 2026-11-11 — **T24: compile-date GitHub Releases enforcement**: `NvmlTest/Program.cs` now prints a
   `Build: yyyy-MM-dd HH:mm` stamp (`LastWriteTime` of the executing assembly, same as the GUI header in
   `MainWindow.cs`); new root **`release.ps1`** creates per-app releases named `gui|cli/<yyyy-MM-dd-HHmm>`
