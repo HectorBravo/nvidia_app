@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/8 | 0m | none |
+| 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 3/8 | 45m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
 | 24-10-2026 21:08:57 | [T17: Add build .bat: compile + publish executables to bin/](#task-t17-add-build-bat-compile-publish-executables-to-bin) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 11m | none |
@@ -26,14 +26,17 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 11-11-2026 15:27:17
-- **Last Updated**: 11-11-2026 15:35:00
-- **Time Spent**: 8m
+- **Last Updated**: 11-11-2026 18:12:00
+- **Time Spent**: 45m
 - **Branch**: [`feat/ai-single-instance-gui-guard`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-single-instance-gui-guard) — created from `main` (user confirmed: no `develop` exists; `main` is the merge target)
 - **Commit(s)**: pending
 - **Blockers**: none
 - **Findings & Notes**:
   - User said "merge into develop" but the repo has **only `main`** locally and remotely → user confirmed to treat `main` as the target branch (merge + delete AI branch).
   - Guard implemented in `src/NvidiaMonitor/App.cs` only — no shared-lib changes, so per T24's release rule only the **gui** stream gets a new release after the merge.
+  - **Design (lockfile heartbeat)**: GUI writes `%TEMP%\NvidiaMonitor.lock` on launch + every ~1 Hz poll tick (`MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()`); its mtime is the liveness stamp. On launch `AnotherInstanceRunning()` reads the stamp and refuses if <6 s old. Headless `--print` never touches it.
+  - **Bug found during live test**: static field init order — `LockPath` referenced `TEMP` declared *after* it → `Path.Combine(null,…)` threw in the type initializer (crash on EVERY launch, headless included). Fixed by declaring `TEMP` before `LockPath`. Also added a null-safe fallback (`?? C:\Windows\Temp`) since PowerShell-launched child processes don't inherit `%TEMP%`.
+  - **Verified live**: single GUI instance creates fresh lock in %TEMP%; second concurrent launch prints "[NvidiaMonitor] Another NvidiaMonitor instance is already running - only one may run at a time." and exits (EC=0, no window). Headless `--print` unaffected.
 
 ### User Confirmations
 
@@ -47,9 +50,9 @@ None yet.
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Implement the single-instance guard in `App.cs` (Windows named shared-memory segment held for process lifetime; friendly refusal message + exit when a GUI instance is already running; headless `--print` unaffected)
-- [ ] Subtask 2 — Build solution clean (`dotnet build nvidia_app.sln -c Release`, TreatWarningsAsErrors)
-- [ ] Subtask 3 — Verify live: launch two GUI instances concurrently → second refuses and exits; verify with process checks
+- [x] Subtask 1 — Implement the single-instance guard in `App.cs` (Windows named shared-memory segment held for process lifetime; friendly refusal message + exit when a GUI instance is already running; headless `--print` unaffected)
+- [x] Subtask 2 — Build solution clean (`dotnet build nvidia_app.sln -c Release`, TreatWarningsAsErrors)
+- [x] Subtask 3 — Verify live: launch two GUI instances concurrently → second refuses and exits; verify with process checks
 - [ ] Subtask 4 — Dedicated `docs(ai)` task-log commit before code push (on the AI branch after its creation)
 - [ ] Subtask 5 — Create + push `feat/ai-single-instance-gui-guard` with `-u`
 - [ ] Subtask 6 — Merge into `main` (user asked for it in this same message ⇒ agent performs merge), then delete the branch locally + remotely
