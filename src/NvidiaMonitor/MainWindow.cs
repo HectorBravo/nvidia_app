@@ -722,7 +722,7 @@ public class MainWindow : Window
         // feeds the readout's "(NNNN MiB)" amount, which goes *after* the percentage (PctValue);
         // the unit is "%" with no space so the legend reads "80% (19739 MiB)". The cast is
         // mandatory: used/total are longs, so long/long would truncate to 0/1.
-        _specs.Add(new ChartSpec("Memory Used (%)", "%", 0,
+        _specs.Add(new ChartSpec("VRAM Memory Used (%)", "%", 0,
             s => s.Select(x => x.MemoryTotalBytes > 0
                 ? (double)x.MemoryUsedBytes / x.MemoryTotalBytes * 100.0
                 : 0.0).ToList(),
@@ -737,7 +737,7 @@ public class MainWindow : Window
             s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
             Percent: true,
             Collapsed: true));
-        _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
+        _specs.Add(new ChartSpec("VRAM Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
             Percent: true,
             Collapsed: true));
