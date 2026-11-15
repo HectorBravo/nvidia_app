@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/8 | 0m | none |
+| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -27,8 +27,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 15-11-2026 22:25:35
-- **Last Updated**: 15-11-2026 22:25:35
-- **Time Spent**: 0m
+- **Last Updated**: 15-11-2026 22:44:00
+- **Time Spent**: 18m
 - **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -50,14 +50,14 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — `ChartController.cs`: add `_logFloor` field + `SetLogFloor(double)`; use it in `ValueToY` (log branch), the horizontal-gridline loop, and `DrawAxis` log ticks (default stays `0.01×ceiling`).
-- [ ] Subtask 2 — `ChartController.cs`: add light-blue brush (`#58a6ff`) + series-colour helper; use it for polyline stroke + legend swatch + crosshair swatch instead of `Palette[key % len]`. Add `_showAbsTotal` so the RAM readout shows `(used / total)`.
-- [ ] Subtask 3 — `SystemMemory.cs` (new): P/Invoke `GlobalMemoryStatusEx` → `(usedBytes, totalBytes)`.
-- [ ] Subtask 4 — `MainWindow.cs`: RAM history field + per-tick sample in `ApplySnapshot`; new `ChartSpec` for System RAM at **index 0** (`Pct`/`Percent`/`PctValue`, `_absUnit GiB`, expanded); Memory Utilization → `Collapsed: true`; PCIe spec `LogFloor: 1.0`.
-- [ ] Subtask 5 — `MainWindow.UpdateCharts`: handle the system chart (key −1, own timeline; ceiling 100; pctBase = total GiB); skip the GPU-only PCIe-max branch for it; align other charts to a shared max-length timeline including RAM.
-- [ ] Subtask 6 — `_runningMax` array + order comment updated for the new chart count.
-- [ ] Subtask 7 — Build (`dotnet build nvidia_app.sln -c Release`) → 0/0; republish both apps to `bin/`; live smoke check.
-- [ ] Subtask 8 — Refresh `ai/PROJECT_DESCRIPTION.md` + AGENTS metadata via project-indexer (source changed).
+- [x] Subtask 1 — `ChartController.cs`: add `_logFloor` field + `SetLogFloor(double)`; use it in `ValueToY` (log branch), the horizontal-gridline loop, and `DrawAxis` log ticks (default stays `0.01×ceiling`). Added shared `LogFloor(ceiling)` helper.
+- [x] Subtask 2 — `ChartController.cs`: added `SysRamBlue` (`#58a6ff`) + `SeriesBrush(key)` helper (negative key → light blue) used by polyline stroke + legend swatch + crosshair swatch. Added `_showAbsTotal` (+ setter) so the RAM readout shows `(used / total)`; VRAM keeps `(NNNN MiB)`.
+- [x] Subtask 3 — `SystemMemory.cs` (new): P/Invoke `GlobalMemoryStatusEx` → `(usedBytes, totalBytes)`. Verified standalone: `22% (28 GiB / 128 GiB)` on this machine.
+- [x] Subtask 4 — `MainWindow.cs`: RAM ring field + per-tick sample in `ApplySnapshot`; new `ChartSpec` for System RAM at **index 0** (`Pct`/`Percent`/`PctValue`/`SystemRam`, expanded); Memory Utilization → `Collapsed: true`; PCIe spec `LogFloor: 1.0`. Build loop wires SetLogFloor / SetAbsUnit("GiB") / SetShowAbsTotal.
+- [x] Subtask 5 — `MainWindow.UpdateCharts`: RAM chart handled (key −1, ceiling 100, pctBase = total GiB, no PCIe metadata); shared timeline length/t0 include the RAM ring; GPU-only PCIe-max branch skipped for it via early `continue`.
+- [x] Subtask 6 — `_runningMax` → `{ 100,100,100,100,100,100,400,32,2100,1600 }`, order comment now **ram, memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock**.
+- [x] Subtask 7 — Build `dotnet build nvidia_app.sln -c Release` → **0 errors / 0 warnings**; republished both apps to `bin/`; launched NvidiaMonitor.exe (Responding=True, no crash). RAM readout format verified.
+- [x] Subtask 8 — Refreshed `ai/PROJECT_DESCRIPTION.md` (Overview, source-files list, architecture diagram, §10 conventions, Change Log) + freshness block (`last_indexed` 2026-11-15 22:38, `git_head` 3b43450). AGENTS.md managed block already correct (no `docs/` folder).
 
 ### Full Context Notes for AI Agents
 
