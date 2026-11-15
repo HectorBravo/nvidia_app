@@ -89,6 +89,7 @@
   - **Assembly stamp gotcha**: in a published app, `Assembly.GetExecutingAssembly().Location` is the app **DLL**, not the exe — the update check reads `NvidiaMonitor.dll`'s LastWriteTime. release.ps1 zips both from the same publish, so their stamps agree; but any *local* test of the banner must stamp the DLL (not only the exe).
   - Verified live end-to-end against real release `gui/2026-11-15-2327`: negative path (own tag → 404 → silent), jitter guard (asset +24 s newer → not offered), positive path (delta 204 s → banner "New version available: 2026-11-15 23:27 (click to update)", flashing light blue), and the full click flow (zip downloaded 131,858 B → verified → helper waited for exit → files replaced → relaunched).
   - `BeginOpacityAnimation` is NOT available on TextBlock in this stack — used `BeginAnimation(UIElement.OpacityProperty, …)` instead.
+  - **Follow-up fix (16-11-2026, PR #2 → `aca387b`, release `gui/2026-11-16-0015`)**: the first check queried only `releases/tags/gui/<own stamp>` — a build whose own tag exists but is older than the newest release saw nothing (the reported "00:08 build doesn't detect 00:10"). Now `CheckAsync` lists `GET /releases?per_page=100`, picks the newest tag parsing as `gui/<yyyy-MM-dd-HHmm>`, and offers it iff that stamp > own stamp; asset-timestamp heuristic + 120 s constant removed. Verified live: copy stamped 00:08:30 shows "New version available: 2026-11-16 00:15".
 
 ### User Confirmations
 
