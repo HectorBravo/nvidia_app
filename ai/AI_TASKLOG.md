@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
@@ -20,6 +21,44 @@
 > 21 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+---
+
+## Task T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
+- **Created**: 15-11-2026 23:04:00
+- **Last Updated**: 15-11-2026 23:10:00
+- **Time Spent**: 6m
+- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart) (T27 branch, continued)
+- **Commit(s)**: [c74de1a](https://github.com/HectorBravo/nvidia_app/commit/c74de1a) (code) · [6db971f](https://github.com/HectorBravo/nvidia_app/commit/6db971f) (index)
+- **Blockers**: none
+- **Findings & Notes**:
+  - **User request** (15-11-2026): rename `Memory Used (%)` → **`VRAM Memory Used (%)`** and `Memory Utilization (%)` → **`VRAM Memory Utilization (%)`**; also explain what "Memory utilization (%)" is and why it doesn't match "Memory Used (%)".
+  - Titles-only change (two `_specs.Add(new ChartSpec("…"))` calls in `MainWindow.cs`, ~L725/L740). No logic touched. Build 0/0; republished NvidiaMonitor to `bin/`; relaunched (Responding=True).
+  - **Explanation given**: Used = framebuffer bytes allocated/reserved (`nvmlDeviceGetMemoryInfo`, sticky); Utilization = driver-sampled fraction of recent time the memory bus was transferring (`nvmlDeviceGetUtilizationRates().memory`). A resident-but-idle model → high Used, low Utilization, so they rarely match.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (15-11-2026 23:0x) Rename the two VRAM chart titles and explain the memory-metric difference → done as requested.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — `MainWindow.cs`: rename the two `ChartSpec` titles.
+- [x] Subtask 2 — Build `-c Release` (0/0) + republish NvidiaMonitor + relaunch smoke check.
+- [x] Subtask 3 — Refresh `ai/PROJECT_DESCRIPTION.md` (§10 T28 note + Change Log + freshness block).
+
+### Full Context Notes for AI Agents
+
+- Continuation of [T27](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) on the same branch. HEAD before this task: `04f1b78`. Only `src/NvidiaMonitor/MainWindow.cs` (titles) + `ai/PROJECT_DESCRIPTION.md` change.
+- Two title strings, both unique: `"Memory Used (%)"` → `"VRAM Memory Used (%)"`; `"Memory Utilization (%)"` → `"VRAM Memory Utilization (%)"`. The System RAM and other specs are untouched.
+
 ---
 
 ## Task T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization
