@@ -77,6 +77,18 @@ public class MainWindow : Window
     public MainWindow()
     {
         Title = "NVIDIA GPU Monitor";
+        // NVIDIA eye logo (T30) for the title bar / taskbar, embedded as a resource.
+        try
+        {
+            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
+                new Uri("pack://application:,,,/nvidia-icon.png"),
+                System.Windows.Media.Imaging.BitmapCreateOptions.None,
+                System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        }
+        catch
+        {
+            // Cosmetic only — never let a missing icon break the window.
+        }
         // Default (restored) size. OnLayoutUpdated() resizes the window one time,
         // after the first data frame, so that all charts and the visible data fit
         // without the user having to resize it at startup (clamped to the work area).

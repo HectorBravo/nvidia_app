@@ -8,7 +8,14 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>NvidiaMonitor</AssemblyName>
     <RootNamespace>HectorBravo.Nvidia.Monitor</RootNamespace>
+    <!-- NVIDIA eye logo as the exe/taskbar icon (T30, max 256x256). -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Embedded copy of the same logo for the WPF window icon. -->
+    <Resource Include="nvidia-icon.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NvmlCore\NvmlCore.csproj" />

@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/5 | 0m | none |
+| 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 26m | none |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
@@ -22,6 +22,51 @@
 > 22 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+---
+
+## Task T30: NVIDIA logo as app/window icon (resized to max 256x256)
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 15-11-2026 23:55:20
+- **Last Updated**: 16-11-2026 00:04:00
+- **Time Spent**: 9m
+- **Branch**: [`feat/ai-update-available-notification`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-update-available-notification) (same branch as [T29](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases))
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Source logo: `https://logolook.net/wp-content/uploads/2024/03/Nvidia-Logo.png` (3840×2160 wallpaper-style PNG, downloaded OK). User wants it ONLY as the app icon + window icon, resized to **max 256×256** (current one is "quite big").
+  - Plan: crop/square the source, downscale to ≤256 px, generate `src/NvidiaMonitor/app.ico` (multi-size .ico for exe/taskbar) + `nvidia-icon.png` (for WPF `Window.Icon`).
+  - **User correction (16-11-2026)**: first cut cropped ONLY the eye mark — user wants the WHOLE logo (eye + wordmark below) inside the max 256×256 square. Regenerated from the full opaque bbox; verified both bands render.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (15-11-2026 23:55:20) Where to apply the logo / prepare it? → "Just for the app icon and the window icon, but resize the icon to 256x256 max as it's quite big now"
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Download/crop/square the source PNG, downscale to ≤256×256. **Corrected per user**: full logo (eye + wordmark), opaque bbox x=640..3200 y=100..2060 → square crop centered (1920,1080) side 2100 → 256×256 transparent PNG (bands verified: eye rows 0-150, wordmark rows 160-256).
+- [x] Subtask 2 — Generate `app.ico` (PNG-embedded, sizes 16/32/48/64/128/256; 32 KB) + `nvidia-icon.png` (15 KB); csproj: `<ApplicationIcon>app.ico</ApplicationIcon>` + `<Resource Include="nvidia-icon.png"/>`.
+- [x] Subtask 3 — `MainWindow.cs` ctor: `Icon = BitmapFrame.Create(pack://application:,,,/nvidia-icon.png)` in a try/catch. (Note: `GetResourceStream` is an Application method, not Assembly — used the pack URI directly.)
+- [x] Subtask 4 — Build 0 warn/0 err; exe carries the icon (`ExtractAssociatedIcon` → 32×32); live run: `WM_GETICON` big+small handles non-null (window/taskbar icon loaded).
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained knowledge base to resume this task without other context.
+
+- Same repo/build facts as [T29](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) (read its notes). GUI-only change; gui release stream only.
+- Icon pipeline: System.Drawing (`System.Windows.Media.Imaging` in-app). For the .ico: PowerShell + System.Drawing can resize; a minimal multi-size .ico = ICONDIR header + one PNG entry per size (Vista+ ICO supports embedded PNG). Sizes 16/32/48/64/128/256.
+- csproj additions in `src/NvidiaMonitor/NvidiaMonitor.csproj`: `<ApplicationIcon>app.ico</ApplicationIcon>` and `<ItemGroup><Resource Include="nvidia-icon.png" /></ItemGroup>` (Resource → loadable via `pack://` / `GetResourceStream`).
+- `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
+- The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
+- Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
 ---
 
 ## Task T29: "New update available" notification + one-click auto-update from GitHub Releases
