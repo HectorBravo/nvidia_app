@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/4 | 0m | none |
 | 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
@@ -69,6 +70,46 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T31: GPU Utilization chart card visible (expanded) by default
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 16-11-2026 00:23:02
+- **Last Updated**: 16-11-2026 00:33:00
+- **Time Spent**: 10m
+- **Branch**: [`feat/ai-expand-gpu-utilization-card`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-expand-gpu-utilization-card) (branched off `main` @ `374b33d`, after PR #1 + PR #2 merged)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Chart cards start collapsed via `ChartSpec.Collapsed: true` (MainWindow.cs ~L887-922); only System RAM + VRAM Memory Used are expanded today. The user wants **GPU Utilization (%)** expanded by default too → drop its `Collapsed: true`.
+  - Side effect: the fit-to-content startup window grows by roughly one expanded card's height (the header comment at L884-886 says "other eight cards start collapsed" — update it to seven).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 00:23:02) Next feature? → "make the graph 'GPU Utilization (%)' visible by default"
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Remove `Collapsed: true` from the GPU Utilization ChartSpec; fix the stale comment (eight → seven).
+- [x] Subtask 2 — Build `-c Release` (0/0) + live check: screenshot shows System RAM, VRAM Memory Used AND GPU Utilization expanded at startup, other seven collapsed, window auto-sized.
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained knowledge base to resume this task without other context.
+
+- `src/NvidiaMonitor/MainWindow.cs`: `_specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0, s => …GpuUtilizationPct…, Percent: true, Collapsed: true));` at ~L887-890 — delete only the `Collapsed: true` arg (keep `Percent: true`). Comment above (L884-886) "the other eight cards start collapsed" → seven.
+- Build loop (~L923-936): `if (spec.Collapsed) chart.SetCollapsed(true);` — unchanged; default `ChartSpec.Collapsed = false` (record default at L835).
+- The startup fit-to-content sizing (`OnLayoutUpdated`/`OnContentRendered`, T14/T19 work) already reserves scrollbars and measures expanded cards, so the window just grows ~one card — no sizing code change needed.
+- GUI closure only → release.ps1 bumps only the gui stream after merge. Git protocol as usual: AI_bot identity, `[ai]` tag, dedicated log commit before push, PR (gh), never push code to main directly; final log + `merge --ff-only` + `--force-with-lease` re-push after merge.
 
 ---
 
