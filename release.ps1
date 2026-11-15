@@ -4,7 +4,7 @@
 #   Both apps (NvidiaMonitor GUI + NvmlTest CLI) print their own compile date
 #   (LastWriteTime of the executing assembly). This script mirrors that into
 #   GitHub Releases: one release per app per compilation, named
-#       gui/<yyyy-MM-dd-HHmm>   and   cli/<yyyy-MM-dd-HHmm>
+#       gui/<yyyyMMdd_HHmm>   and   cli/<yyyyMMdd_HHmm>
 #   with a zip of that app's published bin\<App>\ output (exe + dlls + json,
 #   NO .pdb) attached.
 #
@@ -226,7 +226,7 @@ foreach ($stream in $releaseApps) {
 
     # Release date == the compile date the binary itself prints
     $stamp = (Get-Item $exe).LastWriteTime
-    $dateTag = $stamp.ToString('yyyy-MM-dd-HHmm')
+    $dateTag = $stamp.ToString('yyyyMMdd_HHmm')
     $dateDisp = $stamp.ToString('yyyy-MM-dd HH:mm')
     $tag = "$stream/$dateTag"
 
