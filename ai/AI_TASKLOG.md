@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 26m | none |
+| 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
@@ -29,10 +29,10 @@
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 15-11-2026 23:55:20
-- **Last Updated**: 16-11-2026 00:04:00
-- **Time Spent**: 9m
+- **Last Updated**: 16-11-2026 00:16:00
+- **Time Spent**: 14m
 - **Branch**: [`feat/ai-update-available-notification`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-update-available-notification) (same branch as [T29](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases))
-- **Commit(s)**: pending
+- **Commit(s)**: [760e3c5](https://github.com/HectorBravo/nvidia_app/commit/760e3c5d8b24cfacd0ede25f05b7855f0afec0ac), [1a6e9fe](https://github.com/HectorBravo/nvidia_app/commit/1a6e9fed) (merged via PR #1 → `d183b9b`; release `gui/2026-11-16-0008`)
 - **Blockers**: none
 - **Findings & Notes**:
   - Source logo: `https://logolook.net/wp-content/uploads/2024/03/Nvidia-Logo.png` (3840×2160 wallpaper-style PNG, downloaded OK). User wants it ONLY as the app icon + window icon, resized to **max 256×256** (current one is "quite big").
@@ -40,6 +40,7 @@
   - **User correction (16-11-2026)**: first cut cropped ONLY the eye mark — user wants the WHOLE logo (eye + wordmark below) inside the max 256×256 square. Regenerated from the full opaque bbox; verified both bands render.
   - **User correction #2 (16-11-2026)**: the square *crop* still cut the eye's sides and the wordmark — the source is 3840×**2160 landscape**, so cropping to a square always loses width. Final approach: **contain, never crop** — scale the entire image to 256×144 centered on a transparent 256×256 canvas (ICO sizes keep the same contain ratio). Verified content bbox x=44..212 y=64..192 with both bands present.
   - **User correction #3 (16-11-2026)**: "maintain the aspect ratio, fill the gaps with transparency" — previous contain used the FULL canvas (incl. its transparent margins), shrinking the logo to 256×144. Final: tight-crop to the opaque content bbox first (x=640..3200, y=90..2070 — nothing cut off), then contain THAT as large as possible → **256×198 centered at y=29** on a transparent 256×256 canvas. Verified final content bbox x=0..254 y=30..226; ICO 28 KB with the same layout at all sizes.
+  - **Git LFS (user follow-up)**: `nvidia-icon.png` was already LFS (`*.png` rule), but `app.ico` went in as a raw blob — `.gitattributes` now also routes `*.ico` through LFS and the file was re-committed via `git add --renormalize`.
 
 ### User Confirmations
 

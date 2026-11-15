@@ -1,3 +1,4 @@
 # Git LFS — large binary assets are stored as LFS pointers, not raw blobs.
 # Requires git-lfs on the client (git lfs install) to smudge/clean on checkout/add.
 *.png filter=lfs diff=lfs merge=lfs -text
+*.ico filter=lfs diff=lfs merge=lfs -text
