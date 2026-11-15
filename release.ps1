@@ -204,6 +204,13 @@ if ($running) {
 }
 
 # ── build + publish ───────────────────────────────────────────────
+# Release time (T35): chosen ONCE at the start of this run and written into every
+# published assembly's LastWriteTime. The app prints that stamp in its header, and
+# the tag gui|cli/<yyyyMMdd_HHmm> + zip name are derived from the SAME value — so
+# "release time" is embedded in the binary and matches the release identity exactly,
+# with no dependence on GitHub asset timestamps.
+$releaseStamp = Get-Date
+
 Write-Host '[1/3] Building nvidia_app.sln (Release)…'
 dotnet build nvidia_app.sln -c Release --nologo
 if ($LASTEXITCODE -ne 0) { Write-Host 'BUILD FAILED' -ForegroundColor Red; exit 1 }
@@ -216,6 +223,13 @@ foreach ($stream in $releaseApps) {
     if (Test-Path $appDir) { Remove-Item -LiteralPath $appDir -Recurse -Force -ErrorAction Ignore }
     dotnet publish $app.project -c Release -o $appDir --nologo
     if ($LASTEXITCODE -ne 0) { Write-Host "PUBLISH $($app.name) FAILED" -ForegroundColor Red; exit 1 }
+
+    # Stamp the published assemblies with the release time (the app reads its own
+    # assembly's LastWriteTime — that is what the header shows and what the update
+    # checker compares against tags). The exe too, for consistency.
+    foreach ($f in @("$appDir\$($app.name).dll", "$appDir\$($app.name).exe")) {
+        if (Test-Path $f) { (Get-Item $f).LastWriteTime = $releaseStamp }
+    }
 }
 
 # ── zip + release per app ─────────────────────────────────────────
@@ -224,7 +238,8 @@ foreach ($stream in $releaseApps) {
     $exe = Join-Path (Join-Path 'bin' $app.name) ($app.name + '.exe')
     if (-not (Test-Path $exe)) { Write-Host "missing $exe - cannot stamp release" -ForegroundColor Red; exit 1 }
 
-    # Release date == the compile date the binary itself prints
+    # Release date == the release time stamped into the binary at publish (T35);
+    # tag + zip name derive from it, so binary stamp ≡ release identity.
     $stamp = (Get-Item $exe).LastWriteTime
     $dateTag = $stamp.ToString('yyyyMMdd_HHmm')
     $dateDisp = $stamp.ToString('yyyy-MM-dd HH:mm')

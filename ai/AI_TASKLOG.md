@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 0m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
 | 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
 | 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
@@ -73,6 +74,51 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T35: Format-tolerant update check + deterministic release stamp in release.ps1
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 16-11-2026 02:03:47
+- **Last Updated**: 16-11-2026 02:03:47
+- **Time Spent**: 0m
+- **Branch**: [`fix/ai-update-check-format-tolerant`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-update-check-format-tolerant)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - User mandate: whatever the tag format is, if the newest release's identity differs from this build's stamp, notify — never get stuck again (the 0137-era build was stuck because old tags stopped parsing after T34).
+  - `IsNewerRelease`: parses-as-our-format → strict stamp compare; foreign format → asset `updated_at` > compile+10 min fallback. Unparseable gui tags rank lowest when picking "newest" so a real newest tag always wins the slot.
+  - Deterministic release time: `release.ps1` sets `$releaseStamp = Get-Date` once at start and writes it into every published dll/exe LastWriteTime → header stamp ≡ tag ≡ zip name; GitHub asset timestamps are no longer part of the identity chain.
+
+### User Confirmations
+
+**Pending (awaiting user response):** None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 02:02:00) "if latest release text != current executable release text → notify; format changes must not get me stuck" + "write the current time at compile start as the release time embedded in the binary, matching the release tag/zip" → implemented.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — UpdateService: IsNewerRelease (format-tolerant) + ranking fix
+- [x] Subtask 2 — release.ps1: single $releaseStamp written into published dll/exe
+- [ ] Subtask 3 — Post-merge live re-verification (0147-stamped build must NOT banner against gui/20261116_0147; new release MUST banner it)
+- [ ] Subtask 4 — Commit, push, merge to main
+- [ ] Subtask 5 — New consolidated release via release.ps1 flow (deterministic stamp), delete gui/20261116_0147
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery knowledge base.
+
+**Files changed**: `src/NvidiaMonitor/UpdateService.cs` (new IsNewerRelease ~L70-89; CheckAsync ranking uses `TagStamp(tagStr) ?? DateTime.MinValue` and skips non-gui tags early; freshness check moved AFTER asset parse so publishedUtc is known: `if (!IsNewerRelease(bestTagStr, publishedUtc)) return null;`); `release.ps1` (~L206-235 `$releaseStamp` + stamping loop; comment at L241); `ai/PROJECT_DESCRIPTION.md` §10 auto-update bullet rewritten + changelog T35 entry.
+
+**Live verification done**: build stamped 01:47:30 → banner "New version available: gui/20261116_0147 (click to update)" (correct: stamp truncated 0147, newest tag 0147… wait it showed because asset fallback? No — tag parses, stamp equal→no; it showed via foreign-format path? ACTUAL: dll stamped 01:47:30 → myStamp minute-truncated = 0147; bestTag gui/20261116_0147 stamp=0147 → NOT > → should be null. Banner DID show → because that test build was from BEFORE the IsNewerRelease change (old code compared asset updated_at? no, old code = strict parse compare too). Re-verify after merge: a 0147-stamped build must NOT banner against gui/20261116_0147; a 0148+ release WILL banner it.)
+
+**Release flow**: merge → run `.\release.ps1 --merge <pre> <post>` (now stamps deterministically) OR manual: publish, stamp dll/exe with chosen time, zip, gh release create gui/<stamp> + asset, verify asset attached, delete gui/20261116_0147.
+
+**Gotchas**: PowerShell @'…'@ for notes with `$PID`; verify assets; delete AI branches after merge; `_updateLink` UIA rects are all-zero (can't click-automate; use UIA Name text checks).
 
 ---
 
