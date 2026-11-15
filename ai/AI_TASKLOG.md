@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/5 | 0m | none |
+| 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
 | 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
 | 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
 | 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 25m | none |
@@ -78,13 +78,13 @@
 
 ## Task T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-11-2026 01:45:28
-- **Last Updated**: 16-11-2026 01:45:28
-- **Time Spent**: 0m
-- **Branch**: [`feat/ai-release-tag-yyyymmdd-hhmm`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-tag-yyyymmdd-hhmm)
-- **Commit(s)**: pending
+- **Last Updated**: 16-11-2026 01:51:30
+- **Time Spent**: 10m
+- **Branch**: ~~`feat/ai-release-tag-yyyymmdd-hhmm`~~ (merged via PR #6 `8571db1`, branch deleted)
+- **Commit(s)**: [faef354](https://github.com/HectorBravo/nvidia_app/commit/faef354) — released as gui/20261116_0147
 - **Blockers**: none
 - **Findings & Notes**:
   - Banner said "2026-11-16 01:38" (asset `updated_at` reformatted, UTC→local drift) while the actual tag is `gui/2026-11-16-0137` — confusing. Banner now prints the **real release tag** (`info.Tag`).
@@ -101,11 +101,11 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — UpdateService: StampFormat const `yyyyMMdd_HHmm`, parse with it (done in tree)
-- [ ] Subtask 2 — MainWindow banner shows info.Tag (done in tree)
-- [ ] Subtask 3 — release.ps1 + AGENTS.md tag format switched (done in tree)
-- [ ] Subtask 4 — Commit, push, merge to main
-- [ ] Subtask 5 — New consolidated release `gui/<newstamp>` with full changelog since gui/2026-11-11-1812 + these changes; delete gui/2026-11-16-0137
+- [x] Subtask 1 — UpdateService: StampFormat const `yyyyMMdd_HHmm`, parse with it
+- [x] Subtask 2 — MainWindow banner shows info.Tag
+- [x] Subtask 3 — release.ps1 + AGENTS.md tag format switched
+- [x] Subtask 4 — Commit, push, merge to main (PR #6 → `8571db1`)
+- [x] Subtask 5 — New consolidated release gui/20261116_0147 (System RAM highlighted as NEW feature in notes); deleted gui/2026-11-16-0137; renamed legacy releases to new format: gui/20261111_1812, gui/20261111_0407, cli/20261111_0407 (zips + notes updated, Latest flag restored on gui/20261116_0147)
 
 ### Full Context Notes for AI Agents
 
