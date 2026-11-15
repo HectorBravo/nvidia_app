@@ -29,7 +29,6 @@ namespace HectorBravo.Nvidia.Monitor;
 public sealed class UpdateService
 {
     private const string RepoApi = "https://api.github.com/repos/HectorBravo/nvidia_app";
-    private const int AssetFreshnessToleranceSeconds = 120; // ignore same-minute rebuild jitter
 
     private static readonly HttpClient Http = CreateHttp();
 
@@ -52,33 +51,62 @@ public sealed class UpdateService
 
     private static string BuildTag => "gui/" + BuildStamp.ToString("yyyy-MM-dd-HHmm");
 
+    /// <summary>
+    /// Tag date part ("yyyy-MM-dd-HHmm") of a "gui/&lt;stamp&gt;" release tag, or null
+    /// when the tag doesn't parse. The stamp is the publish-time compile date.
+    /// </summary>
+    private static DateTime? TagStamp(string? tag)
+    {
+        if (tag == null || !tag.StartsWith("gui/", StringComparison.Ordinal)) return null;
+        return DateTime.TryParseExact(
+            tag.Substring(4), "yyyy-MM-dd-HHmm",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var dt) ? dt : null;
+    }
+
     /// <summary>Metadata for an available update, once found.</summary>
-    public sealed record UpdateInfo(DateTime PublishedAtUtc, string DownloadUrl, string ReleaseUrl);
+    public sealed record UpdateInfo(DateTime PublishedAtUtc, string DownloadUrl, string ReleaseUrl, string Tag);
 
     /// <summary>
-    /// Queries GitHub for the release carrying this build's tag. Returns non-null
-    /// only when that release exists AND its asset is clearly newer than our local
-    /// exe (meaning we run an older compile). Any failure (offline, rate limit,
-    /// parse) returns null — the check must never disturb the user.
+    /// Asks GitHub for the newest "gui/&lt;compile-date&gt;" release and offers it when
+    /// its tag stamp is strictly newer than this build's own compile stamp — i.e. a
+    /// newer published build exists. Any failure (offline, rate limit, parse)
+    /// returns null — the check must never disturb the user.
     /// </summary>
     public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
     {
         try
         {
-            var tag = BuildTag;
-            var url = $"{RepoApi}/releases/tags/{Uri.EscapeDataString(tag)}";
+            var url = $"{RepoApi}/releases?per_page=100";
             using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode)
-            {
-                // 404 simply means "no published release for this build" → up to date.
-                return null;
-            }
+            if (!resp.IsSuccessStatusCode) return null;
 
             await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
-            var root = doc.RootElement;
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
 
-            if (!root.TryGetProperty("assets", out var assets)
+            // Newest gui release by tag stamp (release order is not guaranteed).
+            DateTime? bestStamp = null;
+            JsonElement bestEl = default;
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                if (!el.TryGetProperty("tag_name", out var tagEl)) continue;
+                var stamp = TagStamp(tagEl.GetString());
+                if (stamp == null) continue; // cli/ or foreign tags — not ours
+                if (bestStamp == null || stamp > bestStamp)
+                {
+                    bestStamp = stamp;
+                    bestEl = el;
+                }
+            }
+
+            if (bestStamp == null) return null; // no gui releases at all
+            var myStamp = DateTime.ParseExact(
+                BuildStamp.ToString("yyyy-MM-dd-HHmm"), "yyyy-MM-dd-HHmm",
+                System.Globalization.CultureInfo.InvariantCulture);
+            if (bestStamp <= myStamp) return null; // we ARE the newest published build
+
+            if (!bestEl.TryGetProperty("assets", out var assets)
                 || assets.ValueKind != JsonValueKind.Array
                 || assets.GetArrayLength() == 0)
             {
@@ -101,21 +129,13 @@ public sealed class UpdateService
             }
 
             string releaseUrl = string.Empty;
-            if (root.TryGetProperty("html_url", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
+            if (bestEl.TryGetProperty("html_url", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
             {
                 releaseUrl = htmlEl.GetString() ?? string.Empty;
             }
 
-            // Only offer the update when the published asset is meaningfully newer
-            // than our local exe (guards against same-minute rebuild jitter).
-            var localUtc = BuildStamp.ToUniversalTime();
-            if ((publishedUtc - localUtc).TotalSeconds <= AssetFreshnessToleranceSeconds)
-            {
-                return null;
-            }
-
-            _log?.Info($"Update available: release {tag} published {publishedUtc:yyyy-MM-dd HH:mm} UTC.");
-            return new UpdateInfo(publishedUtc, dlEl.GetString()!, releaseUrl);
+            _log?.Info($"Update available: release {bestEl.GetProperty("tag_name").GetString()} (newer than local build).");
+            return new UpdateInfo(publishedUtc, dlEl.GetString()!, releaseUrl, bestEl.GetProperty("tag_name").GetString()!);
         }
         catch (OperationCanceledException)
         {
