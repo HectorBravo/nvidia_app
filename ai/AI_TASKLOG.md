@@ -39,6 +39,7 @@
   - Plan: crop/square the source, downscale to ≤256 px, generate `src/NvidiaMonitor/app.ico` (multi-size .ico for exe/taskbar) + `nvidia-icon.png` (for WPF `Window.Icon`).
   - **User correction (16-11-2026)**: first cut cropped ONLY the eye mark — user wants the WHOLE logo (eye + wordmark below) inside the max 256×256 square. Regenerated from the full opaque bbox; verified both bands render.
   - **User correction #2 (16-11-2026)**: the square *crop* still cut the eye's sides and the wordmark — the source is 3840×**2160 landscape**, so cropping to a square always loses width. Final approach: **contain, never crop** — scale the entire image to 256×144 centered on a transparent 256×256 canvas (ICO sizes keep the same contain ratio). Verified content bbox x=44..212 y=64..192 with both bands present.
+  - **User correction #3 (16-11-2026)**: "maintain the aspect ratio, fill the gaps with transparency" — previous contain used the FULL canvas (incl. its transparent margins), shrinking the logo to 256×144. Final: tight-crop to the opaque content bbox first (x=640..3200, y=90..2070 — nothing cut off), then contain THAT as large as possible → **256×198 centered at y=29** on a transparent 256×256 canvas. Verified final content bbox x=0..254 y=30..226; ICO 28 KB with the same layout at all sizes.
 
 ### User Confirmations
 
