@@ -881,13 +881,12 @@ public class MainWindow : Window
             Percent: true,
             PctBase: s => s.MemoryTotalBytes / 1048576.0,
             PctValue: true));
-        // Only System RAM and Memory Used open expanded; the other eight cards start collapsed
-        // (header row only, the top-left chevron expands them), so the fit-to-content window
-        // opens as short as it can.
+        // Only System RAM, Memory Used and GPU Utilization open expanded; the other seven
+        // cards start collapsed (header row only, the top-left chevron expands them), so
+        // the fit-to-content window opens as short as it can.
         _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
-            Percent: true,
-            Collapsed: true));
+            Percent: true));
         _specs.Add(new ChartSpec("VRAM Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
             Percent: true,

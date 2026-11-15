@@ -75,11 +75,11 @@
 
 ## Task T31: GPU Utilization chart card visible (expanded) by default
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 16-11-2026 00:23:02
-- **Last Updated**: 16-11-2026 00:23:02
-- **Time Spent**: 0m
+- **Last Updated**: 16-11-2026 00:33:00
+- **Time Spent**: 10m
 - **Branch**: [`feat/ai-expand-gpu-utilization-card`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-expand-gpu-utilization-card) (branched off `main` @ `374b33d`, after PR #1 + PR #2 merged)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -99,8 +99,8 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Remove `Collapsed: true` from the GPU Utilization ChartSpec; fix the stale comment (eight → seven).
-- [ ] Subtask 2 — Build `-c Release` (0/0) + live check: GPU Util card renders expanded at startup, window auto-sizes.
+- [x] Subtask 1 — Remove `Collapsed: true` from the GPU Utilization ChartSpec; fix the stale comment (eight → seven).
+- [x] Subtask 2 — Build `-c Release` (0/0) + live check: screenshot shows System RAM, VRAM Memory Used AND GPU Utilization expanded at startup, other seven collapsed, window auto-sized.
 
 ### Full Context Notes for AI Agents
 
