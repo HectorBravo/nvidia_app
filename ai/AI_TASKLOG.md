@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#096a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/4 | 0m | none |
+| 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
 | 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
 | 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 25m | none |
 | 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
@@ -77,13 +77,13 @@
 
 ## Task T33: Bottom (minimum) Y-axis tick label clipped in every chart legend
 
-- **Status**: <span style="background-color:#096a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 16-11-2026 01:41:30
-- **Last Updated**: 16-11-2026 01:41:30
-- **Time Spent**: 0m
-- **Branch**: [`fix/ai-axis-min-tick-label-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-axis-min-tick-label-clip)
-- **Commit(s)**: pending
+- **Last Updated**: 16-11-2026 01:38:39
+- **Time Spent**: 5m
+- **Branch**: ~~`fix/ai-axis-min-tick-label-clip`~~ (merged via PR #5 `1a224e3`, branch deleted)
+- **Commit(s)**: [61d4869](https://github.com/HectorBravo/nvidia_app/commit/61d4869) — released as gui/2026-11-16-0137
 - **Blockers**: none
 - **Findings & Notes**:
   - Every chart's right-hand Y-axis shows its LOWEST tick (e.g. PCIe "1G") cut in half vertically.
@@ -102,10 +102,10 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Fix axis canvas height + label clamp (done in working tree; commit pending)
-- [ ] Subtask 2 — Commit + push branch, merge into main
-- [ ] Subtask 3 — Publish consolidated release (changelog = everything since gui/2026-11-11-1812 + this fix), attach zip, delete gui/2026-11-16-0125
-- [ ] Subtask 4 — Finalize task log on main
+- [x] Subtask 1 — Fix axis canvas height + label clamp (ChartController.cs)
+- [x] Subtask 2 — Commit + push branch, merge into main (PR #5 → `1a224e3`)
+- [x] Subtask 3 — Publish consolidated release gui/2026-11-16-0137 (zip attached, full changelog since gui/2026-11-11-1812), delete gui/2026-11-16-0125
+- [x] Subtask 4 — Finalize task log on main
 
 ### Full Context Notes for AI Agents
 
