@@ -49,51 +49,35 @@ public sealed class UpdateService
     public static DateTime BuildStamp =>
         new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).LastWriteTime;
 
-    /// <summary>The stamp format used in release tags (and shown in the banner).</summary>
-    public const string StampFormat = "yyyyMMdd_HHmm";
-
-    private static string BuildTag => "gui/" + BuildStamp.ToString(StampFormat);
-
     /// <summary>
-    /// Tag date part ("yyyyMMdd_HHmm") of a "gui/&lt;stamp&gt;" release tag, or null
-    /// when the tag doesn't parse. The stamp is the publish-time compile date.
+    /// Identity of THIS build: the name of the release zip it was shipped in, read from
+    /// the embedded resource "releaseinfo.txt" (written by release.ps1 at publish time —
+    /// e.g. "NvidiaMonitor-20261116_0226.zip"). Empty for dev builds that were never
+    /// packaged into a release zip.
     /// </summary>
-    private static DateTime? TagStamp(string? tag)
+    public static string ReleaseZipName
     {
-        if (tag == null || !tag.StartsWith("gui/", StringComparison.Ordinal)) return null;
-        return DateTime.TryParseExact(
-            tag.Substring(4), StampFormat,
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None, out var dt) ? dt : null;
-    }
-
-    /// <summary>
-    /// Whether a published release is NEWER than this running build. Two rules:
-    /// 1. If the newest gui release's tag parses as our stamp format, offer it only
-    ///    when its stamp is strictly newer than ours (exact ordering).
-    /// 2. Otherwise (a foreign/unknown tag format — e.g. after a future format
-    ///    change), never let builds get stuck: the newest gui release is by definition
-    ///    NOT this build (its tag doesn't equal our own build tag), so offer it
-    ///    immediately. No timestamp margin — the release time is embedded in our
-    ///    binaries by release.ps1, so there is no clock skew to guard against.
-    /// </summary>
-    private static bool IsNewerRelease(string? tag)
-    {
-        var stamp = TagStamp(tag);
-        if (stamp != null)
+        get
         {
-            // Minute-truncate our compile time to the tag's minute resolution using .Date +
-            // whole minutes. Must NOT use Ticks - TimeOfDay.Ticks: that breaks when the local
-            // UTC offset is not a whole number of hours (e.g. +04:00), which made every build
-            // nag about its own release. With correct truncation, our own release's tag stamp
-            // equals this minute → not greater → no self-nag; any later minute → offer.
-            var myStamp = BuildStamp.Date.AddMinutes((long)BuildStamp.TimeOfDay.TotalMinutes);
-            return stamp > myStamp;
+            try
+            {
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                using var s = asm.GetManifestResourceStream("releaseinfo.txt");
+                if (s == null) return string.Empty;
+                using var r = new StreamReader(s);
+                return r.ReadToEnd().Trim();
+            }
+            catch { return string.Empty; }
         }
-        // Foreign tag format: it can never equal our build tag, so it is a different
-        // (newer) release — offer immediately.
-        return true;
     }
+
+    /// <summary>
+    /// The ONLY update rule: the newest published gui release ships a zip whose name
+    /// differs from the zip this build was shipped in (embedded resource) → an update
+    /// is available. No timestamps, no tag-format parsing.
+    /// </summary>
+    private static bool IsNewerRelease(string newestZipName) =>
+        !string.Equals(newestZipName, ReleaseZipName, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Metadata for an available update, once found.</summary>
     public sealed record UpdateInfo(DateTime PublishedAtUtc, string DownloadUrl, string ReleaseUrl, string Tag);
@@ -117,35 +101,27 @@ public sealed class UpdateService
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
             if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
 
-            // Newest gui release by publication date (GitHub `created_at`), which is the
-            // format-agnostic notion of "newest" — a foreign-format tag can therefore BE
-            // the newest release and trigger the immediate fallback. Ties break on our
-            // own parseable-stamp ordering.
+            // Newest gui release = highest `published_at` (falling back to `created_at`).
             DateTime? bestPublished = null;
-            DateTime? bestStamp = null;
             JsonElement bestEl = default;
             foreach (var el in doc.RootElement.EnumerateArray())
             {
                 if (!el.TryGetProperty("tag_name", out var tagEl)) continue;
                 var tagStr = tagEl.GetString();
-                if (tagStr == null || !tagStr.StartsWith("gui/", StringComparison.Ordinal)) continue; // cli/ or foreign — not ours
+                if (tagStr == null || !tagStr.StartsWith("gui/", StringComparison.Ordinal)) continue; // cli/ — not ours
 
                 DateTime relPublishedUtc = DateTime.MinValue;
-                if (el.TryGetProperty("created_at", out var caEl)
-                    && caEl.ValueKind == JsonValueKind.String
-                    && DateTimeOffset.TryParse(caEl.GetString(), out var caParsed))
+                if (!el.TryGetProperty("published_at", out var paEl) || paEl.ValueKind != JsonValueKind.String)
+                    el.TryGetProperty("created_at", out paEl); // fallback for drafts/edge cases
+                if (paEl.ValueKind == JsonValueKind.String
+                    && DateTimeOffset.TryParse(paEl.GetString(), out var caParsed))
                 {
                     relPublishedUtc = caParsed.UtcDateTime;
                 }
-                var stamp = TagStamp(tagStr);
 
-                bool better = bestPublished == null
-                    || relPublishedUtc > bestPublished
-                    || (relPublishedUtc == bestPublished && stamp != null && stamp > (bestStamp ?? DateTime.MinValue));
-                if (better)
+                if (bestPublished == null || relPublishedUtc > bestPublished)
                 {
                     bestPublished = relPublishedUtc;
-                    bestStamp = stamp;
                     bestEl = el;
                 }
             }
@@ -166,17 +142,13 @@ public sealed class UpdateService
                 return null;
             }
 
-            DateTime publishedUtc = DateTime.UtcNow;
-            if (asset.TryGetProperty("updated_at", out var updEl)
-                && updEl.ValueKind == JsonValueKind.String
-                && DateTimeOffset.TryParse(updEl.GetString(), out var parsed))
-            {
-                publishedUtc = parsed.UtcDateTime;
-            }
+            // The ONLY rule: the newest release's zip name vs this build's embedded zip name.
+            string newestZipName = asset.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == JsonValueKind.String
+                ? nameEl.GetString() ?? string.Empty
+                : string.Empty;
+            if (!IsNewerRelease(newestZipName)) return null; // we ARE the newest published build
 
-            // Format-tolerant freshness decision (see IsNewerRelease).
-            var bestTagStr = bestEl.GetProperty("tag_name").GetString();
-            if (!IsNewerRelease(bestTagStr)) return null; // we ARE the newest published build
+            DateTime publishedUtc = bestPublished.Value;
 
             string releaseUrl = string.Empty;
             if (bestEl.TryGetProperty("html_url", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
@@ -184,7 +156,8 @@ public sealed class UpdateService
                 releaseUrl = htmlEl.GetString() ?? string.Empty;
             }
 
-            _log?.Info($"Update available: release {bestTagStr} (newer than local build).");
+            var bestTagStr = bestEl.GetProperty("tag_name").GetString();
+            _log?.Info($"Update available: release {bestTagStr} (zip {newestZipName} != local {ReleaseZipName}).");
             return new UpdateInfo(publishedUtc, dlEl.GetString()!, releaseUrl, bestTagStr!);
         }
         catch (OperationCanceledException)
@@ -206,7 +179,7 @@ public sealed class UpdateService
     /// </summary>
     public async Task DownloadAndApplyAsync(UpdateInfo info, IProgress<string>? progress = null, CancellationToken ct = default)
     {
-        var tag = BuildTag.Replace('/', '-');
+        var tag = (ReleaseZipName.Length > 0 ? Path.GetFileNameWithoutExtension(ReleaseZipName) : BuildStamp.ToString("yyyyMMdd_HHmm"));
         var temp = Path.GetTempPath();
         var zipPath = Path.Combine(temp, $"NvidiaMonitor-update-{tag}.zip");
         var scriptPath = Path.Combine(temp, "NvidiaMonitor-update.ps1");

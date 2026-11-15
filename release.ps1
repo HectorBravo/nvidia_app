@@ -211,6 +211,13 @@ if ($running) {
 # with no dependence on GitHub asset timestamps.
 $releaseStamp = Get-Date
 
+# Release identity (T36): the gui build embeds its release ZIP NAME (via
+# src/NvidiaMonitor/releaseinfo.txt → embedded resource "releaseinfo.txt").
+# The update check's ONLY rule: newest published gui release's zip name != this
+# embedded name → notify. No timestamps involved.
+$guiZipName = "NvidiaMonitor-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
+[System.IO.File]::WriteAllText("$PSScriptRoot\src\NvidiaMonitor\releaseinfo.txt", $guiZipName)
+
 Write-Host '[1/3] Building nvidia_app.sln (Release)…'
 dotnet build nvidia_app.sln -c Release --nologo
 if ($LASTEXITCODE -ne 0) { Write-Host 'BUILD FAILED' -ForegroundColor Red; exit 1 }
