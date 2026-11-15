@@ -84,10 +84,10 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span>
 - **Created**: 16-11-2026 03:00:24
-- **Last Updated**: 16-11-2026 03:10:00
-- **Time Spent**: 10m
-- **Branch**: [`docs/ai-update-readme-features-and-watch`](https://github.com/HectorBravo/nvidia_app/tree/docs/ai-update-readme-features-and-watch)
-- **Commit(s)**: pending
+- **Last Updated**: 16-11-2026 03:06:37
+- **Time Spent**: 12m
+- **Branch**: [`docs/ai-update-readme-features-and-watch`](https://github.com/HectorBravo/nvidia_app/tree/docs/ai-update-readme-features-and-watch) — PR [#13](https://github.com/HectorBravo/nvidia_app/pull/13) → `main`
+- **Commit(s)**: [f562325](https://github.com/HectorBravo/nvidia_app/commit/f562325) (task log, before push) · [96123a2](https://github.com/HectorBravo/nvidia_app/commit/96123a2) (README) · [e055ca6](https://github.com/HectorBravo/nvidia_app/commit/e055ca6) (task log progress)
 - **Blockers**: none
 - **Findings & Notes**
   - `README.md` (last touched 11-11-2026, commit `9974feb`) is ~25 tasks stale: it still advertises "Features (v1)", lists the live **Charts** tab under *Planned*, and never mentions `NvmlTest --watch`, `--probe`, SM utilization, PCIe link/bandwidth, System RAM, collapsible cards, auto-update, single-instance guard, or the `yyyyMMdd_HHmm` release tags.
