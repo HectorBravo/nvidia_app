@@ -67,14 +67,36 @@ public sealed class UpdateService
             System.Globalization.DateTimeStyles.None, out var dt) ? dt : null;
     }
 
+    /// <summary>
+    /// Whether a published release is NEWER than this running build. Two rules:
+    /// 1. If the newest gui release's tag parses as our stamp format, offer it only
+    ///    when its stamp is strictly newer than ours (exact ordering).
+    /// 2. Otherwise (a foreign/unknown tag format — e.g. after a future format
+    ///    change), never let builds get stuck: if the newest release's ZIP asset was
+    ///    published more than 10 minutes after our own compile time, offer it.
+    ///    The margin absorbs publish-time clock skew so a build that IS the latest
+    ///    release doesn't nag about itself seconds after being packaged.
+    /// </summary>
+    private static bool IsNewerRelease(string? tag, DateTime assetPublishedUtc)
+    {
+        var stamp = TagStamp(tag);
+        if (stamp != null)
+        {
+            var myStamp = new DateTime(BuildStamp.Ticks - BuildStamp.TimeOfDay.Ticks); // minute-truncated local
+            return stamp > myStamp;
+        }
+        return assetPublishedUtc > BuildStamp.ToUniversalTime().AddMinutes(10);
+    }
+
     /// <summary>Metadata for an available update, once found.</summary>
     public sealed record UpdateInfo(DateTime PublishedAtUtc, string DownloadUrl, string ReleaseUrl, string Tag);
 
     /// <summary>
     /// Asks GitHub for the newest "gui/&lt;compile-date&gt;" release and offers it when
-    /// its tag stamp is strictly newer than this build's own compile stamp — i.e. a
-    /// newer published build exists. Any failure (offline, rate limit, parse)
-    /// returns null — the check must never disturb the user.
+    /// it is newer than this build (see <see cref="IsNewerRelease"/> — format-tolerant,
+    /// so a tag-format change can never leave builds stuck without updates). Any
+    /// failure (offline, rate limit, parse) returns null — the check must never
+    /// disturb the user.
     /// </summary>
     public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
     {
@@ -88,14 +110,17 @@ public sealed class UpdateService
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
             if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
 
-            // Newest gui release by tag stamp (release order is not guaranteed).
+            // Newest gui release by tag stamp. Tags that don't parse our format are
+            // ranked with DateTime.MinValue so a real-format newest tag always wins;
+            // only when NO gui tag parses does the foreign-format fallback apply.
             DateTime? bestStamp = null;
             JsonElement bestEl = default;
             foreach (var el in doc.RootElement.EnumerateArray())
             {
                 if (!el.TryGetProperty("tag_name", out var tagEl)) continue;
-                var stamp = TagStamp(tagEl.GetString());
-                if (stamp == null) continue; // cli/ or foreign tags — not ours
+                var tagStr = tagEl.GetString();
+                if (tagStr == null || !tagStr.StartsWith("gui/", StringComparison.Ordinal)) continue; // cli/ or foreign — not ours
+                var stamp = TagStamp(tagStr) ?? DateTime.MinValue;
                 if (bestStamp == null || stamp > bestStamp)
                 {
                     bestStamp = stamp;
@@ -104,10 +129,6 @@ public sealed class UpdateService
             }
 
             if (bestStamp == null) return null; // no gui releases at all
-            var myStamp = DateTime.ParseExact(
-                BuildStamp.ToString(StampFormat), StampFormat,
-                System.Globalization.CultureInfo.InvariantCulture);
-            if (bestStamp <= myStamp) return null; // we ARE the newest published build
 
             if (!bestEl.TryGetProperty("assets", out var assets)
                 || assets.ValueKind != JsonValueKind.Array
@@ -131,14 +152,18 @@ public sealed class UpdateService
                 publishedUtc = parsed.UtcDateTime;
             }
 
+            // Format-tolerant freshness decision (see IsNewerRelease).
+            var bestTagStr = bestEl.GetProperty("tag_name").GetString();
+            if (!IsNewerRelease(bestTagStr, publishedUtc)) return null; // we ARE the newest published build
+
             string releaseUrl = string.Empty;
             if (bestEl.TryGetProperty("html_url", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
             {
                 releaseUrl = htmlEl.GetString() ?? string.Empty;
             }
 
-            _log?.Info($"Update available: release {bestEl.GetProperty("tag_name").GetString()} (newer than local build).");
-            return new UpdateInfo(publishedUtc, dlEl.GetString()!, releaseUrl, bestEl.GetProperty("tag_name").GetString()!);
+            _log?.Info($"Update available: release {bestTagStr} (newer than local build).");
+            return new UpdateInfo(publishedUtc, dlEl.GetString()!, releaseUrl, bestTagStr!);
         }
         catch (OperationCanceledException)
         {
