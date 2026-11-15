@@ -1,6 +1,6 @@
-<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-11 23:59:00
-git_head: 01845403ec601ef54deac7bf113df09911dc6afd
+﻿<!-- PROJECT_INDEXER:BEGIN
+last_indexed: 2026-11-15 22:38:00
+git_head: 3b43450454ae353a86459b0fe364b138b8661bd2
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -24,8 +24,8 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab). Every chart card also carries a **chevron
   "dropbox" at its top-left** that collapses the card down to just its header row, and
-  **only Memory Utilization and Memory Used open expanded — the other seven cards start
-  collapsed** (T20 + T21, refined by T22), which is what keeps the calculated fit-to-content window short.
+  **only System RAM and Memory Used open expanded — the other eight cards start
+  collapsed** (T20 + T21, refined by T22, then T27), which is what keeps the calculated fit-to-content window short.
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
@@ -34,7 +34,9 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
 Reads per-GPU telemetry: GPU/memory utilization, **SM utilization** (per-process sum, clamped at 100), temperature, power (+limits), memory
 used/total/free, clocks, fan, P-state, **PCIe link (gen × width)** and derived
 theoretical **PCIe bandwidth (GB/s)**, ECC, NVLink count, throttle reasons, and a
-per-GPU process list (compute + graphics) with PID, kind and memory. When NVML/GPU is
+per-GPU process list (compute + graphics) with PID, kind and memory. It also reads
+**system-wide physical RAM** straight from the OS (`kernel32!GlobalMemoryStatusEx`, not
+NVML) for the System RAM chart. When NVML/GPU is
 unavailable it degrades to a friendly message (UI) or a non-zero exit code (CLI).
 
 ## 2. Tech Stack
@@ -77,7 +79,8 @@ git-ignored `bin/` (publish output).
   the window opens at a calculated fit-to-content size — never maximized),
   `ChartController.cs` (`MetricChart` + `ChartController` — synchronized native-WPF
   charts), `GpuPollingService` (~1 Hz background poller → UI thread), `GpuServiceFactory`
-  (builds the concrete engine), `Theme` (dark theme + value formatters + the green
+  (builds the concrete engine), `SystemMemory.cs` (P/Invoke `GlobalMemoryStatusEx` → OS-wide
+  physical RAM used/total for the System RAM chart — no NVML dependency), `Theme` (dark theme + value formatters + the green
   "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`.
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
@@ -142,8 +145,8 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
                  └─ MainWindow (Dispatcher-marshalled)
                       ├─ Overview: all-GPU grid (GpuRow view-models; N/A-aware)
                       └─ Charts:   ChartController (shared timeline/zoom/crosshair/scroll)
-                                   driving 9 MetricChart cards (mem-used [% of that card's own memory → FIRST], GPU-util,
-                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y], GPU-clock, mem-clock — all but mem-used and mem-util start collapsed, see T20/T21/T22) — native WPF shapes
+                                   driving 10 MetricChart cards (System RAM [% of OS total → FIRST, light blue], mem-used [% of that card’s own memory], GPU-util,
+                                   mem-util, temp, SM-util, power, PCIe-bandwidth [log Y, floor 1 GB/s], GPU-clock, mem-clock — all but System RAM and mem-used start collapsed, see T20/T21/T22/T27) — native WPF shapes
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
@@ -290,6 +293,23 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   + Memory Utilization** expanded and every other card (GPU Utilization included) at its
   header row — still 7 of 9 collapsed, so the ≈ 672 px stack and the fit-to-content window
   are unchanged, and spec order / `_runningMax` were not touched.
+  **T27: System RAM chart + PCIe log floor + collapse Memory Utilization** (`ChartController.cs`
+  + `MainWindow.cs` + new `SystemMemory.cs`): a **10th card "System RAM (%)" is now spec index 0**
+  (heads the stack, expanded). It is **not GPU-based** — `MainWindow._ramHistory` (a cap-720 ring)
+  is fed each tick by `SystemMemory.Read()` (`kernel32!GlobalMemoryStatusEx`: used = total − avail),
+  and `UpdateCharts` plots it as a single series under the **negative `SystemSeriesKey` (-1)** so it
+  never collides with GPU keys 0..N and sorts first. `ChartSpec` gained `bool SystemRam` + `double LogFloor`;
+  `MetricChart` gained `SysRamBlue` (`#58a6ff`) + a `SeriesBrush(key)` helper (negative key → light blue,
+  used by the polyline stroke + legend swatch + crosshair swatch), so the RAM line and its icon are
+  **light blue**. Its readout uses `_showAbsTotal` (+ `SetAbsUnit("GiB")`) to render **`NN% (used GiB / total GiB)`**
+  — the same percentage shape as VRAM but showing used *and* total (VRAM keeps the shorter `NN% (MMMM MiB)`,
+  `_showAbsTotal=false`). The PCIe chart now passes **`LogFloor: 1.0`**: `MetricChart.ValueToY`/gridlines/axis
+  ticks use a shared `LogFloor(ceiling)` helper (`_logFloor > 0 ? min(_logFloor, ceiling) : 0.01×ceiling`),
+  so the PCIe right axis **starts at 1G** and low link speeds stop pinning near the top (previously the floor was
+  `0.01×ceiling`, e.g. 0.32 GB/s for a 32 GB/s card, which pushed a gen-1 link ~85 % up). **Memory Utilization is
+  now `Collapsed: true`**, so only **System RAM + Memory Used** open expanded (**8 of 10 collapsed**); `_runningMax`
+  grew to `{100,100,100,100,100,100,400,32,2100,1600}` with the order comment **ram, memUsed, util, memUtil, temp,
+  smUtil, power, pcieBw, clock, memClock**. The shared timeline length/time-origin now include the RAM ring.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -297,6 +317,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-15 — **T27: System RAM chart + PCIe log floor + collapse Memory Utilization** (`ChartController.cs` + `MainWindow.cs` + new `SystemMemory.cs`; gui closure only — shared libs untouched): new **System RAM (%)** card at spec index 0 (heads the stack, expanded) plotting OS-wide physical RAM as `% of total`, single light-blue (`#58a6ff`) series under the negative `SystemSeriesKey (-1)`, readout **`NN% (used GiB / total GiB)`**. Fed by `SystemMemory.Read()` (`kernel32!GlobalMemoryStatusEx`) into a cap-720 ring. `ChartSpec` gained `SystemRam` + `LogFloor`; `MetricChart` gained `SysRamBlue`, `SeriesBrush(key)`, `_showAbsTotal`, `SetAbsUnit`, and a shared `LogFloor(ceiling)` helper so the **PCIe log axis now starts at 1 GB/s** (was `0.01×ceiling`) — low link speeds no longer pin near the top. **Memory Utilization is collapsed by default** (only System RAM + Memory Used expanded; 8 of 10 collapsed); `_runningMax` → `{100,100,100,100,100,100,400,32,2100,1600}`. Build 0/0; RAM readout verified live (`22% (28 GiB / 128 GiB)`).
 - 2026-11-11 — **T26: changelog in GitHub release notes**: `release.ps1` gains `Get-AppChangelog` (conventional-commit subjects touching each app's closure, docs/`ai/` commits excluded, `[ai]` tag stripped) and a third mode `--changelog <base> [<head>] [gui|cli]` that patches the newest release's notes without rebuilding. `--merge` now auto-prepends a `## What's changed` section to every release body; static footer no longer duplicates "Framework-dependent:". `AGENTS.md` + `README.md` document the mandate. Latest gui release `gui/2026-11-11-1812` patched with its T25 changelog.
 - 2026-11-11 — **T25: single-instance GUI guard**: `App.cs` adds a lockfile-heartbeat guard so only one `NvidiaMonitor` window may run at a time (refusal message + exit code 0 on a second concurrent launch; headless `--print` unaffected). `MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()` each poll tick. No shared-lib change → only the `gui` release stream bumped (`gui/2026-11-11-1812`).
 - 2026-11-11 — **T24: compile-date GitHub Releases enforcement**: `NvmlTest/Program.cs` now prints a
