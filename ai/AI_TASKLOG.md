@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
 | 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
 | 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
@@ -74,6 +75,44 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T36: Authenticate GitHub API update checks
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 16-11-2026 02:44:00
+- **Last Updated**: 16-11-2026 02:50:00
+- **Time Spent**: 20m
+- **Branch**: [`fix/ai-authenticated-update-check`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-authenticated-update-check)
+- **Commit(s)**: [209254a](https://github.com/HectorBravo/nvidia_app/commit/209254a) (merged as e254bb1, PR #12)
+- **Blockers**: none
+- **Findings & Notes**:
+  - During testing the banner never appeared even though a fake newest release existed. Root cause: GitHub's **anonymous** API limit is 60 req/hour **per IP**; hourly checks + many test launches exhausted it → every `CheckAsync` got 403 → silent null (by design, failures are swallowed).
+  - Fix: `UpdateService.CreateHttp()` now attaches a bearer token when available — `GITHUB_TOKEN`/`GH_TOKEN` env vars first, else `gh auth token` (hidden process, 3 s timeout, cached per process). Anonymous fallback kept for machines without any token. Authenticated limit: 5000/hour.
+  - Verified live: build stamped `NvidiaMonitor-20261116_0242.zip` shows banner "New version available: gui/ZZZ-TEST (click to update)" against the fake foreign-format release — confirms both the auth fix and format-tolerant detection.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 02:40:00) "the rate depends on the ip ... reports the following releases JSON" → user's external IP sees the full release list; confirmed local IP was rate-limited.
+
+### Subtasks / Plan
+
+- [x] Diagnose silent check failure (trace log proved 403/rate-limit path via newestZip empty/exception)
+- [x] Add token discovery (env vars → gh CLI) + Authorization header in CreateHttp
+- [x] PR #12 merged into main (e254bb1)
+- [x] Live verification: banner shows gui/ZZZ-TEST with foreign zip name ffggggdassfgf.zip
+
+### Full Context Notes for AI Agents
+
+> Token resolution lives in `UpdateService.GitHubToken()` (static cache `_cachedToken`: null=unresolved, ""=no token). Called once from `CreateHttp()` (static HttpClient → one token per process lifetime; a long-running app won't pick up a later `gh auth login` until restart — acceptable). The fake release `gui/ZZZ-TEST` (asset `ffggggdassfgf.zip`) must stay until the user finishes testing, then be deleted with its tag. Detection rule remains pure zip-name identity (T35). Temporary debug trace to %TEMP%\nmupd.log was added and REMOVED before commit — do not re-add.
 
 ---
 
