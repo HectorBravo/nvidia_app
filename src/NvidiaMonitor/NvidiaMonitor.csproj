@@ -10,11 +10,17 @@
     <RootNamespace>HectorBravo.Nvidia.Monitor</RootNamespace>
     <!-- NVIDIA eye logo as the exe/taskbar icon (T30, max 256x256). -->
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- Release identity (T36): release.ps1 writes releaseinfo.txt (the release zip's
+         name) next to this project before publish; it is embedded below and read at
+         runtime by UpdateService.ReleaseZipName — the update check compares it with
+         the newest published release's asset name. Dev builds: empty placeholder. -->
+    <ReleaseInfoFile>$(MSBuildProjectDirectory)\releaseinfo.txt</ReleaseInfoFile>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Embedded copy of the same logo for the WPF window icon. -->
     <Resource Include="nvidia-icon.png" />
+    <EmbeddedResource Include="$(ReleaseInfoFile)" LogicalName="releaseinfo.txt" Condition="Exists('$(ReleaseInfoFile)')" />
   </ItemGroup>
 
   <ItemGroup>
