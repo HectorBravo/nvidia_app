@@ -5,7 +5,7 @@
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
-| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
+| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -18,7 +18,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 21 completed task(s) - [View completed tasks](#completed-tasks)
+> 22 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -28,10 +28,10 @@
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
 - **Created**: 15-11-2026 23:04:00
-- **Last Updated**: 15-11-2026 23:10:00
+- **Last Updated**: 15-11-2026 23:25:00
 - **Time Spent**: 6m
-- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart) (T27 branch, continued)
-- **Commit(s)**: [c74de1a](https://github.com/HectorBravo/nvidia_app/commit/c74de1a) (code) · [6db971f](https://github.com/HectorBravo/nvidia_app/commit/6db971f) (index)
+- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart) (T27 branch, continued) — merged into `main` (fast-forward), branch deleted locally + remotely
+- **Commit(s)**: [c74de1a](https://github.com/HectorBravo/nvidia_app/commit/c74de1a) (code) · [6db971f](https://github.com/HectorBravo/nvidia_app/commit/6db971f) (index) · [3f449e1](https://github.com/HectorBravo/nvidia_app/commit/3f449e1) (progress log, `main`)
 - **Blockers**: none
 - **Findings & Notes**:
   - **User request** (15-11-2026): rename `Memory Used (%)` → **`VRAM Memory Used (%)`** and `Memory Utilization (%)` → **`VRAM Memory Utilization (%)`**; also explain what "Memory utilization (%)" is and why it doesn't match "Memory Used (%)".
@@ -63,13 +63,13 @@
 
 ## Task T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 15-11-2026 22:25:35
-- **Last Updated**: 15-11-2026 22:44:00
+- **Last Updated**: 15-11-2026 23:25:00
 - **Time Spent**: 18m
-- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart)
-- **Commit(s)**: pending
+- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart) — merged into `main` (fast-forward), branch deleted locally + remotely
+- **Commit(s)**: [05c667e](https://github.com/HectorBravo/nvidia_app/commit/05c667e) (plan log) · [3b43450](https://github.com/HectorBravo/nvidia_app/commit/3b43450) (code, in `main`) · [c1b57c6](https://github.com/HectorBravo/nvidia_app/commit/c1b57c6) (index) · [04f1b78](https://github.com/HectorBravo/nvidia_app/commit/04f1b78) (progress log)
 - **Blockers**: none
 - **Findings & Notes**:
   - **User request** (15-11-2026): (1) PCIe graph "was logarithmic" and now looks wrong — after investigation the `LogScale: true` flag is intact in source AND the running binary, so nothing was reverted; the real complaint (confirmed via question) is that the **line sits too high / pinned near the top** → rescale so **low values are visible** and make **1 GB/s the minimum of the right axis**. (2) Add a new **System RAM** chart: same representation as VRAM (plot 0–100 %, parenthetical `(used / total)`), **not tied to any GPU**, light-blue line + swatch. (3) **System RAM is the first graph, expanded by default.** (4) **Memory Utilization (%) → collapsed by default** this iteration.
@@ -1938,6 +1938,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m |
+| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m |
 | 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 47m |
 | 11-11-2026 03:03:57 | [T24: Enforce per-app compile-date releases on GitHub after each merge into main](#task-t24-enforce-per-app-compile-date-releases-on-github-after-each-merge-into-main) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 8/9 | 1h 20m |
 | 10-11-2026 02:25:25 | [T23: Add Git LFS for PNG images, commit screenshot.png + README image reference](#task-t23-add-git-lfs-for-png-images-commit-screenshotpng--readme-image-reference) | chore | 10/10 | 8m |
