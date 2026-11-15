@@ -39,6 +39,21 @@ public class MainWindow : Window
     private readonly DataGrid _grid;
     private readonly Grid _root;
 
+    // ── update-available banner (T29) ────────────────────────
+    // Clickable, flashing light-blue text shown to the right of the build stamp
+    // when GitHub has a newer published build for this compile date.
+    private TextBlock? _updateLink;
+    private System.Windows.Media.Animation.DoubleAnimation? _updateFlash;
+    private UpdateService? _updateSvc;
+    private UpdateService.UpdateInfo? _updateInfo;
+    private DispatcherTimer? _updateTimer;
+    private bool _updateBusy;
+
+    // Light blue used by the System RAM chart (same #58a6ff) — reused for the
+    // update banner so the two read as one family.
+    private static readonly Brush SysRamBlueBrush =
+        new SolidColorBrush((Color)ColorConverter.ConvertFromString("#58a6ff"));
+
     // ── tab control + per-tab widgets ──────────────────────────
     private readonly TabControl _tabs;
     // Assigned inside BuildTabs(), which the constructor calls before any use.
@@ -62,6 +77,18 @@ public class MainWindow : Window
     public MainWindow()
     {
         Title = "NVIDIA GPU Monitor";
+        // NVIDIA eye logo (T30) for the title bar / taskbar, embedded as a resource.
+        try
+        {
+            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
+                new Uri("pack://application:,,,/nvidia-icon.png"),
+                System.Windows.Media.Imaging.BitmapCreateOptions.None,
+                System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        }
+        catch
+        {
+            // Cosmetic only — never let a missing icon break the window.
+        }
         // Default (restored) size. OnLayoutUpdated() resizes the window one time,
         // after the first data frame, so that all charts and the visible data fit
         // without the user having to resize it at startup (clamped to the work area).
@@ -94,9 +121,29 @@ public class MainWindow : Window
             FontFamily = Theme.Mono,
             FontSize = 12,
         };
+        // Update-available banner (T29): hidden until the check finds a newer
+        // published build; then it flashes light blue and starts the update on click.
+        _updateLink = new TextBlock
+        {
+            Text = string.Empty,
+            Foreground = SysRamBlueBrush,
+            FontFamily = Theme.Mono,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Visibility = Visibility.Collapsed,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+        };
+        _updateLink.MouseLeftButtonUp += OnUpdateLinkClick;
+        var buildLine = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { buildTime, _updateLink },
+        };
         _header = new StackPanel
         {
-            Children = { title, buildTime, _driverText },
+            Children = { title, buildLine, _driverText },
             Margin = new Thickness(16, 12, 16, 8),
         };
 
@@ -181,6 +228,14 @@ public class MainWindow : Window
 
         // Pull the first frame immediately so the UI isn't blank for a second.
         await _polling.RefreshNowAsync();
+
+        // Update check (T29): once at startup, then every hour. Never blocks or
+        // disturbs the monitor — failures are silent by design.
+        _updateSvc = new UpdateService(_log);
+        _updateTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+        _updateTimer.Tick += (_, _) => _ = CheckForUpdateAsync();
+        _updateTimer.Start();
+        _ = CheckForUpdateAsync();
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -202,6 +257,10 @@ public class MainWindow : Window
         // in-flight refresh finishing after dispose is harmless.
         _polling?.Dispose();
         _polling = null;
+
+        // Stop the hourly update check with the window.
+        _updateTimer?.Stop();
+        _updateTimer = null;
 
         try
         {
@@ -275,6 +334,98 @@ public class MainWindow : Window
         };
         Content = new Border { Background = Theme.Bg, Child = text };
     }
+
+    // ── update banner (T29) ─────────────────────────────────────
+    /// <summary>
+    /// Asks GitHub whether a newer published build exists for this compile date.
+    /// Runs at startup and every hour; failures are swallowed by UpdateService.
+    /// </summary>
+    private async Task CheckForUpdateAsync()
+    {
+        var svc = _updateSvc;
+        if (svc == null || _closing || _disposed) return;
+
+        try
+        {
+            var info = await svc.CheckAsync();
+            if (info == null || _closing || _disposed) return;
+            ToUi(() => ShowUpdateAvailable(info));
+        }
+        catch
+        {
+            // Never let a check surface to the user.
+        }
+    }
+
+    /// <summary>Reveals the flashing "New version available" banner next to the build stamp.</summary>
+    private void ShowUpdateAvailable(UpdateService.UpdateInfo info)
+    {
+        if (_updateLink == null || _updateBusy) return; // already showing or mid-update
+
+        _updateInfo = info;
+        var version = info.PublishedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        _updateLink.Text = $"New version available: {version} (click to update)";
+        _updateLink.Visibility = Visibility.Visible;
+        _updateLink.ToolTip = "Download and install the newer published build, then restart automatically.";
+
+        // Flash: pulse the opacity forever until the user acts or the app closes.
+        if (_updateFlash == null)
+        {
+            _updateFlash = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.25, TimeSpan.FromMilliseconds(900))
+            {
+                AutoReverse = true,
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+            };
+        }
+        _updateLink.BeginAnimation(System.Windows.UIElement.OpacityProperty, _updateFlash);
+    }
+
+    /// <summary>Stops the flash and hides/relabels the banner.</summary>
+    private void SetUpdateBannerState(string text, bool visible, bool busy)
+    {
+        if (_updateLink == null) return;
+        _updateBusy = busy;
+        if (!busy)
+        {
+            _updateLink.BeginAnimation(System.Windows.UIElement.OpacityProperty, null);
+            _updateLink.Opacity = 1.0;
+        }
+        else if (_updateFlash != null)
+        {
+            // Keep a subtle pulse while working so the UI reads as alive.
+            _updateLink.BeginAnimation(System.Windows.UIElement.OpacityProperty, _updateFlash);
+        }
+        _updateLink.Text = text;
+        _updateLink.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Click handler: downloads the update, swaps files via a helper and restarts.</summary>
+    private async void OnUpdateLinkClick(object sender, MouseButtonEventArgs e)
+    {
+        var svc = _updateSvc;
+        var info = _updateInfo;
+        if (svc == null || info == null || _updateBusy || _closing || _disposed) return;
+
+        SetUpdateBannerState("Downloading update… 0%", visible: true, busy: true);
+        var progress = new Progress<string>(msg => ToUi(() =>
+        {
+            if (_updateLink != null) _updateLink.Text = msg;
+        }));
+
+        try
+        {
+            await svc.DownloadAndApplyAsync(info, progress);
+            // On success the app shuts itself down from inside DownloadAndApplyAsync.
+            SetUpdateBannerState("Applying update — restarting…", visible: true, busy: true);
+        }
+        catch (Exception ex)
+        {
+            _log.Warning($"Update failed: {ex.Message}");
+            // Stay running with the old build; let the user retry later.
+            SetUpdateBannerState("Update failed — click to retry", visible: true, busy: false);
+        }
+    }
+
     // ── rendering ──────────────────────────────────────────────
     /// <summary>Called on the UI thread with the latest snapshot.</summary>
     private void ApplySnapshot(SystemSnapshot snap)

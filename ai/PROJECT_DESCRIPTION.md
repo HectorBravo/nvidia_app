@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-15 23:10:00
-git_head: 04f1b78a34b05ac784f4a2358f604422fcd471da
+last_indexed: 2026-11-16 00:10:00
+git_head: 760e3c5d8b24cfacd0ede25f05b7855f0afec0ac
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -26,6 +26,12 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   "dropbox" at its top-left** that collapses the card down to just its header row, and
   **only System RAM and Memory Used open expanded — the other eight cards start
   collapsed** (T20 + T21, refined by T22, then T27), which is what keeps the calculated fit-to-content window short.
+  It carries the **NVIDIA logo (eye + wordmark) as its app/window icon** (T30) and
+  self-updates: `UpdateService` checks GitHub Releases at startup + every hour and,
+  when a newer published build of the same compile-date tag exists, shows a flashing
+  light-blue **"New version available"** link right of the build stamp — clicking it
+  downloads the release zip and swaps the files via a temp PowerShell helper that
+  restarts the app (T29).
 - **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
@@ -80,8 +86,12 @@ git-ignored `bin/` (publish output).
   `ChartController.cs` (`MetricChart` + `ChartController` — synchronized native-WPF
   charts), `GpuPollingService` (~1 Hz background poller → UI thread), `GpuServiceFactory`
   (builds the concrete engine), `SystemMemory.cs` (P/Invoke `GlobalMemoryStatusEx` → OS-wide
-  physical RAM used/total for the System RAM chart — no NVML dependency), `Theme` (dark theme + value formatters + the green
-  "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`.
+  physical RAM used/total for the System RAM chart — no NVML dependency), `UpdateService.cs`
+  (T29: GitHub Releases update check + download/verify/swap/restart auto-update),
+  `Theme` (dark theme + value formatters + the green
+  "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`; assets
+  `app.ico` (exe/taskbar icon, `<ApplicationIcon>`) + `nvidia-icon.png` (WPF window
+  icon, `<Resource>`; both the NVIDIA eye+wordmark logo ≤256×256, T30).
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
   value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic),
@@ -194,6 +204,24 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   `NvmlTest`).
 
 ## 10. Conventions & Gotchas
+- **Auto-update (T29, `UpdateService.cs`):** checks
+  `https://api.github.com/repos/HectorBravo/nvidia_app/releases/tags/gui/<yyyy-MM-dd-HHmm>`
+  — the tag is built from **`Assembly.GetExecutingAssembly().Location`'s LastWriteTime**,
+  which in a published app is the **DLL**, not the exe (both ship from the same publish, so
+  their stamps agree; local tests must stamp the DLL). An update is offered only when that
+  release exists and its asset `updated_at` is >120 s newer than the local stamp (jitter
+  guard); 404/any error → silent no-op. On click: zip → `%TEMP%`, verified with
+  `ZipFile.OpenRead` (must contain `NvidiaMonitor.exe`, path-escape entries rejected), then a
+  generated `%TEMP%\NvidiaMonitor-update.ps1` waits for the PID to exit, backs up
+  exe/dll/json, `Expand-Archive -Force` over the app dir, relaunches and self-deletes; the app
+  calls `Application.Shutdown()` right after launching the helper (its DLLs are locked while
+  running). The banner is a flashing (`BeginAnimation(UIElement.OpacityProperty, …)` —
+  `BeginOpacityAnimation` is not on TextBlock here) light-blue (`#58a6ff`) TextBlock right of
+  the build stamp; check cadence = startup + hourly `DispatcherTimer`.
+- **App/window icon (T30):** `src/NvidiaMonitor/app.ico` (PNG-embedded multi-size
+  16–256) is the exe icon via `<ApplicationIcon>`; `nvidia-icon.png` (256×256, transparent,
+  full NVIDIA eye+wordmark logo) is a WPF `<Resource>` loaded in the `MainWindow` ctor with
+  `BitmapFrame.Create(new Uri("pack://application:,,,/nvidia-icon.png"))` in a try/catch.
 - **Single-instance GUI guard (T25):** `App.cs` keeps at most one `NvidiaMonitor` window
   alive at a time via a lockfile heartbeat — `%TEMP%\NvidiaMonitor.lock` is created on
   launch and refreshed every ~1 Hz poll tick (`MainWindow.OnLoaded`/`ApplySnapshot` →
@@ -326,6 +354,8 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-16 — **T30: NVIDIA logo app/window icon** (new `app.ico` + `nvidia-icon.png`, `NvidiaMonitor.csproj`, `MainWindow.cs`; gui closure): exe/taskbar icon via `<ApplicationIcon>app.ico</ApplicationIcon>` (PNG-embedded ICO, 16–256 px) and WPF window icon from the embedded `nvidia-icon.png` resource (`BitmapFrame.Create(pack://…)` in the ctor, try/catch). Source: logolook.net NVIDIA logo (3840×2160) cropped to the **full eye+wordmark** square, downscaled to **256×256** per user correction. Verified: `ExtractAssociatedIcon` on the built exe + live `WM_GETICON` handles non-null.
+- 2026-11-16 — **T29: update-available banner + one-click auto-update** (new `src/NvidiaMonitor/UpdateService.cs`, `MainWindow.cs`; gui closure): GitHub Releases check at startup + hourly (`releases/tags/gui/<compile-date>` tag from the executing assembly LastWriteTime; offered only when the asset is >120 s newer than the local stamp), flashing light-blue (#58a6ff) **"New version available: <version> (click to update)"** link right of the build stamp; click → zip to %TEMP% → verify → generated swap helper (wait for PID exit, backup exe/dll/json, `Expand-Archive -Force`, relaunch, self-delete) → app shuts down. Failures stay silent/retryable. Verified end-to-end against real release `gui/2026-11-15-2327`.
 - 2026-11-15 — **T28: chart-title disambiguation** (`MainWindow.cs`, titles only; gui closure): renamed the VRAM cards **`Memory Used (%)` → `VRAM Memory Used (%)`** and **`Memory Utilization (%)` → `VRAM Memory Utilization (%)`** so they read clearly against System RAM. No behavior change (build 0/0, republished). Documented why the two differ: *Used* = framebuffer bytes allocated/reserved (`nvmlDeviceGetMemoryInfo`, sticky), *Utilization* = driver-sampled fraction of recent time the memory bus was transferring (`nvmlDeviceGetUtilizationRates().memory`) — so a resident-but-idle model shows high Used and low Utilization.
 - 2026-11-15 — **T27: System RAM chart + PCIe log floor + collapse Memory Utilization** (`ChartController.cs` + `MainWindow.cs` + new `SystemMemory.cs`; gui closure only — shared libs untouched): new **System RAM (%)** card at spec index 0 (heads the stack, expanded) plotting OS-wide physical RAM as `% of total`, single light-blue (`#58a6ff`) series under the negative `SystemSeriesKey (-1)`, readout **`NN% (used GiB / total GiB)`**. Fed by `SystemMemory.Read()` (`kernel32!GlobalMemoryStatusEx`) into a cap-720 ring. `ChartSpec` gained `SystemRam` + `LogFloor`; `MetricChart` gained `SysRamBlue`, `SeriesBrush(key)`, `_showAbsTotal`, `SetAbsUnit`, and a shared `LogFloor(ceiling)` helper so the **PCIe log axis now starts at 1 GB/s** (was `0.01×ceiling`) — low link speeds no longer pin near the top. **Memory Utilization is collapsed by default** (only System RAM + Memory Used expanded; 8 of 10 collapsed); `_runningMax` → `{100,100,100,100,100,100,400,32,2100,1600}`. Build 0/0; RAM readout verified live (`22% (28 GiB / 128 GiB)`).
 - 2026-11-11 — **T26: changelog in GitHub release notes**: `release.ps1` gains `Get-AppChangelog` (conventional-commit subjects touching each app's closure, docs/`ai/` commits excluded, `[ai]` tag stripped) and a third mode `--changelog <base> [<head>] [gui|cli]` that patches the newest release's notes without rebuilding. `--merge` now auto-prepends a `## What's changed` section to every release body; static footer no longer duplicates "Framework-dependent:". `AGENTS.md` + `README.md` document the mandate. Latest gui release `gui/2026-11-11-1812` patched with its T25 changelog.
