@@ -42,7 +42,46 @@ public sealed class UpdateService
         // GitHub API requires a User-Agent header; keep the request cheap and API-shaped.
         http.DefaultRequestHeaders.UserAgent.ParseAdd("NvidiaMonitor-updater");
         http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+
+        // Anonymous API calls are capped at 60/hour per IP — easy to exhaust with hourly
+        // checks, after which every check silently fails (403) and updates go unnoticed.
+        // Authenticate when a token is available: GITHUB_TOKEN / GH_TOKEN env vars, or a
+        // `gh auth token` on this machine. Requests without a token still work (public repo).
+        var token = GitHubToken();
+        if (!string.IsNullOrWhiteSpace(token))
+            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return http;
+    }
+
+    /// <summary>Best available GitHub token: env vars first, then the gh CLI (once per process).</summary>
+    private static string? _cachedToken;
+    private static string? GitHubToken()
+    {
+        if (_cachedToken != null) return _cachedToken == "" ? null : _cachedToken;
+        try
+        {
+            foreach (var name in new[] { "GITHUB_TOKEN", "GH_TOKEN" })
+            {
+                var t = Environment.GetEnvironmentVariable(name);
+                if (!string.IsNullOrWhiteSpace(t)) { _cachedToken = t.Trim(); return _cachedToken; }
+            }
+            // Ask the GitHub CLI, if installed and authenticated (hidden window, 3 s cap).
+            var psi = new System.Diagnostics.ProcessStartInfo("gh", "auth token")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            using var p = System.Diagnostics.Process.Start(psi);
+            if (p != null && p.WaitForExit(3000) && p.ExitCode == 0)
+            {
+                var t = p.StandardOutput.ReadToEnd().Trim();
+                if (!string.IsNullOrWhiteSpace(t)) { _cachedToken = t; return _cachedToken; }
+            }
+        }
+        catch { /* gh not installed / not authenticated — stay anonymous */ }
+        _cachedToken = ""; // remember: no token available
+        return null;
     }
 
     /// <summary>The compile date (LastWriteTime) of the running exe — same stamp the header prints.</summary>
