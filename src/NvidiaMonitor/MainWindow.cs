@@ -25,6 +25,10 @@ public class MainWindow : Window
     private GpuPollingService? _polling;
     // 12 min of 1 Hz samples, so a 10-minute window (plus a little history) fits.
     private readonly GpuHistory _history = new(capacity: 720);
+    // System RAM is not tied to any GPU, so it lives in its own bounded ring (one sample per
+    // poll tick, same cadence as the GPU series). Kept newest-last; trimmed to capacity.
+    private readonly Queue<RamSample> _ramHistory = new();
+    private const int RamCapacity = 720;
     // Shared timeline / zoom / crosshair / scroll state that keeps all charts in lock-step.
     private readonly ChartController _chartCtl = new();
     private bool _disposed;
@@ -43,9 +47,9 @@ public class MainWindow : Window
     private readonly System.Collections.Generic.List<ChartSpec> _specs = new();
 
     // Per-chart running Y-axis ceiling (auto-scales upward; never shrinks).
-    // Index order matches _charts/_specs: memUsed (0-100 % axis), util, memUtil, temp,
-    // smUtil, power, pcieBw, clock, memClock — the percent charts all seed at 100.
-    private readonly double[] _runningMax = { 100, 100, 100, 100, 100, 400, 32, 2100, 1600 };
+    // Index order matches _charts/_specs: ram (0-100 % axis), memUsed (0-100 % axis), util,
+    // memUtil, temp, smUtil, power, pcieBw, clock, memClock — the percent charts all seed at 100.
+    private readonly double[] _runningMax = { 100, 100, 100, 100, 100, 100, 400, 32, 2100, 1600 };
 
     // One-shot fit-to-content startup sizing (see OnContentRendered).
     private readonly StackPanel _header;
@@ -307,6 +311,12 @@ public class MainWindow : Window
             });
         }
 
+        // System RAM is read straight from the OS every tick (not NVML), so it samples even if
+        // no GPU were present. Pushed to its own ring; UpdateCharts turns it into a series.
+        var (ramUsed, ramTotal) = SystemMemory.Read();
+        _ramHistory.Enqueue(new RamSample(snap.Timestamp, ramUsed, ramTotal));
+        while (_ramHistory.Count > RamCapacity) _ramHistory.Dequeue();
+
         var rows = new List<GpuRow>(snap.Gpus.Count);
         foreach (var g in snap.Gpus)
         {
@@ -399,22 +409,63 @@ public class MainWindow : Window
                 firstGpu = gpu;
             }
         }
+
+        // System RAM is sampled on the same poll cadence, so its ring length matches the GPU
+        // series. Include it in the shared timeline length (it leads the stack and must plot
+        // even before any GPU sample arrives).
+        RamSample[] ram = _ramHistory.ToArray();
+        if (ram.Length > n) n = ram.Length;
         if (n == 0) return;
 
-        // Shared timeline (seconds since start) from the longest series, so it spans the
-        // full history. Per-GPU value arrays are aligned to it below (front-padded with
-        // zeros when that GPU started later or stopped earlier, so the most-recent samples
-        // always sit at the right edge). Anchored at t=0: before the window fills, data
-        // plots from the left; once it overflows, the view pins to the newest and scrolls
-        // left back toward start.
-        var t0 = samplesByGpu[firstGpu][0].Timestamp;
+        // Shared timeline (seconds since start) from the longest series, so it spans the full
+        // history. Per-series value arrays are aligned to it below (front-padded with zeros when
+        // that source started later, so the most-recent samples always sit at the right edge).
+        // Anchored at t=0: before the window fills, data plots from the left; once it overflows,
+        // the view pins to the newest and scrolls left back toward start. The System RAM ring is
+        // preferred as the time origin because it leads the chart stack (index 0) and samples
+        // every tick, so its timestamps always exist once any data has arrived.
+        DateTimeOffset t0 = ram.Length > 0 ? ram[0].Timestamp : samplesByGpu[firstGpu][0].Timestamp;
         var timeline = new double[n];
         for (int i = 0; i < n; i++)
-            timeline[i] = (samplesByGpu[firstGpu][i].Timestamp - t0).TotalSeconds;
+            timeline[i] = Math.Max(0, ((ram.Length > 0 ? ram[i].Timestamp : samplesByGpu[firstGpu][i].Timestamp) - t0).TotalSeconds);
+
+        // Build the System RAM series once (shared by every chart for the X-axis alignment),
+        // front-padded to length n exactly like the GPU arrays. Only its own chart plots it, but
+        // building it here keeps the padding logic in one place.
+        double[] ramPct = new double[n];
+        {
+            int m = ram.Length;
+            int srcStart = Math.Max(0, m - n);
+            int lead = n - (m - srcStart);
+            for (int i = 0; i < lead; i++) ramPct[i] = 0;
+            for (int i = 0; i < n - lead; i++)
+            {
+                var rs = ram[srcStart + i];
+                ramPct[lead + i] = rs.TotalBytes > 0 ? (double)rs.UsedBytes / rs.TotalBytes * 100.0 : 0.0;
+            }
+        }
 
         for (int c = 0; c < _charts.Count; c++)
         {
             var spec = _specs[c];
+
+            // System RAM chart: single light-blue series under the system key, fixed 0-100 %
+            // axis, denominator = total physical RAM in GiB (drives the "(used / total) GiB"
+            // parenthetical). It has no PCIe metadata.
+            if (spec.SystemRam)
+            {
+                _charts[c].SetSeries(
+                    timeline,
+                    new List<KeyValuePair<int, double[]>> { new(SystemSeriesKey, ramPct) },
+                    100,
+                    spec.Title, spec.Unit, spec.Decimals,
+                    null, null,
+                    ram.Length > 0 && ram[^1].TotalBytes > 0
+                        ? new List<KeyValuePair<int, double>> { new(SystemSeriesKey, ram[^1].TotalBytes / 1073741824.0) }
+                        : null);
+                continue;
+            }
+
             var seriesList = new List<KeyValuePair<int, double[]>>();
             var pcieGenMap = new List<KeyValuePair<int, int[]>>();
             var pcieWidthMap = new List<KeyValuePair<int, int[]>>();
@@ -588,6 +639,26 @@ public class MainWindow : Window
         public string Pcie { get; init; } = string.Empty;
     }
 
+    /// <summary>One System RAM reading (bytes) stamped with the poll time — not tied to any GPU.</summary>
+    private readonly struct RamSample
+    {
+        public RamSample(DateTimeOffset timestamp, long usedBytes, long totalBytes)
+        {
+            Timestamp = timestamp;
+            UsedBytes = usedBytes;
+            TotalBytes = totalBytes;
+        }
+
+        public DateTimeOffset Timestamp { get; }
+        public long UsedBytes { get; }
+        public long TotalBytes { get; }
+    }
+
+    // The System RAM series is stored under this pseudo-device key so it never collides with a
+    // real GPU index (0..N) and sorts first in the legend/crosshair (which order by key). MetricChart
+    // renders any negative key in light blue (MetricChart.SeriesBrush).
+    private const int SystemSeriesKey = -1;
+
     /// <summary>
     /// Declares one charted metric: its title, the Y-axis ceiling, and a selector
     /// that maps a GPU's <see cref="HectorBravo.Nvidia.Contracts.GpuMetricSample"/>
@@ -610,7 +681,13 @@ public class MainWindow : Window
         bool PctValue = false,
         // Card starts collapsed to its header row (the top-left chevron expands it), so
         // the fit-to-content window opens shorter.
-        bool Collapsed = false);
+        bool Collapsed = false,
+        // Lower bound of the log scale in data units (0 = auto, 0.01 × ceiling). PCIe passes
+        // 1 GB/s so its right axis starts at 1G and low link speeds stay visible.
+        double LogFloor = 0,
+        // Plotted from the OS-level System RAM ring instead of a GPU series (single light-blue
+        // line, key = SystemSeriesKey). Selector is unused for these charts.
+        bool SystemRam = false);
 
     /// <summary>Builds the 2-tab control (Overview / Charts); Charts is the default tab.</summary>
     private TabControl BuildTabs()
@@ -629,12 +706,22 @@ public class MainWindow : Window
 
         // ── Charts ──────────────────────────────────────────────
         var stack = new StackPanel { Margin = new Thickness(12, 8, 12, 8) };
-        // Memory Used heads the stack: it is a percentage of *this card's own* memory
-        // (the total NVML reports for it), so cards with different VRAM sizes share one
-        // 0-100 % axis. The same denominator (in MiB) feeds the readout's "(NNNN MiB)"
-        // amount, which goes *after* the percentage (PctValue); the unit is "%" with no
-        // space so the legend reads "80% (19739 MiB)". The cast is mandatory: used/total
-        // are longs, so long/long would truncate to 0/1.
+        // System RAM heads the stack. It is NOT tied to any GPU: it plots the OS-wide physical
+        // memory as a percentage of total (0-100 % axis), so it shares the percentage shape of
+        // Memory Used but its denominator is the machine's total RAM. The readout shows both the
+        // used and total amount in GiB — "NN% (used GiB / total GiB)" — via SystemRam, which also
+        // gives it a light-blue line/swatch (it is stored under the negative system series key).
+        _specs.Add(new ChartSpec("System RAM (%)", "%", 0,
+            s => new List<double>(), // unused: fed from the OS-level RAM ring in UpdateCharts
+            Pct: true,
+            Percent: true,
+            PctValue: true,
+            SystemRam: true));
+        // Memory Used is a percentage of *this card's own* memory (the total NVML reports for it),
+        // so cards with different VRAM sizes share one 0-100 % axis. The same denominator (in MiB)
+        // feeds the readout's "(NNNN MiB)" amount, which goes *after* the percentage (PctValue);
+        // the unit is "%" with no space so the legend reads "80% (19739 MiB)". The cast is
+        // mandatory: used/total are longs, so long/long would truncate to 0/1.
         _specs.Add(new ChartSpec("Memory Used (%)", "%", 0,
             s => s.Select(x => x.MemoryTotalBytes > 0
                 ? (double)x.MemoryUsedBytes / x.MemoryTotalBytes * 100.0
@@ -643,16 +730,17 @@ public class MainWindow : Window
             Percent: true,
             PctBase: s => s.MemoryTotalBytes / 1048576.0,
             PctValue: true));
-        // Only Memory Utilization and Memory Used open expanded; the other seven cards start
-        // collapsed (header row only, the top-left chevron expands them), so the
-        // fit-to-content window opens as short as it can.
+        // Only System RAM and Memory Used open expanded; the other eight cards start collapsed
+        // (header row only, the top-left chevron expands them), so the fit-to-content window
+        // opens as short as it can.
         _specs.Add(new ChartSpec("GPU Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.GpuUtilizationPct).ToList(),
             Percent: true,
             Collapsed: true));
         _specs.Add(new ChartSpec("Memory Utilization (%)", "%", 0,
             s => s.Select(x => (double)x.MemoryUtilizationPct).ToList(),
-            Percent: true));
+            Percent: true,
+            Collapsed: true));
         _specs.Add(new ChartSpec("Temperature (°C)", "°C", 0,
             s => s.Select(x => (double)x.TemperatureGpu).ToList(),
             MinCeiling: 100,
@@ -667,9 +755,12 @@ public class MainWindow : Window
             Pct: true,
             PctBase: s => s.PowerCapWatts,
             Collapsed: true));
+        // Log scale with a fixed 1 GB/s floor: the right axis starts at 1G and low link speeds
+        // (e.g. a PCIe 1.0 x16 card at ~4 GB/s) stay visible instead of pinning near the top.
         _specs.Add(new ChartSpec("PCIe Bandwidth (GB/s)", " GB/s", 1,
             s => s.Select(x => x.PcieBandwidthGbps).ToList(),
             LogScale: true,
+            LogFloor: 1.0,
             Pcie: true,
             Collapsed: true));
         _specs.Add(new ChartSpec("GPU Clock (MHz)", " MHz", 0,
@@ -683,7 +774,14 @@ public class MainWindow : Window
             var chart = new MetricChart(spec.Title);
             chart.Bind(_chartCtl); // before the flags: SetCollapsed repaints via Redraw
             if (spec.LogScale) chart.SetLogScale(true);
+            if (spec.LogFloor > 0) chart.SetLogFloor(spec.LogFloor);
             if (spec.PctValue) chart.SetPctValue(true);
+            if (spec.SystemRam)
+            {
+                // The RAM denominator is GiB, and its parenthetical shows used AND total.
+                chart.SetAbsUnit("GiB");
+                chart.SetShowAbsTotal(true);
+            }
             if (spec.Collapsed) chart.SetCollapsed(true);
             _charts.Add(chart);
             stack.Children.Add(chart);

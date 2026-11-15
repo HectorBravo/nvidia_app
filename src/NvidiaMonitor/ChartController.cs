@@ -83,6 +83,9 @@ public class MetricChart : Border
 
     // Crosshair + per-GPU value readout are always red (per spec).
     private static readonly Brush CrossRed = Frozen("#ff5252");
+    // The System RAM chart is not tied to any GPU, so it uses a fixed light blue for its
+    // line and legend/crosshair swatch (its series key is the negative "system" pseudo-id).
+    public static readonly Brush SysRamBlue = Frozen("#58a6ff");
     // Per-minute gridlines AND the t = 0 "start" marker share one light blue and the same
     // format (per user spec: minute 0 looks exactly like every other minute line).
     private static readonly Brush MinuteBlue = Frozen("#7f9bd1");
@@ -120,6 +123,10 @@ public class MetricChart : Border
     private bool _pctValue;
     // Unit label for that absolute amount (the Memory Used denominator is MiB).
     private string _absUnit = "MiB";
+    // When true the percentage readout's parenthetical shows BOTH the used amount and the
+    // total (System RAM: "NN% (used GiB / total GiB)"). Memory Used keeps the shorter
+    // "NN% (used MiB)" form, so this stays false there. Only meaningful with _pctValue.
+    private bool _showAbsTotal;
 
     private readonly Grid _inner = new();
     // The plot body row (plot + fixed right-hand axis). A field so collapsing can
@@ -215,6 +222,10 @@ public class MetricChart : Border
 
     // When true, Y-axis uses logarithmic scale (for metrics with wide dynamic range).
     private bool _logScale;
+    // Lower bound of the log scale in data units. 0 = "auto" (0.01 × ceiling), the old
+    // behaviour. The PCIe chart sets it to 1 GB/s so the right axis starts at 1G and low
+    // link speeds spread out instead of pinning near the top.
+    private double _logFloor;
     // Per-GPU PCIe link config (gen and width, aligned to the timeline; 0 = N/A) for the
     // legend and hover readout. Only populated on the PCIe chart (via SetSeries).
     private Dictionary<int, int[]> _pcieGen = new();
@@ -360,10 +371,22 @@ public class MetricChart : Border
     /// <summary>Switches this chart to a logarithmic Y-axis (for wide-range metrics like PCIe bandwidth).</summary>
     public void SetLogScale(bool log) => _logScale = log;
 
+    /// <summary>Sets the lower bound of the log scale in data units (0 = auto, 0.01 × ceiling).
+    /// The PCIe chart passes 1 GB/s so its right axis starts at 1G and low values are visible.</summary>
+    public void SetLogFloor(double floor) => _logFloor = floor;
+
     /// <summary>Marks that this chart's plotted values are already percentages of the per-GPU
     /// <c>pctBase</c> denominator (the Memory Used chart): the legend and the hover readout
     /// then lead with "NN %" and show the absolute amount in parentheses instead.</summary>
     public void SetPctValue(bool pctValue) => _pctValue = pctValue;
+
+    /// <summary>Sets the unit shown for the absolute amount in the percentage parenthetical
+    /// (MiB by default; System RAM uses GiB).</summary>
+    public void SetAbsUnit(string unit) => _absUnit = string.IsNullOrEmpty(unit) ? "MiB" : unit;
+
+    /// <summary>Makes the percentage parenthetical show both the used amount and the total
+    /// ("NN% (used GiB / total GiB)") instead of just the used amount. System RAM uses this.</summary>
+    public void SetShowAbsTotal(bool show) => _showAbsTotal = show;
 
     /// <summary>Collapse or expand this card. MainWindow sets the startup state from
     /// <c>ChartSpec.Collapsed</c>; the top-left chevron ("dropbox") toggles it at runtime.
@@ -431,13 +454,26 @@ public class MetricChart : Border
         if (!_logScale)
             return PlotH * (1.0 - value / ceiling);
 
-        // Log scale: bottom = 0.01 * ceiling at y = PlotH, top = ceiling at y = 0.
-        double minLog = Math.Log(ceiling * 0.01);
+        // Log scale: bottom = the log floor at y = PlotH, top = ceiling at y = 0. The floor
+        // is an explicit data value when set (PCIe: 1 GB/s → axis starts at 1G); otherwise it
+        // falls back to 0.01 × ceiling so other log charts keep the previous behaviour.
+        double floor = LogFloor(ceiling);
+        double minLog = Math.Log(floor);
         double maxLog = Math.Log(ceiling);
-        double vLog = Math.Log(Math.Max(value, ceiling * 0.01));
+        double vLog = Math.Log(Math.Max(value, floor));
         double frac = (vLog - minLog) / (maxLog - minLog);
         return PlotH * (1 - Math.Clamp(frac, 0, 1));
     }
+
+    // Series colour: the System RAM pseudo-series (negative key) is always light blue; every
+    // GPU keeps its stable palette slot. Used by the polyline, legend swatch and crosshair.
+    private static Brush SeriesBrush(int key)
+        => key < 0 ? SysRamBlue : Palette[key % Palette.Length];
+
+    // Effective lower bound of the log scale for a given ceiling: an explicit data value when
+    // set (PCIe: 1 GB/s), else 0.01 × ceiling. Shared by ValueToY, gridlines and axis ticks.
+    private double LogFloor(double ceiling)
+        => _logFloor > 0 ? Math.Min(_logFloor, ceiling) : ceiling * 0.01;
 
     /// <summary>Re-renders the full canvas (per-minute gridlines + all series + crosshair),
     /// or — while collapsed — refreshes only the header readouts and draws nothing.</summary>
@@ -544,12 +580,13 @@ public class MetricChart : Border
         // (e.g. PCIe Bandwidth) where the linear charts previously had none.
         if (_logScale)
         {
-            // Gridlines at powers of two within [0.01*max, max]. Their value labels live on
+            // Gridlines at powers of two within [floor, max]. Their value labels live on
             // the fixed right-hand Y-axis (DrawAxis), not in the plot, so the plot stays clear.
+            double floor = LogFloor(max);
             for (int p = 0; p <= 8; p++)
             {
                 double val = Math.Pow(2, p);
-                if (val < max * 0.01 || val > max) continue;
+                if (val < floor || val > max) continue;
                 double y = ValueToY(val, max);
                 _canvas.Children.Add(new Line
                 {
@@ -583,7 +620,7 @@ public class MetricChart : Border
             _canvas.Children.Add(new Polyline
             {
                 Points = pts,
-                Stroke = Palette[kvp.Key % Palette.Length],
+                Stroke = SeriesBrush(kvp.Key),
                 StrokeThickness = 1.6,
                 StrokeStartLineCap = PenLineCap.Flat,
                 StrokeEndLineCap = PenLineCap.Flat,
@@ -630,10 +667,11 @@ public class MetricChart : Border
         // (the very top), and the bottom tick (value = 0) at y = PlotH.
         if (_logScale)
         {
+            double floor = LogFloor(max);
             for (int p = 0; p <= 8; p++)
             {
                 double val = Math.Pow(2, p);
-                if (val < max * 0.01 || val > max) continue;
+                if (val < floor || val > max) continue;
                 DrawAxisTick(val >= 1024 ? $"{val / 1024:0.#}G" : $"{val:0}G", ValueToY(val, max));
             }
         }
@@ -715,7 +753,7 @@ public class MetricChart : Border
             double v = ValueAt(t, _tl, kvp.Value);
             _readout.Children.Add(new Border
             {
-                Background = Palette[kvp.Key % Palette.Length],
+                Background = SeriesBrush(kvp.Key),
                 Width = 9,
                 Height = 9,
                 CornerRadius = new CornerRadius(2),
@@ -724,10 +762,13 @@ public class MetricChart : Border
             });
             string text = Fmt(v) + _unit;
             // Memory Used plots the percentage itself (percent first, then the absolute
-            // MiB amount in parentheses); Power keeps the "value (NN %)" shape.
+            // MiB amount in parentheses); Power keeps the "value (NN %)" shape. System RAM
+            // (_showAbsTotal) shows both the used and total amount: "(used GiB / total GiB)".
             if (_pctBase.TryGetValue(kvp.Key, out double pdenom) && pdenom > 0)
                 text += _pctValue
-                    ? $" ({Fmt(v / 100.0 * pdenom)} {_absUnit})"
+                    ? (_showAbsTotal
+                        ? $" ({Fmt(v / 100.0 * pdenom)} {_absUnit} / {Fmt(pdenom)} {_absUnit})"
+                        : $" ({Fmt(v / 100.0 * pdenom)} {_absUnit})")
                     : $" ({(int)Math.Round(v / pdenom * 100.0, MidpointRounding.AwayFromZero)} %)";
             PcieAt(kvp.Key, sampleIdx, out int gen, out int width);
             if (gen > 0 || width > 0)
@@ -880,7 +921,7 @@ public class MetricChart : Border
             double cur = s.Length > 0 ? s[^1] : 0;
             _legend.Children.Add(new Border
             {
-                Background = Palette[kvp.Key % Palette.Length],
+                Background = SeriesBrush(kvp.Key),
                 Width = 10,
                 Height = 10,
                 CornerRadius = new CornerRadius(2),
@@ -891,10 +932,13 @@ public class MetricChart : Border
             PcieAt(kvp.Key, n > 0 ? n - 1 : 0, out int pgen, out int pwidth);
             string legendText = Fmt(cur) + _unit;
             // Memory Used plots the percentage itself (percent first, then the absolute
-            // MiB amount in parentheses); Power keeps the "value (NN %)" shape.
+            // MiB amount in parentheses); Power keeps the "value (NN %)" shape. System RAM
+            // (_showAbsTotal) shows both the used and total amount: "(used GiB / total GiB)".
             if (_pctBase.TryGetValue(kvp.Key, out double denom) && denom > 0)
                 legendText += _pctValue
-                    ? $" ({Fmt(cur / 100.0 * denom)} {_absUnit})"
+                    ? (_showAbsTotal
+                        ? $" ({Fmt(cur / 100.0 * denom)} {_absUnit} / {Fmt(denom)} {_absUnit})"
+                        : $" ({Fmt(cur / 100.0 * denom)} {_absUnit})")
                     : $" ({(int)Math.Round(cur / denom * 100.0, MidpointRounding.AwayFromZero)} %)";
             if (pgen > 0 || pwidth > 0)
                 legendText += $" [{GpuSnapshot.PcieLinkLabel(pgen, pwidth)}]"; // T15: one space (was two)
