@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-16 00:10:00
-git_head: 760e3c5d8b24cfacd0ede25f05b7855f0afec0ac
+last_indexed: 2026-11-16 00:34:00
+git_head: 2040841e9beb1433a75c3d73e3e403c184853815
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -24,8 +24,8 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   **Log** tabs have been removed (the engine's `AppLog` activity logging remains,
   but is no longer surfaced as a tab). Every chart card also carries a **chevron
   "dropbox" at its top-left** that collapses the card down to just its header row, and
-  **only System RAM and Memory Used open expanded — the other eight cards start
-  collapsed** (T20 + T21, refined by T22, then T27), which is what keeps the calculated fit-to-content window short.
+  **only System RAM, VRAM Memory Used and GPU Utilization open expanded — the other seven cards start
+  collapsed** (T20 + T21, refined by T22, then T27, then T31), which is what keeps the calculated fit-to-content window short.
   It carries the **NVIDIA logo (eye + wordmark) as its app/window icon** (T30) and
   self-updates: `UpdateService` checks GitHub Releases at startup + every hour and,
   when a newer published build of the same compile-date tag exists, shows a flashing
@@ -354,6 +354,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-16 — **T31: GPU Utilization expanded by default** (`MainWindow.cs`, one ChartSpec flag; gui closure): the `GPU Utilization (%)` card lost its `Collapsed: true`, so the startup-expanded set is now System RAM + VRAM Memory Used + GPU Utilization (seven cards still collapsed). Window auto-sizes taller. Merged via PR #3 → consolidated release `gui/2026-11-16-0031` (intermediate gui releases 0008/0010/0015 deleted at user request; changelog covers T29+T30+T31).
 - 2026-11-16 — **T30: NVIDIA logo app/window icon** (new `app.ico` + `nvidia-icon.png`, `NvidiaMonitor.csproj`, `MainWindow.cs`; gui closure): exe/taskbar icon via `<ApplicationIcon>app.ico</ApplicationIcon>` (PNG-embedded ICO, 16–256 px) and WPF window icon from the embedded `nvidia-icon.png` resource (`BitmapFrame.Create(pack://…)` in the ctor, try/catch). Source: logolook.net NVIDIA logo (3840×2160) cropped to the **full eye+wordmark** square, downscaled to **256×256** per user correction. Verified: `ExtractAssociatedIcon` on the built exe + live `WM_GETICON` handles non-null.
 - 2026-11-16 — **T29: update-available banner + one-click auto-update** (new `src/NvidiaMonitor/UpdateService.cs`, `MainWindow.cs`; gui closure): GitHub Releases check at startup + hourly (`releases/tags/gui/<compile-date>` tag from the executing assembly LastWriteTime; offered only when the asset is >120 s newer than the local stamp), flashing light-blue (#58a6ff) **"New version available: <version> (click to update)"** link right of the build stamp; click → zip to %TEMP% → verify → generated swap helper (wait for PID exit, backup exe/dll/json, `Expand-Archive -Force`, relaunch, self-delete) → app shuts down. Failures stay silent/retryable. Verified end-to-end against real release `gui/2026-11-15-2327`.
 - 2026-11-15 — **T28: chart-title disambiguation** (`MainWindow.cs`, titles only; gui closure): renamed the VRAM cards **`Memory Used (%)` → `VRAM Memory Used (%)`** and **`Memory Utilization (%)` → `VRAM Memory Utilization (%)`** so they read clearly against System RAM. No behavior change (build 0/0, republished). Documented why the two differ: *Used* = framebuffer bytes allocated/reserved (`nvmlDeviceGetMemoryInfo`, sticky), *Utilization* = driver-sampled fraction of recent time the memory bus was transferring (`nvmlDeviceGetUtilizationRates().memory`) — so a resident-but-idle model shows high Used and low Utilization.
