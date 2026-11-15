@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/5 | 0m | none |
 | 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
 | 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
 | 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 25m | none |
@@ -72,6 +73,49 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 16-11-2026 01:45:28
+- **Last Updated**: 16-11-2026 01:45:28
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-release-tag-yyyymmdd-hhmm`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-release-tag-yyyymmdd-hhmm)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Banner said "2026-11-16 01:38" (asset `updated_at` reformatted, UTC→local drift) while the actual tag is `gui/2026-11-16-0137` — confusing. Banner now prints the **real release tag** (`info.Tag`).
+  - User mandate: tag/zip format is `yyyyMMdd_HHmm` (e.g. `gui/20261116_0150`, zip `NvidiaMonitor-20261116_0150.zip`).
+  - Compatibility note: old-format tags no longer parse → a pre-T34 build cannot see T34+ releases (must be replaced manually once). Accepted by design.
+
+### User Confirmations
+
+**Pending (awaiting user response):** None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 01:44:00) "releases should have the format YYYYMMDD_HHMM; banner must show the real release name" → implemented as `yyyyMMdd_HHmm` tags + banner = `info.Tag`.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — UpdateService: StampFormat const `yyyyMMdd_HHmm`, parse with it (done in tree)
+- [ ] Subtask 2 — MainWindow banner shows info.Tag (done in tree)
+- [ ] Subtask 3 — release.ps1 + AGENTS.md tag format switched (done in tree)
+- [ ] Subtask 4 — Commit, push, merge to main
+- [ ] Subtask 5 — New consolidated release `gui/<newstamp>` with full changelog since gui/2026-11-11-1812 + these changes; delete gui/2026-11-16-0137
+
+### Full Context Notes for AI Agents
+
+> Self-contained recovery knowledge base.
+
+**Files changed**: `src/NvidiaMonitor/UpdateService.cs` (StampFormat const L52-55, TagStamp uses it, myStamp parse L108, header doc L17); `src/NvidiaMonitor/MainWindow.cs` ShowUpdateAvailable L365-369 (banner = info.Tag with gui/ prefix); `release.ps1` L7 comment + L229 `$dateTag = $stamp.ToString('yyyyMMdd_HHmm')`; `AGENTS.md` L43/L45; `ai/PROJECT_DESCRIPTION.md` §10 auto-update bullet + changelog entry T34.
+
+**Release flow for this task**: merge → publish fresh (clean obj/bin so LastWriteTime is new) → zip exe+dll+json → `gh release create gui/<yyyyMMdd_HHmm> <zip> --title "NvidiaMonitor - built yyyy-MM-dd HH:mm" --notes-file` with the FULL changelog since gui/2026-11-11-1812 (copy body of gui/2026-11-16-0137 via `gh release view`, add: banner shows real tag; tags now yyyyMMdd_HHmm) → verify asset attached → `gh release delete gui/2026-11-16-0137 --cleanup-tag -y`.
+
+**Gotchas**: PowerShell double-quote interpolation corrupts `$PID`/`$pid` in here-strings — use @'…'@; `gh release create` asset attach must be verified with `gh release view`; delete AI branches right after merge.
 
 ---
 

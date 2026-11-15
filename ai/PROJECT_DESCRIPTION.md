@@ -204,13 +204,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   `NvmlTest`).
 
 ## 10. Conventions & Gotchas
-- **Auto-update (T29, `UpdateService.cs`):** checks
-  `https://api.github.com/repos/HectorBravo/nvidia_app/releases/tags/gui/<yyyy-MM-dd-HHmm>`
-  — the tag is built from **`Assembly.GetExecutingAssembly().Location`'s LastWriteTime**,
-  which in a published app is the **DLL**, not the exe (both ship from the same publish, so
-  their stamps agree; local tests must stamp the DLL). An update is offered only when that
-  release exists and its asset `updated_at` is >120 s newer than the local stamp (jitter
-  guard); 404/any error → silent no-op. On click: zip → `%TEMP%`, verified with
+- **Auto-update (T29, `UpdateService.cs`):** lists
+  `https://api.github.com/repos/HectorBravo/nvidia_app/releases?per_page=100`, keeps tags
+  matching `gui/<yyyyMMdd_HHmm>` and offers the newest when its stamp > local build stamp
+  (`Assembly.GetExecutingAssembly().Location`'s LastWriteTime — in a published app that is
+  the **DLL**, not the exe; both ship from the same publish so their stamps agree; local
+  tests must stamp the DLL). Banner text shows the **real tag** (e.g. `gui/20261116_0150`).
+  Any error → silent no-op. On click: zip → `%TEMP%`, verified with
   `ZipFile.OpenRead` (must contain `NvidiaMonitor.exe`, path-escape entries rejected), then a
   generated `%TEMP%\NvidiaMonitor-update.ps1` waits for the PID to exit, backs up
   exe/dll/json, `Expand-Archive -Force` over the app dir, relaunches and self-deletes; the app
@@ -359,6 +359,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - 2026-11-16 — **T29: update-available banner + one-click auto-update** (new `src/NvidiaMonitor/UpdateService.cs`, `MainWindow.cs`; gui closure): GitHub Releases check at startup + hourly (`releases/tags/gui/<compile-date>` tag from the executing assembly LastWriteTime; offered only when the asset is >120 s newer than the local stamp), flashing light-blue (#58a6ff) **"New version available: <version> (click to update)"** link right of the build stamp; click → zip to %TEMP% → verify → generated swap helper (wait for PID exit, backup exe/dll/json, `Expand-Archive -Force`, relaunch, self-delete) → app shuts down. Failures stay silent/retryable. Verified end-to-end against real release `gui/2026-11-15-2327`.
 - 2026-11-15 — **T28: chart-title disambiguation** (`MainWindow.cs`, titles only; gui closure): renamed the VRAM cards **`Memory Used (%)` → `VRAM Memory Used (%)`** and **`Memory Utilization (%)` → `VRAM Memory Utilization (%)`** so they read clearly against System RAM. No behavior change (build 0/0, republished). Documented why the two differ: *Used* = framebuffer bytes allocated/reserved (`nvmlDeviceGetMemoryInfo`, sticky), *Utilization* = driver-sampled fraction of recent time the memory bus was transferring (`nvmlDeviceGetUtilizationRates().memory`) — so a resident-but-idle model shows high Used and low Utilization.
 - 2026-11-15 — **T27: System RAM chart + PCIe log floor + collapse Memory Utilization** (`ChartController.cs` + `MainWindow.cs` + new `SystemMemory.cs`; gui closure only — shared libs untouched): new **System RAM (%)** card at spec index 0 (heads the stack, expanded) plotting OS-wide physical RAM as `% of total`, single light-blue (`#58a6ff`) series under the negative `SystemSeriesKey (-1)`, readout **`NN% (used GiB / total GiB)`**. Fed by `SystemMemory.Read()` (`kernel32!GlobalMemoryStatusEx`) into a cap-720 ring. `ChartSpec` gained `SystemRam` + `LogFloor`; `MetricChart` gained `SysRamBlue`, `SeriesBrush(key)`, `_showAbsTotal`, `SetAbsUnit`, and a shared `LogFloor(ceiling)` helper so the **PCIe log axis now starts at 1 GB/s** (was `0.01×ceiling`) — low link speeds no longer pin near the top. **Memory Utilization is collapsed by default** (only System RAM + Memory Used expanded; 8 of 10 collapsed); `_runningMax` → `{100,100,100,100,100,100,400,32,2100,1600}`. Build 0/0; RAM readout verified live (`22% (28 GiB / 128 GiB)`).
+- 2026-11-16 — **T34: release tag format `yyyyMMdd_HHmm`**: tags/zips/banner switched from `yyyy-MM-dd-HHmm` to `gui|cli/<yyyyMMdd_HHmm>` (`release.ps1`, `UpdateService.StampFormat`, banner now shows the real tag e.g. `gui/20261116_0150`; AGENTS.md updated). NOTE: old-format tags (e.g. `gui/2026-11-11-1812`) no longer parse → pre-T34 builds never detect newer releases; they must be replaced manually once.
 - 2026-11-11 — **T26: changelog in GitHub release notes**: `release.ps1` gains `Get-AppChangelog` (conventional-commit subjects touching each app's closure, docs/`ai/` commits excluded, `[ai]` tag stripped) and a third mode `--changelog <base> [<head>] [gui|cli]` that patches the newest release's notes without rebuilding. `--merge` now auto-prepends a `## What's changed` section to every release body; static footer no longer duplicates "Framework-dependent:". `AGENTS.md` + `README.md` document the mandate. Latest gui release `gui/2026-11-11-1812` patched with its T25 changelog.
 - 2026-11-11 — **T25: single-instance GUI guard**: `App.cs` adds a lockfile-heartbeat guard so only one `NvidiaMonitor` window may run at a time (refusal message + exit code 0 on a second concurrent launch; headless `--print` unaffected). `MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()` each poll tick. No shared-lib change → only the `gui` release stream bumped (`gui/2026-11-11-1812`).
 - 2026-11-11 — **T24: compile-date GitHub Releases enforcement**: `NvmlTest/Program.cs` now prints a

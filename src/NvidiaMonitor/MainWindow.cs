@@ -363,7 +363,9 @@ public class MainWindow : Window
         if (_updateLink == null || _updateBusy) return; // already showing or mid-update
 
         _updateInfo = info;
-        var version = info.PublishedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        // Show the real release tag (e.g. "gui/20261116_0150") — exactly what the
+        // user finds on GitHub — instead of a reformatted publish timestamp.
+        var version = info.Tag.StartsWith("gui/", StringComparison.Ordinal) ? info.Tag : $"gui/{info.Tag}";
         _updateLink.Text = $"New version available: {version} (click to update)";
         _updateLink.Visibility = Visibility.Visible;
         _updateLink.ToolTip = "Download and install the newer published build, then restart automatically.";

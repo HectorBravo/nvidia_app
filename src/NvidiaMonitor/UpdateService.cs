@@ -14,7 +14,7 @@ namespace HectorBravo.Nvidia.Monitor;
 /// Checks GitHub Releases for a newer published build of this app and, on user
 /// request, downloads + applies the update (one-click auto-update).
 ///
-/// Release tags are produced by release.ps1 as "gui/&lt;yyyy-MM-dd-HHmm&gt;" — the
+/// Release tags are produced by release.ps1 as "gui/&lt;yyyyMMdd_HHmm&gt;" — the
 /// compile date (LastWriteTime) of the published exe, which is exactly what the
 /// GUI header prints. So "is there a newer build" = does a GitHub release with
 /// THIS app's exact compile-date tag exist whose zip asset was uploaded after
@@ -49,17 +49,20 @@ public sealed class UpdateService
     public static DateTime BuildStamp =>
         new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).LastWriteTime;
 
-    private static string BuildTag => "gui/" + BuildStamp.ToString("yyyy-MM-dd-HHmm");
+    /// <summary>The stamp format used in release tags (and shown in the banner).</summary>
+    public const string StampFormat = "yyyyMMdd_HHmm";
+
+    private static string BuildTag => "gui/" + BuildStamp.ToString(StampFormat);
 
     /// <summary>
-    /// Tag date part ("yyyy-MM-dd-HHmm") of a "gui/&lt;stamp&gt;" release tag, or null
+    /// Tag date part ("yyyyMMdd_HHmm") of a "gui/&lt;stamp&gt;" release tag, or null
     /// when the tag doesn't parse. The stamp is the publish-time compile date.
     /// </summary>
     private static DateTime? TagStamp(string? tag)
     {
         if (tag == null || !tag.StartsWith("gui/", StringComparison.Ordinal)) return null;
         return DateTime.TryParseExact(
-            tag.Substring(4), "yyyy-MM-dd-HHmm",
+            tag.Substring(4), StampFormat,
             System.Globalization.CultureInfo.InvariantCulture,
             System.Globalization.DateTimeStyles.None, out var dt) ? dt : null;
     }
@@ -102,7 +105,7 @@ public sealed class UpdateService
 
             if (bestStamp == null) return null; // no gui releases at all
             var myStamp = DateTime.ParseExact(
-                BuildStamp.ToString("yyyy-MM-dd-HHmm"), "yyyy-MM-dd-HHmm",
+                BuildStamp.ToString(StampFormat), StampFormat,
                 System.Globalization.CultureInfo.InvariantCulture);
             if (bestStamp <= myStamp) return null; // we ARE the newest published build
 
