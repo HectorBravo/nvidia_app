@@ -117,9 +117,11 @@ public sealed class UpdateService
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
             if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
 
-            // Newest gui release by tag stamp. Tags that don't parse our format are
-            // ranked with DateTime.MinValue so a real-format newest tag always wins;
-            // only when NO gui tag parses does the foreign-format fallback apply.
+            // Newest gui release by publication date (GitHub `created_at`), which is the
+            // format-agnostic notion of "newest" — a foreign-format tag can therefore BE
+            // the newest release and trigger the immediate fallback. Ties break on our
+            // own parseable-stamp ordering.
+            DateTime? bestPublished = null;
             DateTime? bestStamp = null;
             JsonElement bestEl = default;
             foreach (var el in doc.RootElement.EnumerateArray())
@@ -127,15 +129,28 @@ public sealed class UpdateService
                 if (!el.TryGetProperty("tag_name", out var tagEl)) continue;
                 var tagStr = tagEl.GetString();
                 if (tagStr == null || !tagStr.StartsWith("gui/", StringComparison.Ordinal)) continue; // cli/ or foreign — not ours
-                var stamp = TagStamp(tagStr) ?? DateTime.MinValue;
-                if (bestStamp == null || stamp > bestStamp)
+
+                DateTime relPublishedUtc = DateTime.MinValue;
+                if (el.TryGetProperty("created_at", out var caEl)
+                    && caEl.ValueKind == JsonValueKind.String
+                    && DateTimeOffset.TryParse(caEl.GetString(), out var caParsed))
                 {
+                    relPublishedUtc = caParsed.UtcDateTime;
+                }
+                var stamp = TagStamp(tagStr);
+
+                bool better = bestPublished == null
+                    || relPublishedUtc > bestPublished
+                    || (relPublishedUtc == bestPublished && stamp != null && stamp > (bestStamp ?? DateTime.MinValue));
+                if (better)
+                {
+                    bestPublished = relPublishedUtc;
                     bestStamp = stamp;
                     bestEl = el;
                 }
             }
 
-            if (bestStamp == null) return null; // no gui releases at all
+            if (bestPublished == null) return null; // no gui releases at all
 
             if (!bestEl.TryGetProperty("assets", out var assets)
                 || assets.ValueKind != JsonValueKind.Array
