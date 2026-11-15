@@ -72,12 +72,12 @@ public sealed class UpdateService
     /// 1. If the newest gui release's tag parses as our stamp format, offer it only
     ///    when its stamp is strictly newer than ours (exact ordering).
     /// 2. Otherwise (a foreign/unknown tag format — e.g. after a future format
-    ///    change), never let builds get stuck: if the newest release's ZIP asset was
-    ///    published more than 10 minutes after our own compile time, offer it.
-    ///    The margin absorbs publish-time clock skew so a build that IS the latest
-    ///    release doesn't nag about itself seconds after being packaged.
+    ///    change), never let builds get stuck: the newest gui release is by definition
+    ///    NOT this build (its tag doesn't equal our own build tag), so offer it
+    ///    immediately. No timestamp margin — the release time is embedded in our
+    ///    binaries by release.ps1, so there is no clock skew to guard against.
     /// </summary>
-    private static bool IsNewerRelease(string? tag, DateTime assetPublishedUtc)
+    private static bool IsNewerRelease(string? tag)
     {
         var stamp = TagStamp(tag);
         if (stamp != null)
@@ -90,7 +90,9 @@ public sealed class UpdateService
             var myStamp = BuildStamp.Date.AddMinutes((long)BuildStamp.TimeOfDay.TotalMinutes);
             return stamp > myStamp;
         }
-        return assetPublishedUtc > BuildStamp.ToUniversalTime().AddMinutes(10);
+        // Foreign tag format: it can never equal our build tag, so it is a different
+        // (newer) release — offer immediately.
+        return true;
     }
 
     /// <summary>Metadata for an available update, once found.</summary>
@@ -159,7 +161,7 @@ public sealed class UpdateService
 
             // Format-tolerant freshness decision (see IsNewerRelease).
             var bestTagStr = bestEl.GetProperty("tag_name").GetString();
-            if (!IsNewerRelease(bestTagStr, publishedUtc)) return null; // we ARE the newest published build
+            if (!IsNewerRelease(bestTagStr)) return null; // we ARE the newest published build
 
             string releaseUrl = string.Empty;
             if (bestEl.TryGetProperty("html_url", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
