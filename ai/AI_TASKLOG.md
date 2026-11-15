@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 0/5 | 0m | none |
+| 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 10m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
 | 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
@@ -84,8 +84,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span>
 - **Created**: 16-11-2026 03:00:24
-- **Last Updated**: 16-11-2026 03:00:24
-- **Time Spent**: 0m
+- **Last Updated**: 16-11-2026 03:10:00
+- **Time Spent**: 10m
 - **Branch**: [`docs/ai-update-readme-features-and-watch`](https://github.com/HectorBravo/nvidia_app/tree/docs/ai-update-readme-features-and-watch)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -105,11 +105,18 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Rewrite the README intro + "Features" section (GUI dashboard: Charts tab, collapsible cards, System RAM, SM util, PCIe, auto-update banner, single-instance guard, icon; CLI: `--print`, `--watch`, `--probe`).
-- [ ] Subtask 2 — Add a dedicated **Console app (`NvmlTest`) options** section documenting `--print`, `--watch [<seconds>]` (default 1 s), `--probe`, exit codes.
-- [ ] Subtask 3 — Fix the *Planned* / *Contracts* lists (drop implemented items, keep CSV/XML export + process-name resolution).
-- [ ] Subtask 4 — Update the Release policy section to the `gui|cli/<yyyyMMdd_HHmm>` tag format; verify Run examples.
-- [ ] Subtask 5 — Render-check the README (markdown lint-free, links/anchors valid), commit + push branch.
+- [x] Subtask 1 — Rewrite the README intro + "Features" section (GUI dashboard: Charts tab, collapsible cards, System RAM, SM util, PCIe, auto-update banner, single-instance guard, icon; CLI: `--print`, `--watch`, `--probe`).
+- [x] Subtask 2 — Document `NvmlTest` options (`--print`, `--watch [<seconds>]` default 1 s, `--probe`, exit codes) **inside the existing Features + Run sections** (user: no dedicated `--watch` section).
+- [x] Subtask 3 — Fix the *Planned* / *Contracts* lists (drop implemented items, keep CSV/XML export + process-name resolution).
+- [x] Subtask 4 — Update the Release policy section to the `gui|cli/<yyyyMMdd_HHmm>` tag format; verify Run examples.
+- [x] Subtask 5 — Render-check the README (markdown lint-free, links/anchors valid), commit + push branch.
+
+**Live verification performed (16-11-2026 03:04, `bin\NvmlTest\NvmlTest.exe` build 2026-11-15 22:32)**
+- `--print` → exit 0; `Build: …` stamp first; table columns `GPU Name "GPU Usage" "Mem Usage" SM Temp Power Memory MemClk PSt Fan PCIe`; PCIe rendered `4.0 x16 / 32 GB/s` style. Matches the README.
+- `--watch abc` → stderr `Error: --watch requires a numeric seconds value (or omit it for the 1s default)`, exit **2**.
+- `--bogus` → stderr usage line, exit **2**.
+- README final shape: 211 lines; headings `Features` + subsections `Telemetry (both front-ends)` / `WPF dashboard` / `Headless CLI (NvmlTest)` / `Graceful fallback & exit codes` / `Available in the shared Contracts project` / `Planned`. No dedicated `--watch` section (user directive) — it lives as a bullet under Headless CLI + four Run examples.
+- Docs-only change: no source touched, so no compile-date release is due for this branch.
 
 ### Full Context Notes for AI Agents
 
