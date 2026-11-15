@@ -4,7 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 0m | none |
+| 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#096a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/4 | 0m | none |
+| 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
 | 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 25m | none |
 | 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
@@ -71,6 +72,54 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T33: Bottom (minimum) Y-axis tick label clipped in every chart legend
+
+- **Status**: <span style="background-color:#096a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 16-11-2026 01:41:30
+- **Last Updated**: 16-11-2026 01:41:30
+- **Time Spent**: 0m
+- **Branch**: [`fix/ai-axis-min-tick-label-clip`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-axis-min-tick-label-clip)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Every chart's right-hand Y-axis shows its LOWEST tick (e.g. PCIe "1G") cut in half vertically.
+  - Cause: the axis canvas was exactly `PlotH` tall with `ClipToBounds=true`; the bottom tick sits at y = PlotH and its label is centered on it (top = y − 7, ~13 px tall) → lower ~6 px clipped by the canvas edge.
+  - Fix (ChartController.cs): `_axisCanvas.Height = PlotH + 2` (was `PlotH`) + bottom clamp in `DrawAxisTick` (`Math.Clamp(y - 7, 0, PlotH + 2 - 13)`). Tick LINE stays at the true y — only the label gets room; top clamp behavior unchanged.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 01:41:00) Release plan → "new release with all changes of the current one, then delete gui/2026-11-16-0125"
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Fix axis canvas height + label clamp (done in working tree; commit pending)
+- [ ] Subtask 2 — Commit + push branch, merge into main
+- [ ] Subtask 3 — Publish consolidated release (changelog = everything since gui/2026-11-11-1812 + this fix), attach zip, delete gui/2026-11-16-0125
+- [ ] Subtask 4 — Finalize task log on main
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery knowledge base.
+
+**Files changed**: `src/NvidiaMonitor/ChartController.cs` — L300-302 (`_axisCanvas.Height = PlotH + 2;` with comment) and `DrawAxisTick` (~L688-712, clamp line `Canvas.SetTop(lbl, Math.Clamp(y - 7, 0, PlotH + 2 - 13));`).
+
+**Layout facts**: `PlotH = 128`, label FontSize 10 (~13 px line height), tick centered at label top − 7. Axis lives in `_axisScroll` (Auto row), plot canvas is `PlotH + AxisH(16)` tall (bottom 16 px = minute labels strip) so the axis column grows 2 px harmlessly. `_canvas` keeps ClipToBounds; `_axisCanvas` has none — clipping was purely its fixed Height.
+
+**Release workflow specifics for this task** (user-specified): after merge, build+publish → zip exe+dlls+json from `bin\NvidiaMonitor` → `gh release create gui/<stamp>` WITH asset + full changelog since gui/2026-11-11-1812 (reuse the notes body of gui/2026-11-16-0125 — see its text via `gh release view` — plus this fix) → then `gh release delete gui/2026-11-16-0125 --cleanup-tag -y`. Use single-quoted here-string (@'…'@) for notes containing `$PID` (double-quoted here-string interpolates and corrupts it).
+
+**Gotchas learned**: PowerShell eats `$pid` in double quotes → always @'…'@; `gh release create` needs the zip path as arg AND verify with `gh release view` (asset silently missing once); delete AI branches right after merge (user preference 16-11-2026).
+
+**Current state**: edit applied, build clean (0 errors), branch created off main @ gui/2026-11-16-0125-era commit; next: task-log commit → code commit → push → merge → release → delete 0125.
 
 ---
 
