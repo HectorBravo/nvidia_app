@@ -297,7 +297,9 @@ public class MetricChart : Border
         Grid.SetColumn(_plotScroll, 0);
 
         _axisScroll.Content = _axisCanvas;
-        _axisCanvas.Height = PlotH; // match the plot area exactly (no AxisH for minutes)
+        // 2 px taller than PlotH: the bottom tick sits at y = PlotH and its label hangs
+        // ~6 px below the tick center — a canvas of exactly PlotH clipped it mid-glyph.
+        _axisCanvas.Height = PlotH + 2;
         _axisScroll.VerticalAlignment = VerticalAlignment.Top;
         Grid.SetColumn(_axisScroll, 1);
 
@@ -704,8 +706,10 @@ public class MetricChart : Border
         };
         Canvas.SetLeft(lbl, 8);
         // Center the label vertically on the tick: label top at (y - halfLabelHeight).
+        // The canvas is ~2 px taller than PlotH so the BOTTOM tick (y = PlotH) fits
+        // fully — previously its label was clipped mid-glyph ("1G" showed as half a G).
         // Clamp to >= 0 so the topmost tick (y=0) isn't drawn above the canvas.
-        Canvas.SetTop(lbl, Math.Max(y - 7, 0));
+        Canvas.SetTop(lbl, Math.Clamp(y - 7, 0, PlotH + 2 - 13));
         _axisCanvas.Children.Add(lbl);
     }
 
