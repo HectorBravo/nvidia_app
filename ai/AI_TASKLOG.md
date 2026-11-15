@@ -38,6 +38,7 @@
   - Source logo: `https://logolook.net/wp-content/uploads/2024/03/Nvidia-Logo.png` (3840×2160 wallpaper-style PNG, downloaded OK). User wants it ONLY as the app icon + window icon, resized to **max 256×256** (current one is "quite big").
   - Plan: crop/square the source, downscale to ≤256 px, generate `src/NvidiaMonitor/app.ico` (multi-size .ico for exe/taskbar) + `nvidia-icon.png` (for WPF `Window.Icon`).
   - **User correction (16-11-2026)**: first cut cropped ONLY the eye mark — user wants the WHOLE logo (eye + wordmark below) inside the max 256×256 square. Regenerated from the full opaque bbox; verified both bands render.
+  - **User correction #2 (16-11-2026)**: the square *crop* still cut the eye's sides and the wordmark — the source is 3840×**2160 landscape**, so cropping to a square always loses width. Final approach: **contain, never crop** — scale the entire image to 256×144 centered on a transparent 256×256 canvas (ICO sizes keep the same contain ratio). Verified content bbox x=44..212 y=64..192 with both bands present.
 
 ### User Confirmations
 
