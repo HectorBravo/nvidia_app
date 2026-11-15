@@ -4,7 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/4 | 0m | none |
+| 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 0m | none |
+| 16-11-2026 00:23:02 | [T31: GPU Utilization chart card visible (expanded) by default](#task-t31-gpu-utilization-chart-card-visible-expanded-by-default) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 25m | none |
 | 15-11-2026 23:30:41 | [T29: "New update available" notification + one-click auto-update from GitHub Releases](#task-t29-new-update-available-notification--one-click-auto-update-from-github-releases) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m | none |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m | none |
@@ -70,6 +71,65 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 16-11-2026 01:11:44
+- **Last Updated**: 16-11-2026 01:11:44
+- **Time Spent**: 0m
+- **Branch**: [`fix/ai-update-swap-helper-pid-var`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-update-swap-helper-pid-var)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - User reports: clicking the update banner exits the app but nothing is updated or relaunched.
+  - Root cause #1 (fatal): the swap helper script set `$pid = <app pid>`. `$PID` is a **PowerShell read-only automatic variable** → assignment throws under `$ErrorActionPreference='Stop'` → helper dies on its first line, before doing anything. Every auto-update click was silently broken since T29 shipped.
+  - Root cause #2 (would have hit next): the app's single-instance guard (%TEMP%\NvidiaMonitor.lock with heartbeat). After the old instance exits, its lockfile lingers; a relaunch within ~6 s would be refused ("Another instance running"). Helper now deletes the lock and waits until it is gone or provably stale (>7 s old, guard threshold is 6 s) before extracting/relaunching.
+  - Fix: rename helper vars (`$pid`→`$appPid`, `$lock`→`$lockFile`) + add lockfile wait/clear logic in UpdateService.GenerateSwapScript body (UpdateService.cs ~L218-245).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (16-11-2026 01:10:00) "Click-test the banner manually or ship?" → "Skip the click test — commit & ship the fix now"
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Reproduce headlessly via temporary `--selfupdate` flag exercising CheckAsync + DownloadAndApplyAsync
+- [x] Subtask 2 — Diagnose helper failure (manual run of staged script → "$pid is read-only" error)
+- [x] Subtask 3 — Fix swap-helper script ($appPid/$lockFile rename + lockfile wait/clear)
+- [x] Subtask 4 — Re-run headless end-to-end: files swapped in place, backup created, app relaunched
+- [ ] Subtask 5 — Remove temp test code, build clean, commit + push branch (in progress)
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained recovery knowledge base. Written FOR the agent.
+
+**Symptom**: banner appears, click → app exits, no update, no relaunch, %TEMP% has only the leftover `NvidiaMonitor-update.ps1` helper (never consumed).
+
+**Diagnosis trail**:
+1. First headless test (temp `--selfupdate` flag in App.cs Main → RunSelfUpdate calling UpdateService.CheckAsync + DownloadAndApplyAsync): download+verify succeeded, "helper launched", but after 20 s: dll stamp unchanged, no backup dir, app not running, helper script still on disk ⇒ helper died immediately.
+2. Ran the staged helper manually: `powershell -File c:\temp\NvidiaMonitor-update.ps1` → **"No se puede sobrescribir la variable PID porque es de solo lectura o constante"** ($pid is read-only automatic var). That was the whole bug — present since T29's original implementation; earlier "verified end-to-end" claims predate… actually they used a different flow; either way, `$pid=` assignment always throws.
+3. Fixed: `$appPid`, `$lockFile`. Re-ran headless test against fake release `gui/2099-12-31-2358` (asset = zip of exe+dlls+json): download → verify → helper waited for app pid to exit → deleted stale lockfile → backup dir `NvidiaMonitor-backup-gui-*` created with 9 files → Expand-Archive over appDir → Start-Process relaunch. Verified: new process alive from same folder, helper script self-deleted.
+
+**Key file**: `src/NvidiaMonitor/UpdateService.cs` — `DownloadAndApplyAsync` (zip→%TEMP%, verify, build helper script, launch via `cmd /c powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File …`). Helper waits `Get-Process -Id $appPid` to die + 1 s handle drain, then lockfile dance, backup, extract, relaunch, self-delete.
+
+**Single-instance guard**: `App.cs AnotherInstanceRunning()` — %TEMP%\NvidiaMonitor.lock, heartbeat LastWriteTime; considered live if <6 s old. Helper clears it / waits for staleness >7 s.
+
+**Fake release still on GitHub** (must be deleted after user confirms or before next real release): tag `gui/2099-12-31-2358` — delete with `gh release delete gui/2099-12-31-2358 --cleanup-tag -y`.
+
+**Temp test code**: the `--selfupdate` flag + RunSelfUpdate were already REMOVED from App.cs before committing (verified 0 matches). Do NOT re-add.
+
+**Test artifacts**: `c:\temp\nm015\` = stamped copy used for tests; safe to delete.
+
+**Next step**: build clean → commit code on this branch → push -u → user merges → release.ps1 --merge → final log commit on main + ff branch + re-push → delete fake release.
 
 ---
 
