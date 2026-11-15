@@ -217,15 +217,24 @@ public sealed class UpdateService
         // Waits for this process to die (releasing the file locks), backs up the
         // current files, extracts the new ones over the app dir, relaunches, and
         // removes itself. Runs hidden via cmd → powershell.
+        // NOTE: never name helper variables $pid/$lock — PowerShell reserves them.
         var script =
             "$ErrorActionPreference='Stop'\n" +
-            $"$pid={pid}\n" +
+            $"$appPid={pid}\n" +
             $"$zip='{Esc(zipPath)}'\n" +
             $"$appDir='{Esc(appDir)}'\n" +
             $"$backup='{Esc(backupDir)}'\n" +
+            "$lockFile=Join-Path $env:TEMP 'NvidiaMonitor.lock'\n" +
             "$deadline=(Get-Date).AddSeconds(60)\n" +
-            "while((Get-Date) -lt $deadline){ if(-not (Get-Process -Id $pid -ErrorAction SilentlyContinue)){break}; Start-Sleep -Milliseconds 500 }\n" +
+            "while((Get-Date) -lt $deadline){ if(-not (Get-Process -Id $appPid -ErrorAction SilentlyContinue)){break}; Start-Sleep -Milliseconds 500 }\n" +
             "Start-Sleep -Milliseconds 1000\n" + // let the OS finish releasing handles
+            // The relaunched instance must not be refused by the single-instance
+            // guard: clear the dead instance's lockfile AND wait until its
+            // heartbeat is provably stale (> 6 s old, the guard's own threshold).
+            "if(Test-Path $lockFile){ Remove-Item -LiteralPath $lockFile -Force -ErrorAction SilentlyContinue }\n" +
+            "$lockDeadline=(Get-Date).AddSeconds(15)\n" +
+            "while((Get-Date) -lt $lockDeadline){ if(-not (Test-Path $lockFile)){break}; $age=((Get-Date)-[datetime](Get-Item -LiteralPath $lockFile).LastWriteTime).TotalMilliseconds; if($age -gt 7000){break}; Start-Sleep -Milliseconds 500 }\n" +
+            "if(Test-Path $lockFile){ Remove-Item -LiteralPath $lockFile -Force -ErrorAction SilentlyContinue }\n" +
             "New-Item -ItemType Directory -Force -Path $backup | Out-Null\n" +
             "Get-ChildItem -LiteralPath $appDir -Include *.exe,*.dll,*.json -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $backup -Force }\n" +
             "Expand-Archive -LiteralPath $zip -DestinationPath $appDir -Force\n" +
