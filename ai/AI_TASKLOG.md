@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/8 | 0m | none |
 | 11-11-2026 23:39:00 | [T26: Add changelog to GitHub release notes + patch latest gui release](#task-t26-add-changelog-to-github-release-notes-patch-latest-gui-release) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 40m | none |
 | 30-10-2026 12:15:01 | [T19: Build timestamp under the NVIDIA GPU MONITOR title + white Y-axis line and value tick marks](#task-t19-build-timestamp-under-the-nvidia-gpu-monitor-title-white-y-axis-line-and-value-tick-marks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 4m | none |
 | 29-10-2026 23:54:24 | [T18: Fix chart top-edge clip - max-value line changes colour at the 100 percent peak](#task-t18-fix-chart-top-edge-clip-max-value-line-changes-colour-at-the-100-percent-peak) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 13/13 | 50m | none |
@@ -19,6 +20,69 @@
 > 21 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
+---
+
+## Task T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 15-11-2026 22:25:35
+- **Last Updated**: 15-11-2026 22:25:35
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-pcie-log-floor-and-system-ram-chart`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-pcie-log-floor-and-system-ram-chart)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - **User request** (15-11-2026): (1) PCIe graph "was logarithmic" and now looks wrong — after investigation the `LogScale: true` flag is intact in source AND the running binary, so nothing was reverted; the real complaint (confirmed via question) is that the **line sits too high / pinned near the top** → rescale so **low values are visible** and make **1 GB/s the minimum of the right axis**. (2) Add a new **System RAM** chart: same representation as VRAM (plot 0–100 %, parenthetical `(used / total)`), **not tied to any GPU**, light-blue line + swatch. (3) **System RAM is the first graph, expanded by default.** (4) **Memory Utilization (%) → collapsed by default** this iteration.
+  - **PCIe root cause**: `MetricChart.ValueToY` log branch maps `[0.01×ceiling … ceiling]`. With ceiling = max possible bandwidth (32 GB/s for PCIe 4.0 x16) the floor is 0.32 GB/s, so a gen-1 link (~4 GB/s) already renders ~85 % up → looks pinned high. Fix: introduce a **log floor** (`_logFloor`, default `0.01×ceiling`; PCIe sets it to `1.0` GB/s). `ValueToY`, the horizontal gridlines loop, and `DrawAxis` ticks all use the floor instead of `0.01×max`. Result: right axis starts at **1G**, low values spread out.
+  - **System RAM**: single series, key **-1** (the "system" pseudo-device) so it never collides with GPU keys 0..N and sorts first in the legend/crosshair (`OrderBy(Key)`). Light blue `#58a6ff`. Plots **% of total RAM**; denominator = total bytes; `_absUnit = "GiB"` → readout `NN% (used GiB / total GiB)`. Gathered via P/Invoke `GlobalMemoryStatusEx` (ullTotalPhys − ullAvailPhys = used). Self-contained in the monitor app (`SystemMemory.cs`), no NVML dependency.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (15-11-2026 22:24) PCIe graph "looks log but line sits too high/pinned near the top" → rescale so low values are visible, and have **1G as the minimum value of the right axis**.
+- (15-11-2026 22:3x) System RAM chart must be the **first graph**, **expanded by default**; make the current **Memory Utilization (%)** chart **not expanded** (collapsed) by default.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — `ChartController.cs`: add `_logFloor` field + `SetLogFloor(double)`; use it in `ValueToY` (log branch), the horizontal-gridline loop, and `DrawAxis` log ticks (default stays `0.01×ceiling`).
+- [ ] Subtask 2 — `ChartController.cs`: add light-blue brush (`#58a6ff`) + series-colour helper; use it for polyline stroke + legend swatch + crosshair swatch instead of `Palette[key % len]`. Add `_showAbsTotal` so the RAM readout shows `(used / total)`.
+- [ ] Subtask 3 — `SystemMemory.cs` (new): P/Invoke `GlobalMemoryStatusEx` → `(usedBytes, totalBytes)`.
+- [ ] Subtask 4 — `MainWindow.cs`: RAM history field + per-tick sample in `ApplySnapshot`; new `ChartSpec` for System RAM at **index 0** (`Pct`/`Percent`/`PctValue`, `_absUnit GiB`, expanded); Memory Utilization → `Collapsed: true`; PCIe spec `LogFloor: 1.0`.
+- [ ] Subtask 5 — `MainWindow.UpdateCharts`: handle the system chart (key −1, own timeline; ceiling 100; pctBase = total GiB); skip the GPU-only PCIe-max branch for it; align other charts to a shared max-length timeline including RAM.
+- [ ] Subtask 6 — `_runningMax` array + order comment updated for the new chart count.
+- [ ] Subtask 7 — Build (`dotnet build nvidia_app.sln -c Release`) → 0/0; republish both apps to `bin/`; live smoke check.
+- [ ] Subtask 8 — Refresh `ai/PROJECT_DESCRIPTION.md` + AGENTS metadata via project-indexer (source changed).
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: Self-contained recovery context. (Filled in below.)
+
+- Repo: `HectorBravo/nvidia_app` (remote `https://github.com/HectorBravo/nvidia_app`). User branch: `main`. HEAD at task start: `2376408`. Work session start: 15-11-2026 22:25:35.
+- **Files that change**: `src/NvidiaMonitor/ChartController.cs`, `src/NvidiaMonitor/MainWindow.cs`, new `src/NvidiaMonitor/SystemMemory.cs`. Contracts / NvmlCore / NvmlTest unchanged (RAM is OS-level, not NVML).
+- **`ChartController.cs` (`MetricChart`) current relevant state**:
+  - Palette (L74-82): index 3 = `#58a6ff` already exists. Series colour chosen in THREE places by `Palette[kvp.Key % Palette.Length]`: polyline stroke (~L586), crosshair swatch (~L718), legend swatch (~L883). Add helper `private Brush SeriesBrush(int key) => key < 0 ? SysRamBlue : Palette[key % Palette.Length];` + `SysRamBlue = Frozen("#58a6ff")`.
+  - `_logScale` (L217), `SetLogScale` (L361). `ValueToY` log branch (L429-440): `minLog = Math.Log(ceiling*0.01)` → use `_logFloor`; clamp value with `Math.Max(value, floor)`. Add `private double _logFloor;` + `public void SetLogFloor(double f) => _logFloor = f;`. When `_logFloor <= 0`, treat as `ceiling*0.01` (back-compat).
+  - Horizontal gridlines loop (L549-561): `if (val < max*0.01 || val > max) continue;` → use floor. DrawAxis log ticks (L631-638): same bound change so the lowest tick is `1G`.
+  - `_pctValue` + `_absUnit` (L120-122, default "MiB"): System RAM sets `_absUnit = "GiB"` via new `SetAbsUnit(string)`; add `_showAbsTotal` (+ `SetShowAbsTotal(bool)`) so the parenthetical becomes `(used GiB / total GiB)` — VRAM keeps `(NNNN MiB)` by leaving it false. Readout format lives in UpdateLegend (~L895-898) + UpdateCrosshair (~L728-731): `pctBase[key]` carries the **total**; used = `cur/100*total`.
+- **`MainWindow.cs` current state**:
+  - `_runningMax` (L48): `{ 100, 100, 100, 100, 100, 400, 32, 2100, 1600 }`, order comment memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock. Prepend a RAM seed (100) → `{ 100, 100, 100, 100, 100, 100, 400, 32, 2100, 1600 }`, comment: **ram, memUsed, util, memUtil, temp, smUtil, power, pcieBw, clock, memClock**.
+  - `ChartSpec` record (L596-613): Title, Unit, Decimals, Selector(GPU-list→doubles), LogScale, Pcie, Pct, Percent, MinCeiling, PctBase(GPU→double), PctValue, Collapsed. RAM is NOT GPU-based → add `bool SystemRam = false` and `double LogFloor = 0`; give it a null Selector (system path builds its own series).
+  - `_specs.Add(...)` order (L638-680): memUsed(0, expanded), util(1, collapsed), memUtil(2, EXPANDED→make Collapsed), temp(3), smUtil(4), power(5), pcie(6, LogScale+Pcie+Collapsed), gpuClock(7), memClock(8). New: RAM at index 0 (expanded); everything shifts +1.
+  - Build loop (L681-690): `new MetricChart(title)` → `Bind` → `if LogScale SetLogScale` (+ `if LogFloor>0 SetLogFloor`) → `if PctValue SetPctValue` (+ `if SystemRam SetAbsUnit("GiB")` + `SetShowAbsTotal(true)`) → `if Collapsed SetCollapsed`.
+  - `ApplySnapshot` (L276-336): per-GPU `_history.Add(...)`. Add one RAM sample/tick to a separate bounded ring (`Queue<RamSample>` capacity 720).
+  - `UpdateCharts` (L384-509): builds shared timeline from GPU series; per chart loops GPUs. For the RAM chart: build its own value array + timeline from the RAM ring, single series key −1, ceiling 100, pctBase[−1] = totalBytes/2^30 (GiB). Skip the PCIe-max branch (L485-495) for SystemRam. Keep shared X-axis consistent: compute `n` as max over GPU series AND the RAM ring; front-pad shorter arrays (existing lead/zero-pad pattern).
+- **`SystemMemory.cs` (new)**: `internal static class SystemMemory { [StructLayout(LayoutKind.Sequential)] MEMORYSTATUSEX …; [DllImport("kernel32.dll", SetLastError=true, EntryPoint="GlobalMemoryStatusEx")] static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer); public static (long used,long total) Read() { var m=new MEMORYSTATUSEX{dwLength=Marshal.SizeOf<MEMORYSTATUSEX>()}; if(!GlobalMemoryStatusEx(ref m)) return (0,0); total=m.ullTotalPhys; used=total-m.ullAvailPhys; } }`.
+- **Colour**: light blue `#58a6ff` for line + swatch. RAM uses key −1 so it never maps to a GPU palette slot; still add explicit `SysRamBlue`.
+- **Verification**: `dotnet build nvidia_app.sln -c Release --nologo` → 0/0 (TreatWarningsAsErrors on Contracts+NvmlCore). Republish NvidiaMonitor→bin/NvidiaMonitor + NvmlTest→bin/NvmlTest (kill running exe first: `Stop-Process -Name NvidiaMonitor -ErrorAction SilentlyContinue`). Live check: RAM chart first + expanded, light blue, reads `NN% (used GiB / total GiB)`; Memory Utilization collapsed; PCIe axis lowest tick = 1G and low values visible.
+- **Git protocol**: branch off `main` @ `2376408`. Dedicated `docs(ai):` log commit before push (this file only), push `-u`, then code commit(s). After user merges → final log commit on `main` + `merge --ff-only origin/main` + `--force-with-lease` re-push. Commits use `GIT_AUTHOR_NAME=AI_bot GIT_COMMITTER_NAME=AI_bot`, `[ai]` tag, email stays hbravo@cuic.net.
+- **Post-merge**: per AGENTS Compile-Date Releases rule run `.\release.ps1 --merge <pre> <post>` (gui closure changed → gui release; cli NOT touched since shared libs unchanged). Close running NvidiaMonitor.exe first.
+
 ---
 
 ## Task T26: Add changelog to GitHub release notes + patch latest gui release
