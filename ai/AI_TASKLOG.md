@@ -29,8 +29,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 15-11-2026 23:30:41
-- **Last Updated**: 15-11-2026 23:30:41
-- **Time Spent**: 0m
+- **Last Updated**: 15-11-2026 23:57:00
+- **Time Spent**: 26m
 - **Branch**: [`feat/ai-update-available-notification`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-update-available-notification)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -38,6 +38,9 @@
   - Releases are named `gui/<yyyy-MM-dd-HHmm>` / `cli/<yyyy-MM-dd-HHmm>` (release.ps1), the tag suffix being the exe's LastWriteTime — i.e. the same compile date the GUI header prints. So "is there a newer build" = does a release with this app's exact compile-date tag exist whose asset is newer than the local exe.
   - New file `src/NvidiaMonitor/UpdateService.cs` (GUI-only, no shared-lib change → only the gui release stream is affected). Checks once at startup + every 1 h; downloads the zip to %TEMP%, verifies it, writes a self-elevating-free `update.ps1` helper that waits for the app to exit, backs up the old files and extracts the new ones into the app dir, then exits the app.
   - No NuGet packages allowed → JSON parsed with `System.Text.Json` (in-box) via `HttpClient`.
+  - **Assembly stamp gotcha**: in a published app, `Assembly.GetExecutingAssembly().Location` is the app **DLL**, not the exe — the update check reads `NvidiaMonitor.dll`'s LastWriteTime. release.ps1 zips both from the same publish, so their stamps agree; but any *local* test of the banner must stamp the DLL (not only the exe).
+  - Verified live end-to-end against real release `gui/2026-11-15-2327`: negative path (own tag → 404 → silent), jitter guard (asset +24 s newer → not offered), positive path (delta 204 s → banner "New version available: 2026-11-15 23:27 (click to update)", flashing light blue), and the full click flow (zip downloaded 131,858 B → verified → helper waited for exit → files replaced → relaunched).
+  - `BeginOpacityAnimation` is NOT available on TextBlock in this stack — used `BeginAnimation(UIElement.OpacityProperty, …)` instead.
 
 ### User Confirmations
 
@@ -51,12 +54,11 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — New `UpdateService.cs`: GitHub Releases check for the exact `gui/<compile-date>` tag + asset metadata.
-- [ ] Subtask 2 — In `UpdateService.cs`: download zip to temp, verify, write+launch `update.ps1` swap helper, exit app.
-- [ ] Subtask 3 — `MainWindow.cs`: start check on load; hourly `DispatcherTimer`; dispose-safe.
-- [ ] Subtask 4 — Dark-themed "Update available" dialog (Update now / Later / View release page) + status feedback.
-- [ ] Subtask 4 — Inline clickable "update available" link right of the build-stamp in the header (no dialog) + status feedback while downloading.
-- [ ] Subtask 5 — Build the solution, verify no warnings/errors; sanity-test the check logic.
+- [x] Subtask 1 — New `UpdateService.cs`: GitHub Releases check for the exact `gui/<compile-date>` tag + asset metadata.
+- [x] Subtask 2 — In `UpdateService.cs`: download zip to temp, verify, write+launch `update.ps1` swap helper, exit app.
+- [x] Subtask 3 — `MainWindow.cs`: start check on load; hourly `DispatcherTimer`; dispose-safe.
+- [x] Subtask 4 — Inline clickable "New version available: <version>" banner right of the build-stamp (flashing light blue #58a6ff, no dialog) + progress feedback while downloading.
+- [x] Subtask 5 — Build the solution (0 warn/0 err); live end-to-end test passed: banner shown → click → zip downloaded+verified → swap helper replaced files (dll LWT 23:24→23:27) → app relaunched.
 
 ### Full Context Notes for AI Agents
 
