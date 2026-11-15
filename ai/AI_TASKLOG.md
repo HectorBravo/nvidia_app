@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 0m | none |
+| 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
 | 16-11-2026 01:41:30 | [T33: Bottom (minimum) Y-axis tick label clipped in every chart legend](#task-t33-bottom-minimum-y-axis-tick-label-clipped-in-every-chart-legend) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 5m | none |
 | 16-11-2026 01:11:44 | [T32: Fix auto-update swap helper (reserved $pid var killed it; lockfile blocked relaunch)](#task-t32-fix-auto-update-swap-helper-reserved-pid-var-killed-it-lockfile-blocked-relaunch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 30m | none |
@@ -79,13 +79,13 @@
 
 ## Task T35: Format-tolerant update check + deterministic release stamp in release.ps1
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 16-11-2026 02:03:47
-- **Last Updated**: 16-11-2026 02:03:47
-- **Time Spent**: 0m
-- **Branch**: [`fix/ai-update-check-format-tolerant`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-update-check-format-tolerant)
-- **Commit(s)**: pending
+- **Last Updated**: 16-11-2026 02:12:30
+- **Time Spent**: 15m
+- **Branches**: ~~`fix/ai-update-check-format-tolerant`~~ (PR #7 → `9fcbac7`) + follow-up ~~`fix/ai-self-nag-minute-truncation`~~ (PR #8 → `09620f3`); both deleted
+- **Commit(s)**: [232617d](https://github.com/HectorBravo/nvidia_app/commit/232617d), [67510cc](https://github.com/HectorBravo/nvidia_app/commit/67510cc) — released as gui/20261116_0210
 - **Blockers**: none
 - **Findings & Notes**:
   - User mandate: whatever the tag format is, if the newest release's identity differs from this build's stamp, notify — never get stuck again (the 0137-era build was stuck because old tags stopped parsing after T34).
@@ -104,9 +104,11 @@
 
 - [x] Subtask 1 — UpdateService: IsNewerRelease (format-tolerant) + ranking fix
 - [x] Subtask 2 — release.ps1: single $releaseStamp written into published dll/exe
-- [ ] Subtask 3 — Post-merge live re-verification (0147-stamped build must NOT banner against gui/20261116_0147; new release MUST banner it)
-- [ ] Subtask 4 — Commit, push, merge to main
-- [ ] Subtask 5 — New consolidated release via release.ps1 flow (deterministic stamp), delete gui/20261116_0147
+- [x] Subtask 3 — Live verification (02:10-stamped build → NO banner vs gui/20261116_0210; 02:09-stamped build → banner "gui/20261116_0210")
+- [x] Subtask 4 — Commit, push, merge to main (PR #7 → `9fcbac7`; self-nag follow-up PR #8 → `09620f3`)
+- [x] Subtask 5 — Releases gui/20261116_0203 (interim) and gui/20261116_0210 (final, consolidated notes); deleted gui/20261116_0147 + gui/20261116_0203
+
+**Follow-up bug found & fixed during verification**: T35's `new DateTime(Ticks - TimeOfDay.Ticks)` minute-truncation breaks on non-whole-hour UTC offsets (+04:00 here) → every build nagged about its own release. Fixed to `BuildStamp.Date.AddMinutes((long)TimeOfDay.TotalMinutes)` (PR #8). Releases 0147/0203 carried the bug and were deleted; gui/20261116_0210 is clean.
 
 ### Full Context Notes for AI Agents
 
