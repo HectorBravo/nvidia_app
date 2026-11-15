@@ -82,7 +82,12 @@ public sealed class UpdateService
         var stamp = TagStamp(tag);
         if (stamp != null)
         {
-            var myStamp = new DateTime(BuildStamp.Ticks - BuildStamp.TimeOfDay.Ticks); // minute-truncated local
+            // Minute-truncate our compile time to the tag's minute resolution using .Date +
+            // whole minutes. Must NOT use Ticks - TimeOfDay.Ticks: that breaks when the local
+            // UTC offset is not a whole number of hours (e.g. +04:00), which made every build
+            // nag about its own release. With correct truncation, our own release's tag stamp
+            // equals this minute → not greater → no self-nag; any later minute → offer.
+            var myStamp = BuildStamp.Date.AddMinutes((long)BuildStamp.TimeOfDay.TotalMinutes);
             return stamp > myStamp;
         }
         return assetPublishedUtc > BuildStamp.ToUniversalTime().AddMinutes(10);
