@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-15 22:38:00
-git_head: 3b43450454ae353a86459b0fe364b138b8661bd2
+last_indexed: 2026-11-15 23:10:00
+git_head: 04f1b78a34b05ac784f4a2358f604422fcd471da
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -310,6 +310,15 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   now `Collapsed: true`**, so only **System RAM + Memory Used** open expanded (**8 of 10 collapsed**); `_runningMax`
   grew to `{100,100,100,100,100,100,400,32,2100,1600}` with the order comment **ram, memUsed, util, memUtil, temp,
   smUtil, power, pcieBw, clock, memClock**. The shared timeline length/time-origin now include the RAM ring.
+  **T28: chart-title disambiguation + the two VRAM memory metrics explained** (`MainWindow.cs`, titles only):
+  the cards are renamed **`Memory Used (%)` → `VRAM Memory Used (%)`** and **`Memory Utilization (%)` →
+  `VRAM Memory Utilization (%)`** (the older prose above still uses the pre-T28 names). They measure **different
+  things** and rarely match: **VRAM Memory Used (%)** = `MemoryUsedBytes / MemoryTotalBytes × 100` from
+  `nvmlDeviceGetMemoryInfo` — how much of the card's framebuffer is **allocated/reserved** (sticky, only drops when
+  buffers are freed); **VRAM Memory Utilization (%)** = `nvmlDeviceGetUtilizationRates().memory` (`MemoryUtilizationPct`)
+  — the driver-sampled fraction of recent time the memory bus was **actively transferring data**. A model can hold many
+  GB resident (Used high) yet be idle between steps (Utilization low), so Used stays flat near its allocation level while
+  Utilization spikes toward 100 % only during real bandwidth traffic.
 - `bin/` is **git-ignored** and produced by `dotnet publish`, not by `dotnet build`.
 - **README staleness (as of this index):** `README.md` still lists the live **charts**
   under "Planned (next iteration)", but they are now implemented in `NvidiaMonitor`
@@ -317,6 +326,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-15 — **T28: chart-title disambiguation** (`MainWindow.cs`, titles only; gui closure): renamed the VRAM cards **`Memory Used (%)` → `VRAM Memory Used (%)`** and **`Memory Utilization (%)` → `VRAM Memory Utilization (%)`** so they read clearly against System RAM. No behavior change (build 0/0, republished). Documented why the two differ: *Used* = framebuffer bytes allocated/reserved (`nvmlDeviceGetMemoryInfo`, sticky), *Utilization* = driver-sampled fraction of recent time the memory bus was transferring (`nvmlDeviceGetUtilizationRates().memory`) — so a resident-but-idle model shows high Used and low Utilization.
 - 2026-11-15 — **T27: System RAM chart + PCIe log floor + collapse Memory Utilization** (`ChartController.cs` + `MainWindow.cs` + new `SystemMemory.cs`; gui closure only — shared libs untouched): new **System RAM (%)** card at spec index 0 (heads the stack, expanded) plotting OS-wide physical RAM as `% of total`, single light-blue (`#58a6ff`) series under the negative `SystemSeriesKey (-1)`, readout **`NN% (used GiB / total GiB)`**. Fed by `SystemMemory.Read()` (`kernel32!GlobalMemoryStatusEx`) into a cap-720 ring. `ChartSpec` gained `SystemRam` + `LogFloor`; `MetricChart` gained `SysRamBlue`, `SeriesBrush(key)`, `_showAbsTotal`, `SetAbsUnit`, and a shared `LogFloor(ceiling)` helper so the **PCIe log axis now starts at 1 GB/s** (was `0.01×ceiling`) — low link speeds no longer pin near the top. **Memory Utilization is collapsed by default** (only System RAM + Memory Used expanded; 8 of 10 collapsed); `_runningMax` → `{100,100,100,100,100,100,400,32,2100,1600}`. Build 0/0; RAM readout verified live (`22% (28 GiB / 128 GiB)`).
 - 2026-11-11 — **T26: changelog in GitHub release notes**: `release.ps1` gains `Get-AppChangelog` (conventional-commit subjects touching each app's closure, docs/`ai/` commits excluded, `[ai]` tag stripped) and a third mode `--changelog <base> [<head>] [gui|cli]` that patches the newest release's notes without rebuilding. `--merge` now auto-prepends a `## What's changed` section to every release body; static footer no longer duplicates "Framework-dependent:". `AGENTS.md` + `README.md` document the mandate. Latest gui release `gui/2026-11-11-1812` patched with its T25 changelog.
 - 2026-11-11 — **T25: single-instance GUI guard**: `App.cs` adds a lockfile-heartbeat guard so only one `NvidiaMonitor` window may run at a time (refusal message + exit code 0 on a second concurrent launch; headless `--print` unaffected). `MainWindow.OnLoaded`/`ApplySnapshot` call `App.RefreshInstanceLock()` each poll tick. No shared-lib change → only the `gui` release stream bumped (`gui/2026-11-11-1812`).
