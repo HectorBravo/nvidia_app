@@ -127,7 +127,7 @@
 
 **Post-merge record (18-11-2026 19:01)**
 - PR [#15](https://github.com/HectorBravo/nvidia_app/pull/15) merged into `main` with a merge commit: [1263665](https://github.com/HectorBravo/nvidia_app/commit/1263665bbc39e27835cfe4c039e0ff85bc1fc8bf). Pre-merge `main` was [6d0a466](https://github.com/HectorBravo/nvidia_app/commit/6d0a4669773518075523fdd6d35f6783b8e058c8).
-- Release step: `.\release.ps1 --merge 6d0a466 1263665` → record the resulting `cli/<yyyyMMdd_HHmm>` tag below.
+- Release step: `.\release.ps1 --merge 6d0a466 1263665` → published **only** the cli stream (`[merge] NvidiaMonitor unchanged -> skipped`): [`cli/20261118_1902`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261118_1902), asset `NvmlTest-20261118_1902.zip`, changelog line "refactor(cli): compact the table (2-line headers, tight units, integer W/GB, Id column) (4f274ce)". Final task-log commit: [2094b3f](https://github.com/HectorBravo/nvidia_app/commit/2094b3f4f09b30bb2944c6b69e02f78e37b9557d) on `main`; the AI branch was fast-forwarded onto it and re-pushed (both at `2094b3f`).
 
 **Target shape (the exact output this task must produce)**
 ```
