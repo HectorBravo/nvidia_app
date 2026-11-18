@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 10m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
 | 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
@@ -78,7 +79,75 @@
 
 ---
 
-## Task T36: Authenticate GitHub API update checks
+## Task T37: Update README.md with the new features + document NvmlTest --watch
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span>
+- **Created**: 16-11-2026 03:00:24
+- **Last Updated**: 16-11-2026 03:06:37
+- **Time Spent**: 12m
+- **Branch**: [`docs/ai-update-readme-features-and-watch`](https://github.com/HectorBravo/nvidia_app/tree/docs/ai-update-readme-features-and-watch) — PR [#13](https://github.com/HectorBravo/nvidia_app/pull/13) → `main`
+- **Commit(s)**: [f562325](https://github.com/HectorBravo/nvidia_app/commit/f562325) (task log, before push) · [96123a2](https://github.com/HectorBravo/nvidia_app/commit/96123a2) (README) · [e055ca6](https://github.com/HectorBravo/nvidia_app/commit/e055ca6) (task log progress)
+- **Blockers**: none
+- **Findings & Notes**
+  - `README.md` (last touched 11-11-2026, commit `9974feb`) is ~25 tasks stale: it still advertises "Features (v1)", lists the live **Charts** tab under *Planned*, and never mentions `NvmlTest --watch`, `--probe`, SM utilization, PCIe link/bandwidth, System RAM, collapsible cards, auto-update, single-instance guard, or the `yyyyMMdd_HHmm` release tags.
+  - `ai/PROJECT_DESCRIPTION.md` §10 already flags this explicitly as README staleness ("charts are now implemented… Processes and Log tabs no longer exist").
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- None yet.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Rewrite the README intro + "Features" section (GUI dashboard: Charts tab, collapsible cards, System RAM, SM util, PCIe, auto-update banner, single-instance guard, icon; CLI: `--print`, `--watch`, `--probe`).
+- [x] Subtask 2 — Document `NvmlTest` options (`--print`, `--watch [<seconds>]` default 1 s, `--probe`, exit codes) **inside the existing Features + Run sections** (user: no dedicated `--watch` section).
+- [x] Subtask 3 — Fix the *Planned* / *Contracts* lists (drop implemented items, keep CSV/XML export + process-name resolution).
+- [x] Subtask 4 — Update the Release policy section to the `gui|cli/<yyyyMMdd_HHmm>` tag format; verify Run examples.
+- [x] Subtask 5 — Render-check the README (markdown lint-free, links/anchors valid), commit + push branch.
+
+**Live verification performed (16-11-2026 03:04, `bin\NvmlTest\NvmlTest.exe` build 2026-11-15 22:32)**
+- `--print` → exit 0; `Build: …` stamp first; table columns `GPU Name "GPU Usage" "Mem Usage" SM Temp Power Memory MemClk PSt Fan PCIe`; PCIe rendered `4.0 x16 / 32 GB/s` style. Matches the README.
+- `--watch abc` → stderr `Error: --watch requires a numeric seconds value (or omit it for the 1s default)`, exit **2**.
+- `--bogus` → stderr usage line, exit **2**.
+- README final shape: 211 lines; headings `Features` + subsections `Telemetry (both front-ends)` / `WPF dashboard` / `Headless CLI (NvmlTest)` / `Graceful fallback & exit codes` / `Available in the shared Contracts project` / `Planned`. No dedicated `--watch` section (user directive) — it lives as a bullet under Headless CLI + four Run examples.
+- Docs-only change: no source touched, so no compile-date release is due for this branch.
+
+### Full Context Notes for AI Agents
+
+**Repo / environment**
+- Working dir `D:\Repos\nvidia_app`, Windows PowerShell, branch created from `main` @ `d900ca3`.
+- Remote: `https://github.com/HectorBravo/nvidia_app.git` (repo_url = that minus `.git`).
+- Docs-only change → **no code touched**, so the compile-date release rule (AGENTS.md) does **not** apply; nothing to publish.
+
+**Exact current README structure (`README.md`, 145 lines)**
+1. L1–5 title + two screenshots (`screenshot.png`, `screenshot2.png` — Git LFS).
+2. L7–12 intro (two front-ends over one NVML engine).
+3. L14 "## Features (v1)" — telemetry list, per-GPU process enumeration, WPF overview-grid bullet, live polling, headless CLI (`--print` for both apps), graceful fallback.
+4. L35 "### Available in the shared `Contracts` project (ready to surface)" — `Exporter.ToCsv/ToXml`.
+5. L39 "### Planned (next iteration)" — charts (NOW DONE), Processes/Log tabs (REMOVED as tabs), process-name resolution (still open), `--print --watch` (NOW DONE in the CLI).
+6. L46 "## Solution layout" table; L57 Build; L66 publish; L75 Release policy; L100 Run; L128 Requirements; L137 Notes.
+
+**Facts to write into the README (verified against source, 16-11-2026)**
+- **CLI options** — `src/NvmlTest/Program.cs` L18–68: flags case-insensitive. `--print`; `--watch [<seconds>]` implies `--print`, value optional → default **1 s**, clamped to ≥0.1 s, explicit non-numeric → exit **2**; live loop does `Console.Clear()` (guarded when stdout is redirected), prints a `NvmlTest --watch (every Ns) — Ctrl-C to stop` header, NVML hiccups warn on stderr and retry next tick; Ctrl-C exits cleanly with **0**. `--probe` → `NvmlProbe.Run()` (NVML version + legacy `nvmlDeviceGetProcessUtilization` + batched `nvmlDeviceGetProcessesUtilizationInfo` version-constant sweep), independent of the table printer. Unknown/absent mode → usage on stderr, exit **2**. Every non-probe run prints a `Build: yyyy-MM-dd HH:mm` stamp (assembly LastWriteTime) first.
+- **CLI table** — `SmiFormatter.cs`: nvidia-smi-style table incl. an **SM** utilization column and a **PCIe** column rendered as `{gen}.0 x{width} / {bandwidth} GB/s`.
+- **GUI tabs** — 2 tabs, **Overview** + **Charts**; Charts is the startup tab; Processes/Log tabs were removed (`MainWindow.cs`).
+- **Charts** — 10 native-WPF cards (no NuGet): System RAM (%), VRAM Memory Used (%), GPU Utilization (%), VRAM Memory Utilization (%), Temperature, SM Utilization, Power, PCIe Bandwidth (log Y, floor 1 GB/s), GPU Clock, Memory Clock. Expanded at startup: **System RAM + VRAM Memory Used + GPU Utilization**; the other seven start collapsed; every card has a top-left chevron to collapse/expand. Shared timeline, synchronized crosshair, `Ctrl+wheel` zoom (window 2–60 min, default 10), history ring buffer cap 720 (~12 min @ 1 Hz).
+- **Extra telemetry** — SM utilization (per-process sum, clamped 100), PCIe link gen×width + theoretical bandwidth, ECC, NVLink count, throttle reasons; **System RAM** comes from `kernel32!GlobalMemoryStatusEx` (`SystemMemory.cs`), not NVML.
+- **Window / chrome** — opens at a calculated fit-to-content size (never maximized), green "slide" scrollbars always reserved 13 px, NVIDIA eye+wordmark icon (`app.ico` + `nvidia-icon.png`), build stamp under the title, dark theme.
+- **Self-update** — `UpdateService.cs`: GitHub Releases check at startup + hourly; flashing light-blue "New version available: gui/<tag> (click to update)" right of the build stamp; click downloads the release zip and swaps files via a temp PowerShell helper that relaunches the app. API calls are authenticated when `GITHUB_TOKEN`/`GH_TOKEN` is set or `gh auth token` works (5000/hr), else anonymous (60/hr).
+- **Single instance** — `App.cs` lockfile heartbeat `%TEMP%\NvidiaMonitor.lock`; a second concurrent GUI launch prints a refusal and exits 0; headless `--print` unaffected.
+- **Release tags** — `gui|cli/<yyyyMMdd_HHmm>` (`release.ps1 --merge <pre> <post>`, `--force gui|cli`, `--changelog <base> [<head>] [gui|cli]`), auto `## What's changed` changelog. Old `yyyy-MM-dd-HHmm` tags are what the README currently shows → must be corrected.
+
+**Current state / next step**: branch created, task log entry written (this section). Next: rewrite `README.md` subtasks 1–4, then commit + push (`git push -u`).
+
+---
+
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
