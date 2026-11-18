@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/5 | 4m | none |
+| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
 | 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
@@ -83,13 +83,13 @@
 
 ## Task T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)
 
-- **Status**: in_progress
-- **Type**: refactor
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
 - **Created**: 18-11-2026 18:57:11
-- **Last Updated**: 18-11-2026 18:57:11
-- **Time Spent**: 0m
-- **Branch**: [`refactor/ai-compact-cli-table`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-compact-cli-table)
-- **Commit(s)**: pending
+- **Last Updated**: 18-11-2026 19:01:39
+- **Time Spent**: 8m
+- **Branch**: [`refactor/ai-compact-cli-table`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-compact-cli-table) — PR [#15](https://github.com/HectorBravo/nvidia_app/pull/15) → `main` (merged)
+- **Commit(s)**: [76bd261](https://github.com/HectorBravo/nvidia_app/commit/76bd261) (task log, before push) · [4f274ce](https://github.com/HectorBravo/nvidia_app/commit/4f274ce) (formatter) · [8fdb40d](https://github.com/HectorBravo/nvidia_app/commit/8fdb40d) (docs + project map) · merge [1263665](https://github.com/HectorBravo/nvidia_app/commit/1263665bbc39e27835cfe4c039e0ff85bc1fc8bf)
 - **Blockers**: none
 - **Findings & Notes**
   - Only `src/NvmlTest/SmiFormatter.cs` needs to change — the table renderer is self-contained (width constants + header/dash/row blocks); `Program.cs` and `SystemMemory.cs` stay untouched. Still a **cli-closure-only** change → only `cli/<yyyyMMdd_HHmm>` publishes.
@@ -122,8 +122,12 @@
 - [x] Subtask 1 — Rework the width constants + `Sep = 1`, rename the first column to `Id`, and re-wrap every value formatter (`Pct`, `TempVal`, `Power`/`Watts` integer, `MemClkVal`, `Memory`, `SysRam`/`Gb` integer).
 - [x] Subtask 2 — Emit the two header lines (wrapped labels; short names on line 2 only) + one dash line.
 - [x] Subtask 3 — Build + run `--print` / `--watch` and verify alignment, compact values and that the widest value still fits its column.
-- [ ] Subtask 4 — README bullet refresh (compact table description); task log before push; push branch + PR.
-- [ ] Subtask 5 — After merge: final log commit on `main`, fast-forward + re-push branch, `.\release.ps1 --merge <pre> <post>` (cli only), record the tag.
+- [x] Subtask 4 — README bullet refresh (compact table description); task log before push; push branch + PR.
+- [x] Subtask 5 — After merge: final log commit on `main`, fast-forward + re-push branch, `.\release.ps1 --merge <pre> <post>` (cli only), record the tag.
+
+**Post-merge record (18-11-2026 19:01)**
+- PR [#15](https://github.com/HectorBravo/nvidia_app/pull/15) merged into `main` with a merge commit: [1263665](https://github.com/HectorBravo/nvidia_app/commit/1263665bbc39e27835cfe4c039e0ff85bc1fc8bf). Pre-merge `main` was [6d0a466](https://github.com/HectorBravo/nvidia_app/commit/6d0a4669773518075523fdd6d35f6783b8e058c8).
+- Release step: `.\release.ps1 --merge 6d0a466 1263665` → record the resulting `cli/<yyyyMMdd_HHmm>` tag below.
 
 **Target shape (the exact output this task must produce)**
 ```
@@ -2586,6 +2590,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m |
