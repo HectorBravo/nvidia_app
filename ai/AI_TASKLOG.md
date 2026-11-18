@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/5 | 0m | none |
+| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/5 | 4m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
 | 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
@@ -95,6 +95,10 @@
   - Only `src/NvmlTest/SmiFormatter.cs` needs to change — the table renderer is self-contained (width constants + header/dash/row blocks); `Program.cs` and `SystemMemory.cs` stay untouched. Still a **cli-closure-only** change → only `cli/<yyyyMMdd_HHmm>` publishes.
   - Header becomes two lines so long labels can wrap: line 1 carries the first half of the wrapped labels, line 2 the rest; short names (`Id`, `SM`, `Temp`, `PSt`, `Fan`) occupy **line 2 only**, leaving line 1 blank over them. Then one dash line.
   - Interpretation recorded for the user's "The Mem Usage can be split into two header lines where you put GPU on the first, Usage on the second. Same split for Mem usage": the two utilization columns are `GPU / Utilization` and `Mem / Utilization` (the user named both "Mem Usage" — resolved as the two existing usage columns).
+  - Final widths that fit the compacted values: `Id 3`, `Name 24`, util/mem-util `11` each, `SM 4`, `Temp 4`, `Power 10`, `Memory 13`, `Mem/Clock 7`, `PSt 3`, `Fan 4`, `SysRAM 13`, `PCIe 14`, `Sep = 1`. Table shrank from ~168 to ~112 columns.
+  - PCIe cell strips the spaces inside the shared `GpuSnapshot.PcieLabel` (`"4.0 x16"` → `"4.0x16"`) locally in the formatter, so no shared-lib change (gui stream stays untouched).
+  - Live output after the change (build `2026-11-18 18:59`, 3 GPUs — all rows align with the dash line):
+    `Id  Name … Utilization Utilization SM Temp Power Memory Clock PSt Fan SysRAM PCIe` / `0 NVIDIA GeForce RTX 3090 0% 0% 59% 52°C 293/420W 23606/24576MB 9501MHz P2 47% 65% 83/128GB 4.0x16/32GB/s`.
 
 ### User Confirmations
 
@@ -115,9 +119,9 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Rework the width constants + `Sep = 1`, rename the first column to `Id`, and re-wrap every value formatter (`Pct`, `TempVal`, `Power`/`Watts` integer, `MemClkVal`, `Memory`, `SysRam`/`Gb` integer).
-- [ ] Subtask 2 — Emit the two header lines (wrapped labels; short names on line 2 only) + one dash line.
-- [ ] Subtask 3 — Build + run `--print` / `--watch` and verify alignment, compact values and that the widest value still fits its column.
+- [x] Subtask 1 — Rework the width constants + `Sep = 1`, rename the first column to `Id`, and re-wrap every value formatter (`Pct`, `TempVal`, `Power`/`Watts` integer, `MemClkVal`, `Memory`, `SysRam`/`Gb` integer).
+- [x] Subtask 2 — Emit the two header lines (wrapped labels; short names on line 2 only) + one dash line.
+- [x] Subtask 3 — Build + run `--print` / `--watch` and verify alignment, compact values and that the widest value still fits its column.
 - [ ] Subtask 4 — README bullet refresh (compact table description); task log before push; push branch + PR.
 - [ ] Subtask 5 — After merge: final log commit on `main`, fast-forward + re-push branch, `.\release.ps1 --merge <pre> <post>` (cli only), record the tag.
 
