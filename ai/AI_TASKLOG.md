@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
+| 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
 | 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
 | 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
@@ -82,13 +82,13 @@
 
 ## Task T38: NvmlTest — System RAM column (percentage + used/total GB)
 
-- **Status**: in_progress
-- **Type**: feat
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 18-11-2026 12:29:53
-- **Last Updated**: 18-11-2026 12:33:26
-- **Time Spent**: 4m
-- **Branch**: [`feat/ai-cli-system-ram-column`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-system-ram-column)
-- **Commit(s)**: pending
+- **Last Updated**: 18-11-2026 12:34:37
+- **Time Spent**: 9m
+- **Branch**: [`feat/ai-cli-system-ram-column`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-system-ram-column) — PR [#14](https://github.com/HectorBravo/nvidia_app/pull/14) → `main` (merged)
+- **Commit(s)**: [ae210da](https://github.com/HectorBravo/nvidia_app/commit/ae210da) (task log, before push) · [8da2be6](https://github.com/HectorBravo/nvidia_app/commit/8da2be6) (code) · [80d8953](https://github.com/HectorBravo/nvidia_app/commit/80d8953) (docs + project map) · merge [99d3e98](https://github.com/HectorBravo/nvidia_app/commit/99d3e9800dc8c0b5863d0126d89293f7bfab4559)
 - **Blockers**: none
 - **Findings & Notes**
   - GUI already reads physical RAM from the OS (`src/NvidiaMonitor/SystemMemory.cs`, kernel32 `GlobalMemoryStatusEx`); the CLI table has no system-RAM column (NVML snapshots only carry GPU memory).
@@ -115,8 +115,12 @@
 - [x] Subtask 2 — Extend `SmiFormatter.Format` with a `SysRAM` column: percentage + used/total GB values; width constant, header, dashes, row cell.
 - [x] Subtask 3 — Wire the reader into `Program.cs` for both one-shot `--print` and `--watch` rendering.
 - [x] Subtask 4 — Build + run `--print` / `--watch` live to verify alignment and values against Task Manager.
-- [ ] Subtask 5 — Update README (CLI column list) + `ai/PROJECT_DESCRIPTION.md` freshness; commit task log before push, push branch, open PR.
-- [ ] Subtask 6 — After merge: final task-log commit on `main`, fast-forward + re-push the AI branch, then `.\release.ps1 --merge <pre> <post>` (cli release).
+- [x] Subtask 5 — Update README (CLI column list) + `ai/PROJECT_DESCRIPTION.md` freshness; commit task log before push, push branch, open PR.
+- [x] Subtask 6 — After merge: final task-log commit on `main`, fast-forward + re-push the AI branch, then `.\release.ps1 --merge <pre> <post>` (cli release).
+
+**Post-merge record (18-11-2026 12:34)**
+- PR [#14](https://github.com/HectorBravo/nvidia_app/pull/14) merged into `main` with a merge commit: [99d3e98](https://github.com/HectorBravo/nvidia_app/commit/99d3e9800dc8c0b5863d0126d89293f7bfab4559). Pre-merge `main` was [6937672](https://github.com/HectorBravo/nvidia_app/commit/69376724a118322179e44cbdcc8cb26c8a3ecf99).
+- Release step: `.\release.ps1 --merge 6937672 99d3e98` → publishes only the **cli** stream (`gui` closure untouched); record the resulting `cli/<yyyyMMdd_HHmm>` tag in Findings.
 
 ### Full Context Notes for AI Agents
 
@@ -2483,6 +2487,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m |
 | 15-11-2026 23:04:00 | [T28: Rename VRAM chart titles (VRAM Memory Used / VRAM Memory Utilization) + explain the two memory metrics](#task-t28-rename-vram-chart-titles-vram-memory-used--vram-memory-utilization--explain-the-two-memory-metrics) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/3 | 6m |
 | 15-11-2026 22:25:35 | [T27: PCIe log-scale floor at 1 GB/s + new System RAM chart (first, expanded) + collapse Memory Utilization](#task-t27-pcie-log-scale-floor-at-1-gbs--new-system-ram-chart-first-expanded--collapse-memory-utilization) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 18m |
 | 11-11-2026 15:27:17 | [T25: Single-instance GUI guard (only one NvidiaMonitor may run at a time)](#task-t25-single-instance-gui-guard-only-one-nvidiamonitor-may-run-at-a-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 8/8 | 47m |
