@@ -85,8 +85,8 @@
 - **Status**: in_progress
 - **Type**: feat
 - **Created**: 18-11-2026 12:29:53
-- **Last Updated**: 18-11-2026 12:29:53
-- **Time Spent**: 0m
+- **Last Updated**: 18-11-2026 12:33:26
+- **Time Spent**: 4m
 - **Branch**: [`feat/ai-cli-system-ram-column`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-system-ram-column)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -95,6 +95,8 @@
   - `SystemMemory` is `internal` to the Monitor assembly, so `NvmlTest` cannot reuse it. Decision: add a small equivalent reader local to `NvmlTest` (app-local → only the `cli` release stream bumps) instead of moving it into `NvmlCore`/`Contracts` (which would bump BOTH apps).
   - Pre-work done: PR #13 (`docs/ai-update-readme-features-and-watch`, T37) merged into `main` with a merge commit (6937672); branch deleted locally and remotely. `main` is at that merge commit.
   - Publish follows the AGENTS.md Compile-Date Releases Rule: AI branch + task log, PR → merge to `main`, then `.\release.ps1 --merge <pre> <post>`; only `cli/...` should publish (CLI-local change).
+  - Implemented as planned: new `src/NvmlTest/SystemMemory.cs` (internal P/Invoke reader), `SmiFormatter.Format(snapshot, ramUsedBytes, ramTotalBytes)` with a right-aligned `SysRAM` column (`WSysRam = 24`) between `Fan` and `PCIe`, and per-render reads in both `--print` and `--watch` paths.
+  - Live verification (build `2026-11-18 12:32`, 3 GPUs): header/dash/rows aligned; cell renders `65 % 83.4 / 127.8 GB`. Cross-checked with `Win32_OperatingSystem` → total 127.8 GiB, free 44.4 GiB ⇒ used ≈ 83.4 GiB / 65 % — matches. Solution build: 0 warnings, 0 errors.
 
 ### User Confirmations
 
@@ -109,10 +111,10 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Add a physical-RAM reader to `NvmlTest` (`SystemMemory.cs`, `GlobalMemoryStatusEx` P/Invoke mirroring the GUI implementation).
-- [ ] Subtask 2 — Extend `SmiFormatter.Format` with a `SysRAM` column: percentage + used/total GB values; width constant, header, dashes, row cell.
-- [ ] Subtask 3 — Wire the reader into `Program.cs` for both one-shot `--print` and `--watch` rendering.
-- [ ] Subtask 4 — Build + run `--print` / `--watch` live to verify alignment and values against Task Manager.
+- [x] Subtask 1 — Add a physical-RAM reader to `NvmlTest` (`SystemMemory.cs`, `GlobalMemoryStatusEx` P/Invoke mirroring the GUI implementation).
+- [x] Subtask 2 — Extend `SmiFormatter.Format` with a `SysRAM` column: percentage + used/total GB values; width constant, header, dashes, row cell.
+- [x] Subtask 3 — Wire the reader into `Program.cs` for both one-shot `--print` and `--watch` rendering.
+- [x] Subtask 4 — Build + run `--print` / `--watch` live to verify alignment and values against Task Manager.
 - [ ] Subtask 5 — Update README (CLI column list) + `ai/PROJECT_DESCRIPTION.md` freshness; commit task log before push, push branch, open PR.
 - [ ] Subtask 6 — After merge: final task-log commit on `main`, fast-forward + re-push the AI branch, then `.\release.ps1 --merge <pre> <post>` (cli release).
 

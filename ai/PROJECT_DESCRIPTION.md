@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-16 00:34:00
-git_head: 2040841e9beb1433a75c3d73e3e403c184853815
+last_indexed: 2026-11-18 12:40:00
+git_head: 69376724a118322179e44cbdcc8cb26c8a3ecf99
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -95,10 +95,14 @@ git-ignored `bin/` (publish output).
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
   value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic),
+  `SystemMemory` (`GlobalMemoryStatusEx` P/Invoke → `(used, total)` physical RAM,
+  `(0,0)` on failure; CLI-local copy of the GUI reader so only the `cli` release
+  stream is affected — T38),
   `NvmlProbe` (the `--probe` runner: NVML version, the legacy two-phase
   `nvmlDeviceGetProcessUtilization`, the batched `nvmlDeviceGetProcessesUtilizationInfo`
   with its version-constant sweep), `SmiFormatter` (nvidia-smi-style table, now
-  including an `SM` utilization column). Its "PCIe" column
+  including an `SM` utilization column and a machine-wide `SysRAM` column —
+  `NN % used / total GB`, repeated on every GPU row; T38). Its "PCIe" column
   shows the link config plus the theoretical bandwidth
   (`{gen}.0 x{width} / {bandwidth} GB/s`), mirroring the WPF GUI's PCIe values.
 
@@ -358,6 +362,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-18 — **T38: CLI System RAM column** (new `src/NvmlTest/SystemMemory.cs`, `SmiFormatter.cs`, `Program.cs`; **cli closure only**): the `--print` / `--watch` table gained a right-aligned **`SysRAM`** column (`WSysRam = 24`) between `Fan` and `PCIe`, rendered `NN % used / total GB` (GiB, 1024³, one decimal; e.g. `65 % 83.4 / 127.8 GB`) from a CLI-local copy of the GUI's `GlobalMemoryStatusEx` reader (`internal static SystemMemory.Read()` → `(used, total)`, `(0,0)` → `N/A`, never divides by zero). The value is machine-wide, so it repeats on every GPU row; `Program.cs` re-reads it once per render (also each `--watch` tick) and passes it to the new `SmiFormatter.Format(snapshot, ramUsedBytes, ramTotalBytes)` overload, keeping the renderer free of OS calls. Kept local to `NvmlTest` on purpose — moving it into `NvmlCore`/`Contracts` would bump BOTH release streams for no gain. Verified live: 3-GPU table aligned, values match `Win32_OperatingSystem` (127.8 GiB total).
 - 2026-11-16 — **T31: GPU Utilization expanded by default** (`MainWindow.cs`, one ChartSpec flag; gui closure): the `GPU Utilization (%)` card lost its `Collapsed: true`, so the startup-expanded set is now System RAM + VRAM Memory Used + GPU Utilization (seven cards still collapsed). Window auto-sizes taller. Merged via PR #3 → consolidated release `gui/2026-11-16-0031` (intermediate gui releases 0008/0010/0015 deleted at user request; changelog covers T29+T30+T31).
 - 2026-11-16 — **T30: NVIDIA logo app/window icon** (new `app.ico` + `nvidia-icon.png`, `NvidiaMonitor.csproj`, `MainWindow.cs`; gui closure): exe/taskbar icon via `<ApplicationIcon>app.ico</ApplicationIcon>` (PNG-embedded ICO, 16–256 px) and WPF window icon from the embedded `nvidia-icon.png` resource (`BitmapFrame.Create(pack://…)` in the ctor, try/catch). Source: logolook.net NVIDIA logo (3840×2160) cropped to the **full eye+wordmark** square, downscaled to **256×256** per user correction. Verified: `ExtractAssociatedIcon` on the built exe + live `WM_GETICON` handles non-null.
 - 2026-11-16 — **T29: update-available banner + one-click auto-update** (new `src/NvidiaMonitor/UpdateService.cs`, `MainWindow.cs`; gui closure): GitHub Releases check at startup + hourly (`releases/tags/gui/<compile-date>` tag from the executing assembly LastWriteTime; offered only when the asset is >120 s newer than the local stamp), flashing light-blue (#58a6ff) **"New version available: <version> (click to update)"** link right of the build stamp; click → zip to %TEMP% → verify → generated swap helper (wait for PID exit, backup exe/dll/json, `Expand-Archive -Force`, relaunch, self-delete) → app shuts down. Failures stay silent/retryable. Verified end-to-end against real release `gui/2026-11-15-2327`.

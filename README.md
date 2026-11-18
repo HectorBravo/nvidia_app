@@ -22,7 +22,7 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
 - Per-GPU **running-process** enumeration (compute + graphics) with PID, kind and per-process
   memory.
 - **System-wide physical RAM** read from the OS (`kernel32!GlobalMemoryStatusEx`, not NVML) —
-  feeds the dashboard's System RAM chart.
+  feeds the dashboard's System RAM chart and the CLI table's **SysRAM** column.
 - Values NVML cannot report for a device render as **N/A**, so one missing metric never
   aborts the whole read.
 
@@ -55,8 +55,10 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   (headless `--print` is unaffected).
 
 ### Headless CLI (`NvmlTest`)
-- `--print` — one `nvidia-smi`-style table (including an **SM** column and a **PCIe** column
-  rendered as `gen × width / bandwidth GB/s`, e.g. `4.0 x16 / 32 GB/s`), then exit.
+- `--print` — one `nvidia-smi`-style table (including an **SM** column, a **SysRAM** column with
+  the machine's physical RAM as `NN % used / total GB` — e.g. `65 % 83.4 / 127.8 GB`, repeated on
+  every GPU row since it is system-wide — and a **PCIe** column rendered as
+  `gen × width / bandwidth GB/s`, e.g. `4.0 x16 / 32 GB/s`), then exit.
 - `--watch [<seconds>]` — the same table as a **live feed**, re-rendered every `<seconds>` like
   `watch nvidia-smi`. The value is optional (**bare `--watch` = every 1 s**), implies `--print`,
   and `Ctrl-C` stops it cleanly (exit `0`). An explicit non-numeric value exits `2`.
