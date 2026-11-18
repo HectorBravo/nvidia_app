@@ -120,7 +120,7 @@
 
 **Post-merge record (18-11-2026 12:34)**
 - PR [#14](https://github.com/HectorBravo/nvidia_app/pull/14) merged into `main` with a merge commit: [99d3e98](https://github.com/HectorBravo/nvidia_app/commit/99d3e9800dc8c0b5863d0126d89293f7bfab4559). Pre-merge `main` was [6937672](https://github.com/HectorBravo/nvidia_app/commit/69376724a118322179e44cbdcc8cb26c8a3ecf99).
-- Release step: `.\release.ps1 --merge 6937672 99d3e98` → publishes only the **cli** stream (`gui` closure untouched); record the resulting `cli/<yyyyMMdd_HHmm>` tag in Findings.
+- Release step: `.\release.ps1 --merge 6937672 99d3e98` → published **only** the cli stream (`[merge] NvidiaMonitor unchanged -> skipped`): [`cli/20261118_1842`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261118_1842) with asset `NvmlTest-20261118_1842.zip` and the auto changelog line "feat(cli): add SysRAM column (used % + used/total GB) to the NvmlTest table (8da2be6)". Final task-log commit: [35e8211](https://github.com/HectorBravo/nvidia_app/commit/35e8211dda8520683e72c5c41353e636a9c6ee41) on `main`; the AI branch was fast-forwarded onto it (`merge --ff-only`) and re-pushed.
 
 ### Full Context Notes for AI Agents
 
