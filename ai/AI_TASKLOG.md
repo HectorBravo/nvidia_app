@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 3/5 | 4m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
 | 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
@@ -79,6 +80,104 @@
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
 
 ---
+
+## Task T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)
+
+- **Status**: in_progress
+- **Type**: refactor
+- **Created**: 18-11-2026 18:57:11
+- **Last Updated**: 18-11-2026 18:57:11
+- **Time Spent**: 0m
+- **Branch**: [`refactor/ai-compact-cli-table`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-compact-cli-table)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**
+  - Only `src/NvmlTest/SmiFormatter.cs` needs to change — the table renderer is self-contained (width constants + header/dash/row blocks); `Program.cs` and `SystemMemory.cs` stay untouched. Still a **cli-closure-only** change → only `cli/<yyyyMMdd_HHmm>` publishes.
+  - Header becomes two lines so long labels can wrap: line 1 carries the first half of the wrapped labels, line 2 the rest; short names (`Id`, `SM`, `Temp`, `PSt`, `Fan`) occupy **line 2 only**, leaving line 1 blank over them. Then one dash line.
+  - Interpretation recorded for the user's "The Mem Usage can be split into two header lines where you put GPU on the first, Usage on the second. Same split for Mem usage": the two utilization columns are `GPU / Utilization` and `Mem / Utilization` (the user named both "Mem Usage" — resolved as the two existing usage columns).
+  - Final widths that fit the compacted values: `Id 3`, `Name 24`, util/mem-util `11` each, `SM 4`, `Temp 4`, `Power 10`, `Memory 13`, `Mem/Clock 7`, `PSt 3`, `Fan 4`, `SysRAM 13`, `PCIe 14`, `Sep = 1`. Table shrank from ~168 to ~112 columns.
+  - PCIe cell strips the spaces inside the shared `GpuSnapshot.PcieLabel` (`"4.0 x16"` → `"4.0x16"`) locally in the formatter, so no shared-lib change (gui stream stays untouched).
+  - Live output after the change (build `2026-11-18 18:59`, 3 GPUs — all rows align with the dash line):
+    `Id  Name … Utilization Utilization SM Temp Power Memory Clock PSt Fan SysRAM PCIe` / `0 NVIDIA GeForce RTX 3090 0% 0% 59% 52°C 293/420W 23606/24576MB 9501MHz P2 47% 65% 83/128GB 4.0x16/32GB/s`.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided) — directive list for this task:**
+
+- (18-11-2026 18:57:00) "On the columns that use %, remove the space between the number and the %." → `34 %` → `34%`
+- (18-11-2026 18:57:00) "The Mem Usage can be split into two header lines (adding a new one) where you put GPU on the first, Usage on the second. Same split for Mem usage." → wrapped headers `GPU / Utilization`, `Mem / Utilization`
+- (18-11-2026 18:57:00) "Any column with a short name uses only second line now and frees first one." → `Id`, `SM`, `Temp`, `PSt`, `Fan` render on header line 2 only
+- (18-11-2026 18:57:00) "Both values in power can be printed as integer, meaning 14.6 becomes 14." → `13.7 / 420.0 W` → `14/420W`
+- (18-11-2026 18:57:00) "The space between the temp and the º sign can be removed too." → `29 °C` → `29°C`
+- (18-11-2026 18:57:00) "Spaces between -- and -- can be reduced from 2 to 1." → `Sep = 1`
+- (18-11-2026 18:57:00) "Sysram can be considered as integer, so 83.1 becomes 83, for both values of the column." → `65 % 83.4 / 127.8 GB` → `65% 83/128GB`
+- (18-11-2026 18:57:00) "Rename GPU column (first one) to Id" → first column header `GPU` → `Id`
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Rework the width constants + `Sep = 1`, rename the first column to `Id`, and re-wrap every value formatter (`Pct`, `TempVal`, `Power`/`Watts` integer, `MemClkVal`, `Memory`, `SysRam`/`Gb` integer).
+- [x] Subtask 2 — Emit the two header lines (wrapped labels; short names on line 2 only) + one dash line.
+- [x] Subtask 3 — Build + run `--print` / `--watch` and verify alignment, compact values and that the widest value still fits its column.
+- [ ] Subtask 4 — README bullet refresh (compact table description); task log before push; push branch + PR.
+- [ ] Subtask 5 — After merge: final log commit on `main`, fast-forward + re-push branch, `.\release.ps1 --merge <pre> <post>` (cli only), record the tag.
+
+**Target shape (the exact output this task must produce)**
+```
+Build: 2026-11-18 19:10
+Driver: 621.24  CUDA: 13.5  NVML: 13.621.24 2026-11-18 19:10:00
+
+         GPU   GPU          Mem       SM Temp Power     Memory      MemClk PSt  Fan  SysRAM  PCIe
+Id     Name  Utilization Utilization    31°C 265/420W 23606/24576MB 9501MHz P8   41%  83/128GB 4.0x16/32GB/s
+---  ------------------------  ----  ---  ----  --------  -----------  ------  --  ---  ---------  -------------
+```
+(Exact spacing follows from the width table below; the point is: two header lines, dash line, then rows.)
+
+**Column plan (width = max(header part length, longest value); `Sep = 1`)**
+
+| Col | Header L1 | Header L2 | Width | Longest value example |
+|-----|-----------|-----------|-------|-----------------------|
+| Id | *(blank)* | `Id` | 3 (`WIdx`) | `0` |
+| Name | *(blank)* | `Name` | 24 (`WName`) | GPU name, left-padded |
+| GPU util | `GPU` | `Utilization` | 11 (`WUtil`) | `100%` |
+| Mem util | `Mem` | `Utilization` | 11 (`WMemUtil`) | `100%` |
+| SM | *(blank)* | `SM` | 2 (`WSm`) | `100%` |
+| Temp | *(blank)* | `Temp` | 4 (`WTemp`) | `100°C` |
+| Power | *(blank)* | `Power` | 8 (`WPower`) | `1000/1000W` (integer W both sides) |
+| Memory | *(blank)* | `Memory` | 12 (`WMemory`) | `23784/24576MB` → 13; use 13 |
+| MemClk | `Mem` | `Clock` | 5 (`WMemClk`) | `9501MHz` → 7; use 7 |
+| PSt | *(blank)* | `PSt` | 3 (`WPSt`) | `P8` |
+| Fan | *(blank)* | `Fan` | 4 (`WFan`) | `100%` |
+| SysRAM | *(blank)* | `SysRAM` | 9 (`WSysRam`) | `100% 83/128GB` → 13; use 13 |
+| PCIe | `PCIe` | *(blank, last col unpadded)* | 14 (`WPcie`) | `4.0x16/32GB/s` |
+
+**Formatter changes in `src/NvmlTest/SmiFormatter.cs` (only file to touch)**
+- `Sep`: 2 → 1.
+- `Pct(int)`: `$"{v} %"` → `$"{v}%"`.
+- `TempVal`: `"{v} °C"` → `"{v}\u00B0C"`.
+- `MemClkVal`: `"{v} MHz"` → `"{v}MHz"`.
+- `Watts(int mw)`: `"0.0"` decimals → integer mW→W (round), so `Power` renders `{used}/{cap}W` (e.g. `265/420W`); negative sentinel still `N/A`.
+- `Memory` / `Mb`: `"{used} / {total} MB"` → `"{used}/{total}MB"`.
+- `SysRam` / `Gb`: `"{pct}% {used}/{total}GB"` with **integer** GiB both sides (round half up, e.g. `83/128GB`); total ≤ 0 → `N/A`.
+- `Pcie`: `"{gen}.0 x{width} / {bw} GB/s"` → `"{gen}.0x{width}/{bw}GB/s"`.
+- Header block: two `AppendLine()` rows built from the L1/L2 labels above (L1 = spaces where a column is "short-name only"), then the existing dash row.
+- Keep every formatter InvariantCulture; keep `Pad`/`PadL`/`Dash`/`Spaces` helpers.
+
+**Verify commands**
+```powershell
+dotnet build src/NvmlTest -c Release --nologo
+dotnet publish src/NvmlTest -c Release -o bin/NvmlTest
+& 'D:\Repos\nvidia_app\bin\NvmlTest\NvmlTest.exe' --print
+```
+Check: no value overflows its column (compare header/dash/row lengths per line), `--watch` still re-renders.
+
+**Release**: cli-only closure → after merge run `.\release.ps1 --merge <pre> <post>`; expect exactly one new `cli/<yyyyMMdd_HHmm>` tag and `[merge] NvidiaMonitor unchanged -> skipped`.
+
+---
+
 
 ## Task T38: NvmlTest — System RAM column (percentage + used/total GB)
 
