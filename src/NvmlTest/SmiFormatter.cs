@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Text;
 using HectorBravo.Nvidia.Contracts;
@@ -5,8 +6,9 @@ using HectorBravo.Nvidia.Contracts;
 namespace HectorBravo.Nvidia.Test;
 
 /// <summary>
-/// Renders a <see cref="SystemSnapshot"/> as an nvidia-smi-style, monospaced,
-/// column-aligned text table for headless / CLI consumption.
+/// Renders a <see cref="SystemSnapshot"/> plus the machine's physical-RAM reading
+/// as an nvidia-smi-style, monospaced, column-aligned text table for headless /
+/// CLI consumption.
 /// </summary>
 public static class SmiFormatter
 {
@@ -23,10 +25,16 @@ public static class SmiFormatter
     private const int WMemClk  = 8;   // "MemClk"     | "9999 MHz"
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 5;   // "Fan"        | "100 %"
+    private const int WSysRam  = 24;  // "SysRAM"     | "63 % 40.7 / 64.0 GB"
     private const int WPcie    = 18;  // "PCIe"       | "4.0 x16 / 8 GB/s"
     private const int Sep      = 2;
 
-    public static string Format(SystemSnapshot s)
+    /// <summary>
+    /// Renders a <see cref="SystemSnapshot"/> plus the machine's physical-RAM
+    /// reading as an nvidia-smi-style, monospaced, column-aligned text table for
+    /// headless / CLI consumption.
+    /// </summary>
+    public static string Format(SystemSnapshot s, long ramUsedBytes, long ramTotalBytes)
     {
         var sb = new StringBuilder();
 
@@ -56,6 +64,7 @@ public static class SmiFormatter
         sb.Append(PadL("MemClk", WMemClk)).Append(Spaces(Sep));
         sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));
         sb.Append(PadL("Fan", WFan)).Append(Spaces(Sep));
+        sb.Append(PadL("SysRAM", WSysRam)).Append(Spaces(Sep));
         sb.Append(PadL("PCIe", WPcie));
         sb.AppendLine();
 
@@ -71,8 +80,13 @@ public static class SmiFormatter
         sb.Append(Dash(WMemClk)).Append(Spaces(Sep));
         sb.Append(Dash(WPSt)).Append(Spaces(Sep));
         sb.Append(Dash(WFan)).Append(Spaces(Sep));
+        sb.Append(Dash(WSysRam)).Append(Spaces(Sep));
         sb.Append(Dash(WPcie));
         sb.AppendLine();
+
+        // System RAM is machine-wide, not per-GPU: the same reading repeats on every
+        // row so the table stays rectangular (the user asked for a column).
+        var sysRam = SysRam(ramUsedBytes, ramTotalBytes);
 
         foreach (var g in s.Gpus)
         {
@@ -87,6 +101,7 @@ public static class SmiFormatter
             sb.Append(PadL(MemClkVal(g.MemoryClockMhz), WMemClk)).Append(Spaces(Sep));
             sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));
             sb.Append(PadL(Pct(g.FanSpeedPct), WFan)).Append(Spaces(Sep));
+            sb.Append(PadL(sysRam, WSysRam)).Append(Spaces(Sep));
             sb.Append(PadL(Pcie(g), WPcie));
             sb.AppendLine();
         }
@@ -132,6 +147,19 @@ public static class SmiFormatter
 
     /// <summary>Bytes → MB (integer). Invariant culture so no thousands/comma separator is ever emitted.</summary>
     private static string Mb(long bytes) => (bytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// System RAM: "63 % 40.7 / 64.0 GB" — the used share of physical memory plus the
+    /// actual used / total values in GB (GiB, 1024³ — the same numbers Task Manager
+    /// shows). A non-positive total (OS read failed) renders N/A; never divides by zero.
+    /// </summary>
+    private static string SysRam(long usedBytes, long totalBytes) =>
+        totalBytes <= 0 ? "N/A"
+        : $"{Pct((int)Math.Round(usedBytes * 100.0 / totalBytes))} {Gb(usedBytes)} / {Gb(totalBytes)} GB";
+
+    /// <summary>Bytes → GB (GiB, 1024³), one decimal. Invariant culture (no comma separator).</summary>
+    private static string Gb(long bytes) =>
+        (bytes / (1024.0 * 1024 * 1024)).ToString("0.0", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// PCIe: "{gen}.0 x{width} / {bandwidth} GB/s" — mirrors the GUI's PCIe values:
