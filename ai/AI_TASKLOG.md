@@ -4,7 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 10m | none |
+| 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
+| 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
 | 16-11-2026 02:44:00 | [T36: Authenticate GitHub API update checks (anonymous 60/hr IP limit caused silent check failures)](#task-t36-authenticate-github-api-update-checks) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 20m | none |
 | 16-11-2026 02:03:47 | [T35: Format-tolerant update check + deterministic release stamp in release.ps1](#task-t35-format-tolerant-update-check--deterministic-release-stamp-in-releaseps1) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 15m | none |
 | 16-11-2026 01:45:28 | [T34: Release tag format yyyyMMdd_HHmm + banner shows the real tag](#task-t34-release-tag-format-yyyymmdd_hhmm--banner-shows-the-real-tag) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 5/5 | 10m | none |
@@ -78,6 +79,86 @@
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
 
 ---
+
+## Task T38: NvmlTest — System RAM column (percentage + used/total GB)
+
+- **Status**: in_progress
+- **Type**: feat
+- **Created**: 18-11-2026 12:29:53
+- **Last Updated**: 18-11-2026 12:29:53
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-cli-system-ram-column`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-system-ram-column)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**
+  - GUI already reads physical RAM from the OS (`src/NvidiaMonitor/SystemMemory.cs`, kernel32 `GlobalMemoryStatusEx`); the CLI table has no system-RAM column (NVML snapshots only carry GPU memory).
+  - `SystemMemory` is `internal` to the Monitor assembly, so `NvmlTest` cannot reuse it. Decision: add a small equivalent reader local to `NvmlTest` (app-local → only the `cli` release stream bumps) instead of moving it into `NvmlCore`/`Contracts` (which would bump BOTH apps).
+  - Pre-work done: PR #13 (`docs/ai-update-readme-features-and-watch`, T37) merged into `main` with a merge commit (6937672); branch deleted locally and remotely. `main` is at that merge commit.
+  - Publish follows the AGENTS.md Compile-Date Releases Rule: AI branch + task log, PR → merge to `main`, then `.\release.ps1 --merge <pre> <post>`; only `cli/...` should publish (CLI-local change).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (18-11-2026 12:29:00) How to merge the still-open PR #13 before starting? → "Merge PR #13 with `gh pr merge 13 --merge` (creates a merge commit, keeps branch history)"
+- (18-11-2026 12:29:00) Publish rules for the console tool? → "Do the changes and publish with the same rules as for the gui tool, but first merge the current ai branch into main if not yet and delete it"
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Add a physical-RAM reader to `NvmlTest` (`SystemMemory.cs`, `GlobalMemoryStatusEx` P/Invoke mirroring the GUI implementation).
+- [ ] Subtask 2 — Extend `SmiFormatter.Format` with a `SysRAM` column: percentage + used/total GB values; width constant, header, dashes, row cell.
+- [ ] Subtask 3 — Wire the reader into `Program.cs` for both one-shot `--print` and `--watch` rendering.
+- [ ] Subtask 4 — Build + run `--print` / `--watch` live to verify alignment and values against Task Manager.
+- [ ] Subtask 5 — Update README (CLI column list) + `ai/PROJECT_DESCRIPTION.md` freshness; commit task log before push, push branch, open PR.
+- [ ] Subtask 6 — After merge: final task-log commit on `main`, fast-forward + re-push the AI branch, then `.\release.ps1 --merge <pre> <post>` (cli release).
+
+### Full Context Notes for AI Agents
+
+> **Purpose**: self-contained resume knowledge base.
+
+**Repo / environment**
+- Repo root: `D:\Repos\nvidia_app`; remote `https://github.com/HectorBravo/nvidia_app.git`; user email `hbravo@cuic.net` (never modify git identity config — only `GIT_AUTHOR_NAME`/`GIT_COMMITTER_NAME=AI_bot`).
+- Windows PowerShell. Solution `nvidia_app.sln`, .NET 8. Projects: `src/NvmlCore`, `src/HectorBravo.Nvidia.Contracts`, `src/NvidiaMonitor` (WPF, net8.0-windows), `src/NvmlTest` (console, net8.0, root ns `HectorBravo.Nvidia.Test`).
+- Publish outputs go to the git-ignored `bin\NvidiaMonitor\` / `bin\NvmlTest\`.
+
+**Git state (18-11-2026 12:30)**
+- On branch `feat/ai-cli-system-ram-column`, created from `main` @ `69376724a118322179e44cbdcc8cb26c8a3ecf99` (merge of PR #13).
+- Previous AI branch `docs/ai-update-readme-features-and-watch` deleted locally + remotely; T37 moved to done in the Summary table.
+
+**Files to change**
+1. **NEW** `src/NvmlTest/SystemMemory.cs` — namespace `HectorBravo.Nvidia.Test`; mirror the P/Invoke shape of `src/NvidiaMonitor/SystemMemory.cs` (`MEMORYSTATUSEX`, `GlobalMemoryStatusEx`, returns `(long used, long total)`, `(0,0)` on failure; used = total − available). `internal static`.
+2. `src/NvmlTest/SmiFormatter.cs` — width constants at lines 15–27 (`WIdx…WPcie`, `Sep = 2`); header row 48–60; dash row 63–75; per-GPU rows 77–92; helpers at the bottom (`Pad`, `PadL`, `Dash`, `Spaces`, `Pct`, `Memory`, `Mb`).
+   - New column header `SysRAM`, width ~24 to fit `"57 % 32.0 / 64.0 GB"`: used/total in GiB (1024³) with one decimal + rounded percentage. `N/A` when total ≤ 0.
+   - System RAM is machine-wide, not per-GPU → repeat the same value on every GPU row so the table stays rectangular (user asked for "a column", so a banner-only line was rejected).
+3. `src/NvmlTest/Program.cs` — one-shot print at lines 92–98; live loop 108–141. Read RAM once per render and pass it into the formatter (`Format(SystemSnapshot s, long ramUsed, long ramTotal)`); keep the renderer free of OS calls.
+
+**Build / verify commands**
+```powershell
+dotnet build src/NvmlTest -c Release
+dotnet publish src/NvmlTest -c Release -o bin/NvmlTest   # → bin\NvmlTest\NvmlTest.exe
+.\bin\NvmlTest\NvmlTest.exe --print
+.\bin\NvmlTest\NvmlTest.exe --watch 2    # Ctrl-C to stop (exit 0)
+```
+Close `NvidiaMonitor.exe` before publishing (it locks its own DLLs).
+
+**Release / publish rules (AGENTS.md, mandatory)**
+- Never push to `main`; work on `<type>/ai-*`, push with `-u`; task log in dedicated `docs(ai): [ai] …` commits before push and final after merge; then fast-forward the AI branch onto the final-log commit (`git merge --ff-only origin/main`) + `--force-with-lease` re-push.
+- After every merge into `main`: `.\release.ps1 --merge <pre-merge-commit> <post-merge-commit>` → builds/publishes changed apps, zips `bin\<App>\` (exe/dll/json, no pdb), creates `gui|cli/<yyyyMMdd_HHmm>` releases with an auto changelog from conventional commits touching each app's closure. Idempotent by tag.
+- This change touches only `src/NvmlTest/**` → **only the `cli` stream** publishes. Docs/`ai/` commits are excluded from the changelog, so keep the code commit conventional (`feat(cli): [ai] …`) so it lands in the release notes.
+- AGENTS.md also requires refreshing `ai/PROJECT_DESCRIPTION.md` at task end; its `git_head` is already stale (`2040841`, indexed 16-11-2026). Minimum: dated changelog line + bump `last_indexed`/`git_head`; record in Findings if a full regeneration was not run.
+
+**Edge cases / gotchas**
+- InvariantCulture everywhere in the formatter — locale must never introduce `,` separators.
+- GiB vs GB: GUI labels GiB (1024³); CLI keeps the user's "GB" label with bytes/1024³ values (same number Task Manager shows).
+- `GlobalMemoryStatusEx` failure → `(0,0)` → render `N/A`, never divide by zero.
+- Alignment: fixed-width columns with 2-space separators and exactly one non-padded last column (`PCIe`) — insert `SysRAM` before it and keep that invariant.
+
+---
+
 
 ## Task T37: Update README.md with the new features + document NvmlTest --watch
 
