@@ -18,19 +18,17 @@ public static class SmiFormatter
     // short ones sit on line 2 alone so line 1 stays blank above them.
     private const int WIdx     = 3;   // "Id"         | values: 0,1,2
     private const int WName    = 24;  // "Name"       | longest GPU name
-    private const int WUtil    = 11;  // "GPU" /      | "100 %" → "100%"
-                                       // "Utilization"
-    private const int WMemUtil = 11;  // "Mem" /      | "100 %" → "100%"
-                                       // "Utilization"
+    private const int WUtil    = 7;   // "GPU use"    | "100%"
+    private const int WMemUtil = 7;   // "Mem use"    | "100%"
     private const int WSm      = 4;   // "SM"         | "100%"
     private const int WTemp    = 4;   // "Temp"       | "100°C"
-    private const int WPower   = 10;  // "Power"      | "1000 / 1000 W" (int watts)
+    private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
     private const int WMemory  = 13;  // "Memory"     | "23784/24576MB"
     private const int WMemClk  = 7;   // "MemClk"     | "9999MHz"
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 4;   // "Fan"        | "100%"
     private const int WSysRam  = 13;  // "SysRAM"     | "100 % 83/128GB" → "100% 83/128GB"
-    private const int WPcie    = 14;  // "PCIe"       | "4.0x16/32GB/s"
+    private const int WPcie    = 13;  // "PCIe"       | "4.0x16/32GB/s"
     private const int Sep      = 1;   // single space between columns (compact table)
 
     /// <summary>
@@ -56,29 +54,29 @@ public static class SmiFormatter
             return sb.ToString();
         }
 
-        // Header rows. Long labels wrap over two lines ("GPU" / "Utilization");
-        // columns with a short name sit on line 2 only, so line 1 stays blank above
-        // them (blank = same width of spaces). Line 2 is left-aligned for index/name,
-        // right-aligned for the numeric labels.
+        // Header rows. Every label now sits on line 2 (line 1 stays blank, kept so the
+        // two-line header shape holds if a label ever needs to wrap again). Line 2 is
+        // left-aligned for index/name, right-aligned for the numeric labels; the last
+        // column is padded here so the blank line 1 lines up with it.
         sb.Append(Spaces(WIdx)).Append(Spaces(Sep));
         sb.Append(Spaces(WName)).Append(Spaces(Sep));
-        sb.Append(PadL("GPU", WUtil)).Append(Spaces(Sep));
-        sb.Append(PadL("Mem", WMemUtil)).Append(Spaces(Sep));
+        sb.Append(Spaces(WUtil)).Append(Spaces(Sep));
+        sb.Append(Spaces(WMemUtil)).Append(Spaces(Sep));
         sb.Append(Spaces(WSm)).Append(Spaces(Sep));
         sb.Append(Spaces(WTemp)).Append(Spaces(Sep));
         sb.Append(Spaces(WPower)).Append(Spaces(Sep));
         sb.Append(Spaces(WMemory)).Append(Spaces(Sep));
-        sb.Append(PadL("Mem", WMemClk)).Append(Spaces(Sep));
+        sb.Append(Spaces(WMemClk)).Append(Spaces(Sep));
         sb.Append(Spaces(WPSt)).Append(Spaces(Sep));
         sb.Append(Spaces(WFan)).Append(Spaces(Sep));
         sb.Append(Spaces(WSysRam)).Append(Spaces(Sep));
-        sb.Append(PadL("PCIe", WPcie));
+        sb.Append(Spaces(WPcie));
         sb.AppendLine();
 
         sb.Append(Pad("Id", WIdx)).Append(Spaces(Sep));
         sb.Append(Pad("Name", WName)).Append(Spaces(Sep));
-        sb.Append(PadL("Utilization", WUtil)).Append(Spaces(Sep));
-        sb.Append(PadL("Utilization", WMemUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("GPU use", WUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("Mem use", WMemUtil)).Append(Spaces(Sep));
         sb.Append(PadL("SM", WSm)).Append(Spaces(Sep));
         sb.Append(PadL("Temp", WTemp)).Append(Spaces(Sep));
         sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
@@ -87,7 +85,7 @@ public static class SmiFormatter
         sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));
         sb.Append(PadL("Fan", WFan)).Append(Spaces(Sep));
         sb.Append(PadL("SysRAM", WSysRam)).Append(Spaces(Sep));
-        sb.Append(Spaces(WPcie));
+        sb.Append(PadL("PCIe", WPcie));
         sb.AppendLine();
 
         // Separator row (dashes).

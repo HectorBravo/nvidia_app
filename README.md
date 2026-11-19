@@ -55,12 +55,12 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   (headless `--print` is unaffected).
 
 ### Headless CLI (`NvmlTest`)
-- `--print` — one **compact** `nvidia-smi`-style table, then exit. Columns: `Id`, `Name`, GPU /
-  Mem **Utilization**, `SM`, `Temp`, `Power`, `Memory`, Mem **Clock**, `PSt`, `Fan`, **SysRAM** and
-  **PCIe**. Values are packed tight — no space before `%` (`52%`), whole watts (`293/420W`), whole
-  GiB (`23606/24576MB`, SysRAM `65% 83/128GB`, repeated on every GPU row since RAM is system-wide),
-  clocks as `9501MHz`, PCIe as `4.0x16/32GB/s`. Long labels wrap over **two header lines**
-  (`GPU` / `Utilization`, `Mem` / `Clock`); short names sit on the second line alone.
+- `--print` — one **compact** `nvidia-smi`-style table, then exit. Columns: `Id`, `Name`,
+  **`GPU use`**, **`Mem use`**, `SM`, `Temp`, `Power`, `Memory`, **`Clock`**, `PSt`, `Fan`,
+  **`SysRAM`** and **`PCIe`**. Values are packed tight — no space before `%` (`52%`), whole watts
+  (`293/420W`), whole GiB (`23606/24576MB`, SysRAM `82% 105/128GB`, repeated on every GPU row since
+  RAM is system-wide), clocks as `9501MHz`, PCIe as `4.0x16/32GB/s`. The header spans **two lines**
+  and every label sits on the second one, so the first line stays blank.
 - `--watch [<seconds>]` — the same table as a **live feed**, re-rendered every `<seconds>` like
   `watch nvidia-smi`. The value is optional (**bare `--watch` = every 1 s**), implies `--print`,
   and `Ctrl-C` stops it cleanly (exit `0`). An explicit non-numeric value exits `2`.
