@@ -16,7 +16,7 @@ public static class SmiFormatter
     // This guarantees headers and dashes are perfectly aligned. Headers may span
     // two lines (see the header block in Format): long labels wrap onto line 2,
     // short ones sit on line 2 alone so line 1 stays blank above them.
-    private const int WIdx     = 3;   // "Id"         | values: 0,1,2
+    private const int WIdx     = 2;   // "Id"         | values: 0,1,2
     private const int WName    = 24;  // "Name"       | longest GPU name
     private const int WUtil    = 4;   // "GPU" /      | "100%" ("use")
     private const int WMemUtil = 4;   // "Mem" /      | "100%" ("use")
