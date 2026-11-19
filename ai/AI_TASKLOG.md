@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 1/4 | 1m | none |
+| 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 2/4 | 5m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
@@ -89,8 +89,8 @@
 - **Status**: in_progress
 - **Type**: refactor
 - **Created**: 19-11-2026 09:40:22
-- **Last Updated**: 19-11-2026 09:41:30
-- **Time Spent**: 1m
+- **Last Updated**: 19-11-2026 09:45:40
+- **Time Spent**: 5m
 - **Branch**: [`refactor/ai-narrower-id-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-narrower-id-column)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -113,7 +113,7 @@
 ### Subtasks / Plan
 
 - [x] Subtask 1 — `WIdx` 3 → 2.
-- [ ] Subtask 2 — Build + run `--print` / `--watch`; verify alignment (clean publish dir to dodge the DLL lock).
+- [x] Subtask 2 — Build + run `--print` / `--watch`; verify alignment (clean publish dir to dodge the DLL lock).
 - [ ] Subtask 3 — Docs refresh; task log before push; push branch + PR + merge.
 - [ ] Subtask 4 — Final log commit on `main`, then `release.ps1 --merge <pre> <post>` (cli only) and record the tag.
 
