@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/4 | 0m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
@@ -79,6 +80,55 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T41: Drop the PSt column from the CLI table
+
+- **Status**: in_progress
+- **Type**: refactor
+- **Created**: 19-11-2026 09:36:17
+- **Last Updated**: 19-11-2026 09:36:17
+- **Time Spent**: 0m
+- **Branch**: [`refactor/ai-drop-pst-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-drop-pst-column)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**
+  - Continues the [T40](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) compaction of the `NvmlTest` table; again only `src/NvmlTest/SmiFormatter.cs` (cli closure → cli release only).
+  - "pst" = the perf-state column (`PSt`, values `P0`…`P8`) — removed entirely: width constant, both header lines, dash row and the data cell. `GpuSnapshot.PerfStateLabel` (shared Contracts) stays as-is; the GUI and the `NvidiaMonitor --print` summary still use it.
+  - Column count 13 → 12; table ~90 → ~85 columns.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (19-11-2026 09:36:00) "pst column can be removed" → drop the `PSt` column from the CLI table.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Remove `WPSt` and every `PSt` emission (header line 1, header line 2, dash row, data row).
+- [ ] Subtask 2 — Build + run `--print` / `--watch`; verify all lines still align.
+- [ ] Subtask 3 — README + project-map refresh; task log before push; push branch + PR.
+- [ ] Subtask 4 — Merge to `main`, final log commit, `release.ps1 --merge <pre> <post>` (cli only), record the tag.
+
+### Full Context Notes for AI Agents
+
+**Exact edit (`src/NvmlTest/SmiFormatter.cs`)** — delete these four emissions plus the constant:
+- `private const int WPSt = 3;` (line ~28).
+- header line 1: `sb.Append(Spaces(WPSt)).Append(Spaces(Sep));`
+- header line 2: `sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));`
+- dash row: `sb.Append(Dash(WPSt)).Append(Spaces(Sep));`
+- data row: `sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));`
+
+Remaining column order: `Id`, `Name`, GPU use, Mem use, `SM`, `Temp`, `Power`, `Memory`, Mem/Clock, `Fan`, `SysRAM`, `PCIe`. Widths unchanged otherwise (`Sep = 1`; util columns 4; `WPower 8`, `WMemory 13`, `WMemClk 7`, `WSysRam 13`, `WPcie 13`).
+
+**Verify**: `dotnet build 'D:\Repos\nvidia_app\nvidia_app.sln' -c Release` then publish to `bin\NvmlTest` and run `--print` + a short `--watch 1`. Close any running `NvmlTest.exe` / `NvidiaMonitor.exe` first — they lock the published DLLs (seen this session: MSB3027 file-lock failures).
+
+**Release**: cli-only closure → after merge, `.\release.ps1 --merge <pre> <post>`; expect `[merge] NvidiaMonitor unchanged -> skipped` and one new `cli/<yyyyMMdd_HHmm>` tag.
 
 ---
 
