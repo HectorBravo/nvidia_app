@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-19 09:30:00
-git_head: 2e3da8f4f09b30bb2944c6b69e02f78e37b9557d
+last_indexed: 2026-11-19 09:38:00
+git_head: 5a50afca96fd296074b35fdb475ccf0370c64949
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -103,7 +103,7 @@ git-ignored `bin/` (publish output).
   with its version-constant sweep), `SmiFormatter` (compact nvidia-smi-style table:
   **two header lines** — wrapped labels (`GPU`/`use`, `Mem`/`use`, `Mem`/`Clock`) put their first
   word on line 1, every other label sits on line 2 — then one dash line; columns `Id`, `Name`,
-  GPU use, Mem use, `SM`, `Temp`, `Power`, `Memory`, Mem Clock, `PSt`, `Fan`, `SysRAM`, `PCIe`;
+  GPU use, Mem use, `SM`, `Temp`, `Power`, `Memory`, Mem Clock, `Fan`, `SysRAM`, `PCIe`;
   tight values: `52%`, `29°C`, `293/420W`, `23612/24576MB`, `9501MHz`, machine-wide `SysRAM` as
   `82% 104/128GB`, `PCIe` as `4.0x16/32GB/s`; T38–T40). Its "PCIe" column
   shows the link config plus the theoretical bandwidth
@@ -365,6 +365,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-19 — **T41: drop the PSt column** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the perf-state column (`PSt`, `P0`…`P8`) was removed from the CLI table — width constant `WPSt` plus its four emissions (both header lines, dash row, data cell). Column count 13 → 12, table ~90 → ~85 columns. `GpuSnapshot.PerfStateLabel` in Contracts is untouched (the GUI overview grid and the `NvidiaMonitor --print` summary still show the P-state). Verified live with 3 GPUs (`--print` + `--watch`).
 - 2026-11-19 — **T40: CLI header labels + narrower columns** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the two utilization headers shortened `Utilization` → **`GPU use` / `Mem use`**, then split across both header lines (**`GPU`/`use`**, **`Mem`/`use`**) so `WUtil`/`WMemUtil` 11 → 7 → **6 → 4**; the memory-clock column relabelled to wrap as **`Mem`/`Clock`** (was `Clock` alone); **`PCIe` moved from header line 1 to line 2** — every other label sits on line 2 with blank padding above it, and line 2 pads the last column so the two lines line up; `WPcie` 14 → **13** (exact fit for `4.0x16/32GB/s`) and `WPower` 10 → **8**. Table ~112 → ~90 columns. Verified live with 3 GPUs (`--print` + `--watch`).
 - 2026-11-18 — **T39: compact CLI table** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the `--print` / `--watch` table was compressed end to end — column separator 2 → 1 space; no space before `%` (`52%`) or between value and unit (`29°C`, `9501MHz`, `23606/24576MB`); **Power** in whole watts both sides (`293/420W`, mW rounded away from zero); **SysRAM** GB values rounded to whole GiB (`65% 83/128GB`); **PCIe** label spaces stripped locally (`PcieLabel.Replace(" ","")` → `4.0x16/32GB/s`, so the shared Contracts label stays untouched); first column renamed `GPU` → `Id`; and the header now spans **two lines** — long labels wrap (`GPU`/`Utilization`, `Mem`/`Utilization`, `Mem`/`Clock`) while short names (`Id`, `SM`, `Temp`, `PSt`, `Fan`, `SysRAM`) sit on line 2 only, leaving line 1 blank above them. Widths retuned to the widest compact value (`WUtil/WMemUtil 11`, `WSm/WFan 4`, `WTemp 4`, `WPower 10`, `WMemory 13`, `WMemClk 7`, `WSysRam 13`, `WPcie 14`); table ~168 → ~112 columns. Verified live with 3 GPUs (`--print` + `--watch`).
 - 2026-11-18 — **T38: CLI System RAM column** (new `src/NvmlTest/SystemMemory.cs`, `SmiFormatter.cs`, `Program.cs`; **cli closure only**): the `--print` / `--watch` table gained a right-aligned **`SysRAM`** column (`WSysRam = 24`) between `Fan` and `PCIe`, rendered `NN % used / total GB` (GiB, 1024³, one decimal; e.g. `65 % 83.4 / 127.8 GB`) from a CLI-local copy of the GUI's `GlobalMemoryStatusEx` reader (`internal static SystemMemory.Read()` → `(used, total)`, `(0,0)` → `N/A`, never divides by zero). The value is machine-wide, so it repeats on every GPU row; `Program.cs` re-reads it once per render (also each `--watch` tick) and passes it to the new `SmiFormatter.Format(snapshot, ramUsedBytes, ramTotalBytes)` overload, keeping the renderer free of OS calls. Kept local to `NvmlTest` on purpose — moving it into `NvmlCore`/`Contracts` would bump BOTH release streams for no gain. Verified live: 3-GPU table aligned, values match `Win32_OperatingSystem` (127.8 GiB total).
