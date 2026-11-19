@@ -4,7 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/4 | 0m | none |
+| 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 1/4 | 1m | none |
+| 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
@@ -83,15 +84,60 @@
 
 ---
 
-## Task T41: Drop the PSt column from the CLI table
+## Task T42: Narrow the Id column and publish the T41 PSt removal
 
 - **Status**: in_progress
 - **Type**: refactor
-- **Created**: 19-11-2026 09:36:17
-- **Last Updated**: 19-11-2026 09:36:17
-- **Time Spent**: 0m
-- **Branch**: [`refactor/ai-drop-pst-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-drop-pst-column)
+- **Created**: 19-11-2026 09:40:22
+- **Last Updated**: 19-11-2026 09:41:30
+- **Time Spent**: 1m
+- **Branch**: [`refactor/ai-narrower-id-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-narrower-id-column)
 - **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**
+  - Two things in one pass: (a) the T41 PSt removal reached `main` but its release was still owed, and (b) the user asked to narrow the first column by one.
+  - **T41 release already published**: `.\release.ps1 --merge 5a50afca96fd296074b35fdb475ccf0370c64949 9438751dc4383e0154a9b88954c7b0b6f316193f` → [`cli/20261119_0940`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261119_0940) (gui skipped). First attempt printed "Nothing to release" because a still-running `NvmlTest.exe` broke the publish; after killing it, re-running with the **full** commit SHAs released normally — short/ambiguous-ish SHAs were not the issue, but full SHAs are what the script expects.
+  - Id column `WIdx` 3 → **2** (fits `Id` and single-digit ids; two-digit GPU counts still print, just with one less pad). Table ~85 → ~84 columns.
+  - Note on verification this session: `bin\NvmlTest\NvmlTest.dll` got locked by a lingering `NvmlTest.exe`, so publish silently kept the old dll (the printed `Build:` stamp was the giveaway). Verified the width change from a clean throwaway publish dir instead, then removed it.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (19-11-2026 09:40:00) "Id column can be reduced by one -" → `WIdx` 3 → **2**.
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — `WIdx` 3 → 2.
+- [ ] Subtask 2 — Build + run `--print` / `--watch`; verify alignment (clean publish dir to dodge the DLL lock).
+- [ ] Subtask 3 — Docs refresh; task log before push; push branch + PR + merge.
+- [ ] Subtask 4 — Final log commit on `main`, then `release.ps1 --merge <pre> <post>` (cli only) and record the tag.
+
+### Full Context Notes for AI Agents
+
+**Edit**: one line in `src/NvmlTest/SmiFormatter.cs` — `private const int WIdx = 2;`.
+Current widths: `Id 2`, `Name 24`, util columns `4` each, `SM 4`, `Temp 4`, `Power 8`, `Memory 13`, Mem/`Clock 7`, `Fan 4`, `SysRAM 13`, `PCIe 13`, `Sep = 1`; 12 columns (no PSt since T41).
+
+**File-lock gotcha (recurring)**: a running `NvmlTest.exe` / `NvidiaMonitor.exe` blocks publish with MSB3021/MSB3027 or, worse, leaves a stale dll behind. Always `Stop-Process -Name NvmlTest,NvidiaMonitor` before publish and check the printed `Build:` stamp matches the new build time.
+
+**Release for T41**: already done — `cli/20261119_0940`. This task's own merge needs a fresh `--merge <pre> <post>` run.
+
+---
+
+## Task T41: Drop the PSt column from the CLI table
+
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
+- **Created**: 19-11-2026 09:36:17
+- **Last Updated**: 19-11-2026 09:41:30
+- **Time Spent**: 5m
+- **Branch**: [`refactor/ai-drop-pst-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-drop-pst-column) — PR [#17](https://github.com/HectorBravo/nvidia_app/pull/17) → `main` (merged)
+- **Commit(s)**: [2175c56](https://github.com/HectorBravo/nvidia_app/commit/2175c56) (task log, before push) · [93d1bbe](https://github.com/HectorBravo/nvidia_app/commit/93d1bbe) (formatter) · [7501a7b](https://github.com/HectorBravo/nvidia_app/commit/7501a7b) (docs) · merge [9438751](https://github.com/HectorBravo/nvidia_app/commit/9438751dc4383e0154a9b88954c7b0b6f316193f)
+- **Blockers**: none
 - **Blockers**: none
 - **Findings & Notes**
   - Continues the [T40](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) compaction of the `NvmlTest` table; again only `src/NvmlTest/SmiFormatter.cs` (cli closure → cli release only).
@@ -110,10 +156,15 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Remove `WPSt` and every `PSt` emission (header line 1, header line 2, dash row, data row).
-- [ ] Subtask 2 — Build + run `--print` / `--watch`; verify all lines still align.
-- [ ] Subtask 3 — README + project-map refresh; task log before push; push branch + PR.
-- [ ] Subtask 4 — Merge to `main`, final log commit, `release.ps1 --merge <pre> <post>` (cli only), record the tag.
+- [x] Subtask 1 — Remove `WPSt` and every `PSt` emission (header line 1, header line 2, dash row, data row).
+- [x] Subtask 2 — Build + run `--print` / `--watch`; verify all lines still align.
+- [x] Subtask 3 — README + project-map refresh; task log before push; push branch + PR.
+- [x] Subtask 4 — Merge to `main`, final log commit, `release.ps1 --merge <pre> <post>` (cli only), record the tag.
+
+**Post-merge record (19-11-2026 09:41)**
+- PR [#17](https://github.com/HectorBravo/nvidia_app/pull/17) merged into `main` with a merge commit: [9438751](https://github.com/HectorBravo/nvidia_app/commit/9438751dc4383e0154a9b88954c7b0b6f316193f) (pre-merge `main` = [5a50afc](https://github.com/HectorBravo/nvidia_app/commit/5a50afca96fd296074b35fdb475ccf0370c64949)).
+- Release: `.\release.ps1 --merge 5a50afca… 9438751dc…` → gui skipped, published [`cli/20261119_0940`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261119_0940).
+- The T41 log bookkeeping (this section + Completed Tasks row) landed with [T42](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal), since the user sent the next tweak while this was still in flight.
 
 ### Full Context Notes for AI Agents
 
@@ -2718,6 +2769,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m |
