@@ -18,8 +18,8 @@ public static class SmiFormatter
     // short ones sit on line 2 alone so line 1 stays blank above them.
     private const int WIdx     = 3;   // "Id"         | values: 0,1,2
     private const int WName    = 24;  // "Name"       | longest GPU name
-    private const int WUtil    = 7;   // "GPU use"    | "100%"
-    private const int WMemUtil = 7;   // "Mem use"    | "100%"
+    private const int WUtil    = 6;   // "GPU" /      | "100%" ("use")
+    private const int WMemUtil = 6;   // "Mem" /      | "100%" ("use")
     private const int WSm      = 4;   // "SM"         | "100%"
     private const int WTemp    = 4;   // "Temp"       | "100°C"
     private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
@@ -54,14 +54,13 @@ public static class SmiFormatter
             return sb.ToString();
         }
 
-        // Header rows. Every label now sits on line 2 (line 1 stays blank, kept so the
-        // two-line header shape holds if a label ever needs to wrap again). Line 2 is
-        // left-aligned for index/name, right-aligned for the numeric labels; the last
-        // column is padded here so the blank line 1 lines up with it.
+        // Header rows. Only the two utilization labels wrap: "GPU"/"use" and "Mem"/"use"
+        // put their first word on line 1; every other label sits on line 2 (blank padding
+        // above it), so line 2 carries the full header and pads the last column to match.
         sb.Append(Spaces(WIdx)).Append(Spaces(Sep));
         sb.Append(Spaces(WName)).Append(Spaces(Sep));
-        sb.Append(Spaces(WUtil)).Append(Spaces(Sep));
-        sb.Append(Spaces(WMemUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("GPU", WUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("Mem", WMemUtil)).Append(Spaces(Sep));
         sb.Append(Spaces(WSm)).Append(Spaces(Sep));
         sb.Append(Spaces(WTemp)).Append(Spaces(Sep));
         sb.Append(Spaces(WPower)).Append(Spaces(Sep));
@@ -75,8 +74,8 @@ public static class SmiFormatter
 
         sb.Append(Pad("Id", WIdx)).Append(Spaces(Sep));
         sb.Append(Pad("Name", WName)).Append(Spaces(Sep));
-        sb.Append(PadL("GPU use", WUtil)).Append(Spaces(Sep));
-        sb.Append(PadL("Mem use", WMemUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("use", WUtil)).Append(Spaces(Sep));
+        sb.Append(PadL("use", WMemUtil)).Append(Spaces(Sep));
         sb.Append(PadL("SM", WSm)).Append(Spaces(Sep));
         sb.Append(PadL("Temp", WTemp)).Append(Spaces(Sep));
         sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
