@@ -18,13 +18,13 @@ public static class SmiFormatter
     // short ones sit on line 2 alone so line 1 stays blank above them.
     private const int WIdx     = 3;   // "Id"         | values: 0,1,2
     private const int WName    = 24;  // "Name"       | longest GPU name
-    private const int WUtil    = 6;   // "GPU" /      | "100%" ("use")
-    private const int WMemUtil = 6;   // "Mem" /      | "100%" ("use")
+    private const int WUtil    = 4;   // "GPU" /      | "100%" ("use")
+    private const int WMemUtil = 4;   // "Mem" /      | "100%" ("use")
     private const int WSm      = 4;   // "SM"         | "100%"
     private const int WTemp    = 4;   // "Temp"       | "100°C"
     private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
     private const int WMemory  = 13;  // "Memory"     | "23784/24576MB"
-    private const int WMemClk  = 7;   // "MemClk"     | "9999MHz"
+    private const int WMemClk  = 7;   // "Mem" /      | "9501MHz" ("Clock")
     private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 4;   // "Fan"        | "100%"
     private const int WSysRam  = 13;  // "SysRAM"     | "100 % 83/128GB" → "100% 83/128GB"
@@ -54,9 +54,9 @@ public static class SmiFormatter
             return sb.ToString();
         }
 
-        // Header rows. Only the two utilization labels wrap: "GPU"/"use" and "Mem"/"use"
-        // put their first word on line 1; every other label sits on line 2 (blank padding
-        // above it), so line 2 carries the full header and pads the last column to match.
+        // Header rows. The wrapped labels put their first word on line 1 ("GPU"/"use",
+        // "Mem"/"use", "Mem"/"Clock"); every other label sits on line 2 only (blank
+        // padding above it), so line 2 carries the full header and pads the last column.
         sb.Append(Spaces(WIdx)).Append(Spaces(Sep));
         sb.Append(Spaces(WName)).Append(Spaces(Sep));
         sb.Append(PadL("GPU", WUtil)).Append(Spaces(Sep));
@@ -65,7 +65,7 @@ public static class SmiFormatter
         sb.Append(Spaces(WTemp)).Append(Spaces(Sep));
         sb.Append(Spaces(WPower)).Append(Spaces(Sep));
         sb.Append(Spaces(WMemory)).Append(Spaces(Sep));
-        sb.Append(Spaces(WMemClk)).Append(Spaces(Sep));
+        sb.Append(PadL("Mem", WMemClk)).Append(Spaces(Sep));
         sb.Append(Spaces(WPSt)).Append(Spaces(Sep));
         sb.Append(Spaces(WFan)).Append(Spaces(Sep));
         sb.Append(Spaces(WSysRam)).Append(Spaces(Sep));
