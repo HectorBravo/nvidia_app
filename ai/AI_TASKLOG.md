@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/4 | 0m | none |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
 | 18-11-2026 12:29:53 | [T38: NvmlTest — System RAM column (percentage + used/total GB)](#task-t38-nvmltest--system-ram-column-percentage--usedtotal-gb) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 9m | none |
 | 16-11-2026 03:00:24 | [T37: Update README.md with the new features + document NvmlTest --watch](#task-t37-update-readme-md-with-the-new-features--document-nvmltest---watch) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#8250df;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">docs</span> | 5/5 | 12m | none |
@@ -78,6 +79,70 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line
+
+- **Status**: in_progress
+- **Type**: refactor
+- **Created**: 19-11-2026 09:27:02
+- **Last Updated**: 19-11-2026 09:27:02
+- **Time Spent**: 0m
+- **Branch**: [`refactor/ai-shorter-util-headers`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-shorter-util-headers)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**
+  - Follow-up to [T39](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators): only the header labels change, so `src/NvmlTest/SmiFormatter.cs` again (cli closure only → only a `cli/...` release).
+  - `Utilization` (11 chars) was what forced `WUtil`/`WMemUtil` to 11; shortening to `GPU use` / `Mem use` (7) lets both columns drop to **7** and keeps line 1 free of long text.
+  - With PCIe moving to line 2, header line 1 becomes entirely blank — kept anyway so the two-line header shape stays consistent (user asked for the label move, not the removal of the line).
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (19-11-2026 09:27:00) "GPU utilizaton and Mem utilization can be shortened to GPU use and Mem use" → line 2 labels become `GPU use` / `Mem use`, widths 11 → 7.
+- (19-11-2026 09:27:00) "Also PCIe column text should be on the second line, not first" → `PCIe` moves to header line 2; line 2 keeps the last-column padding so line 1's trailing blank aligns.
+- (19-11-2026 09:27:00) "after finishing, merge ai branches into main, update tasklog and delete the ai branches" → merge this branch to `main`, final task-log commit, then delete every AI branch locally + remotely (`feat/ai-cli-system-ram-column`, `refactor/ai-compact-cli-table`, this one).
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Header labels: `Utilization` → `GPU use` / `Mem use` (widths 11 → 7); move `PCIe` from line 1 to line 2 (line 2 pads the last column, line 1 emits blank).
+- [ ] Subtask 2 — Build + run `--print` / `--watch`; verify every header/dash/row line has identical length.
+- [ ] Subtask 3 — README + `ai/PROJECT_DESCRIPTION.md` label refresh; task log before push; push branch, PR, merge into `main`.
+- [ ] Subtask 4 — Final task-log commit on `main`; `release.ps1 --merge <pre> <post>` (cli only); delete all AI branches (local + remote) and record it.
+
+### Full Context Notes for AI Agents
+
+**Exact edit (`src/NvmlTest/SmiFormatter.cs`)**
+- Widths: `WUtil = 7`, `WMemUtil = 7` (comment: `"GPU use"` / `"Mem use"` | `100%`). All other widths unchanged (`Id 3`, `Name 24`, `SM 4`, `Temp 4`, `Power 10`, `Memory 13`, `Mem/Clock 7`, `PSt 3`, `Fan 4`, `SysRAM 13`, `PCIe 14`, `Sep = 1`).
+- Header **line 1**: every column emits `Spaces(width)` (fully blank now, since PCIe left line 1) — keep the per-column loop shape so future wrapped labels still land correctly.
+- Header **line 2**: `Pad("Id",WIdx)`, `Pad("Name",WName)`, `PadL("GPU use",WUtil)`, `PadL("Mem use",WMemUtil)`, `PadL("SM",WSm)`, `PadL("Temp",WTemp)`, `PadL("Power",WPower)`, `PadL("Memory",WMemory)`, `PadL("Clock",WMemClk)`, `PadL("PSt",WPSt)`, `PadL("Fan",WFan)`, `PadL("SysRAM",WSysRam)`, then `PadL("PCIe",WPcie)` (was `Spaces(WPcie)`); the last column is padded on line 2 so line 1's blank padding lines up.
+- Dash row and data rows untouched.
+
+**Target output shape**
+```
+Id  Name                    GPU use   Mem use   SM Temp      Power        Memory   Clock PSt  Fan        SysRAM           PCIe
+--- ------------------------ ------- --------- ---- ---- ---------- ------------- ------- --- ---- ------------- --------------
+0   NVIDIA GeForce RTX 3090         0%        0%  58% 47°C   196/420W 23606/24576MB 9501MHz  P2  44%  65% 84/128GB  4.0x16/32GB/s
+```
+
+**Verify commands**
+```powershell
+dotnet build nvidia_app.sln -c Release --nologo
+Set-Location -LiteralPath 'D:\Repos\nvidia_app'
+dotnet publish 'D:\Repos\nvidia_app\src\NvmlTest\NvmlTest.csproj' -c Release -o 'D:\Repos\nvidia_app\bin\NvmlTest'
+& 'D:\Repos\nvidia_app\bin\NvmlTest\NvmlTest.exe' --print
+```
+
+**Git / release protocol for this task (user directive)**
+- AI branch `refactor/ai-shorter-util-headers`, push with `-u`; dedicated `docs(ai): [ai]` log commits before push and final after merge; identity via `GIT_AUTHOR_NAME`/`GIT_COMMITTER_NAME=AI_bot` only.
+- After merge into `main`: `.\release.ps1 --merge <pre> <post>` (expect cli-only), then **delete every AI branch** locally (`git branch -D`) and remotely (`git push origin --delete`): `feat/ai-cli-system-ram-column`, `refactor/ai-compact-cli-table`, `refactor/ai-shorter-util-headers`. All three are already ancestors of `main` (verified with `git merge-base --is-ancestor`), so `-D` loses nothing.
+- Note: deleting the AI branch supersedes the usual "fast-forward + re-push" step for this task, per the user's explicit instruction — make sure the final log commit is on `main` **before** deleting.
 
 ---
 
