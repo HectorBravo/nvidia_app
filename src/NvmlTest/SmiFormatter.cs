@@ -25,7 +25,6 @@ public static class SmiFormatter
     private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
     private const int WMemory  = 13;  // "Memory"     | "23784/24576MB"
     private const int WMemClk  = 7;   // "Mem" /      | "9501MHz" ("Clock")
-    private const int WPSt     = 3;   // "PSt"        | "P0"..."P8"
     private const int WFan     = 4;   // "Fan"        | "100%"
     private const int WSysRam  = 13;  // "SysRAM"     | "100 % 83/128GB" → "100% 83/128GB"
     private const int WPcie    = 13;  // "PCIe"       | "4.0x16/32GB/s"
@@ -66,7 +65,6 @@ public static class SmiFormatter
         sb.Append(Spaces(WPower)).Append(Spaces(Sep));
         sb.Append(Spaces(WMemory)).Append(Spaces(Sep));
         sb.Append(PadL("Mem", WMemClk)).Append(Spaces(Sep));
-        sb.Append(Spaces(WPSt)).Append(Spaces(Sep));
         sb.Append(Spaces(WFan)).Append(Spaces(Sep));
         sb.Append(Spaces(WSysRam)).Append(Spaces(Sep));
         sb.Append(Spaces(WPcie));
@@ -81,7 +79,6 @@ public static class SmiFormatter
         sb.Append(PadL("Power", WPower)).Append(Spaces(Sep));
         sb.Append(PadL("Memory", WMemory)).Append(Spaces(Sep));
         sb.Append(PadL("Clock", WMemClk)).Append(Spaces(Sep));
-        sb.Append(PadL("PSt", WPSt)).Append(Spaces(Sep));
         sb.Append(PadL("Fan", WFan)).Append(Spaces(Sep));
         sb.Append(PadL("SysRAM", WSysRam)).Append(Spaces(Sep));
         sb.Append(PadL("PCIe", WPcie));
@@ -97,7 +94,6 @@ public static class SmiFormatter
         sb.Append(Dash(WPower)).Append(Spaces(Sep));
         sb.Append(Dash(WMemory)).Append(Spaces(Sep));
         sb.Append(Dash(WMemClk)).Append(Spaces(Sep));
-        sb.Append(Dash(WPSt)).Append(Spaces(Sep));
         sb.Append(Dash(WFan)).Append(Spaces(Sep));
         sb.Append(Dash(WSysRam)).Append(Spaces(Sep));
         sb.Append(Dash(WPcie));
@@ -118,7 +114,6 @@ public static class SmiFormatter
             sb.Append(PadL(Power(g.PowerMw, g.EnforcedPowerLimitMw), WPower)).Append(Spaces(Sep));
             sb.Append(PadL(Memory(g.MemoryUsedBytes, g.MemoryTotalBytes), WMemory)).Append(Spaces(Sep));
             sb.Append(PadL(MemClkVal(g.MemoryClockMhz), WMemClk)).Append(Spaces(Sep));
-            sb.Append(PadL(g.PerfStateLabel, WPSt)).Append(Spaces(Sep));
             sb.Append(PadL(Pct(g.FanSpeedPct), WFan)).Append(Spaces(Sep));
             sb.Append(PadL(sysRam, WSysRam)).Append(Spaces(Sep));
             sb.Append(PadL(Pcie(g), WPcie));
