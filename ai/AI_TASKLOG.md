@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 2/4 | 5m | none |
+| 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m | none |
@@ -86,19 +86,22 @@
 
 ## Task T42: Narrow the Id column and publish the T41 PSt removal
 
-- **Status**: in_progress
-- **Type**: refactor
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
 - **Created**: 19-11-2026 09:40:22
-- **Last Updated**: 19-11-2026 09:45:40
-- **Time Spent**: 5m
-- **Branch**: [`refactor/ai-narrower-id-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-narrower-id-column)
-- **Commit(s)**: pending
+- **Last Updated**: 19-11-2026 09:49:34
+- **Time Spent**: 12m
+- **Branch**: [`refactor/ai-narrower-id-column`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-narrower-id-column) — PR [#18](https://github.com/HectorBravo/nvidia_app/pull/18) → `main` (merged)
+- **Commit(s)**: [bb27422](https://github.com/HectorBravo/nvidia_app/commit/bb27422) (task log, before push) · [c7c151d](https://github.com/HectorBravo/nvidia_app/commit/c7c151d) (formatter) · [bbe458c](https://github.com/HectorBravo/nvidia_app/commit/bbe458c) (docs + log) · merge [04c8c90](https://github.com/HectorBravo/nvidia_app/commit/04c8c90a382ff1b74b518dc371349648ed3b0519)
 - **Blockers**: none
 - **Findings & Notes**
+  - The Summary table in this file lists only **incomplete** tasks; T38–T42 are done and live in the **Completed Tasks** section at the bottom (so the count is accurate even when the top looks short).
   - Two things in one pass: (a) the T41 PSt removal reached `main` but its release was still owed, and (b) the user asked to narrow the first column by one.
   - **T41 release already published**: `.\release.ps1 --merge 5a50afca96fd296074b35fdb475ccf0370c64949 9438751dc4383e0154a9b88954c7b0b6f316193f` → [`cli/20261119_0940`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261119_0940) (gui skipped). First attempt printed "Nothing to release" because a still-running `NvmlTest.exe` broke the publish; after killing it, re-running with the **full** commit SHAs released normally — short/ambiguous-ish SHAs were not the issue, but full SHAs are what the script expects.
   - Id column `WIdx` 3 → **2** (fits `Id` and single-digit ids; two-digit GPU counts still print, just with one less pad). Table ~85 → ~84 columns.
   - Note on verification this session: `bin\NvmlTest\NvmlTest.dll` got locked by a lingering `NvmlTest.exe`, so publish silently kept the old dll (the printed `Build:` stamp was the giveaway). Verified the width change from a clean throwaway publish dir instead, then removed it.
+  - **Release published**: [`cli/20261119_0949`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261119_0949) (`NvmlTest-20261119_0949.zip`, gui skipped) — `.\release.ps1 --merge a704e348174df42851eb876bcde4ec68a0cc8dab 04c8c90a382ff1b74b518dc371349648ed3b0519`.
+  - **Two release-script gotchas found the hard way**: (1) `release.ps1` decides "changed" from the commit range, so passing a base that already contains the code commit yields *"Nothing to release"* — the base must be the commit **before** the merge on `main`'s first-parent line (`a704e34`, not `9438751`). (2) A stale dll survives publish when the file is locked: after killing the process, delete `bin\NvmlTest\NvmlTest.dll` and re-publish, then confirm the dll timestamp/`Build:` stamp. The earlier [`cli/20261119_0940`](T41) release carried that stale (pre-T42) binary; it was deleted (`gh release delete --yes` + remote tag removed) since it had 0 downloads and `cli/20261119_0949` supersedes it with both T41 + T42 code.
 
 ### User Confirmations
 
@@ -114,8 +117,8 @@
 
 - [x] Subtask 1 — `WIdx` 3 → 2.
 - [x] Subtask 2 — Build + run `--print` / `--watch`; verify alignment (clean publish dir to dodge the DLL lock).
-- [ ] Subtask 3 — Docs refresh; task log before push; push branch + PR + merge.
-- [ ] Subtask 4 — Final log commit on `main`, then `release.ps1 --merge <pre> <post>` (cli only) and record the tag.
+- [x] Subtask 3 — Docs refresh; task log before push; push branch + PR + merge.
+- [x] Subtask 4 — Final log commit on `main`, then `release.ps1 --merge <pre> <post>` (cli only) and record the tag.
 
 ### Full Context Notes for AI Agents
 
@@ -125,6 +128,8 @@ Current widths: `Id 2`, `Name 24`, util columns `4` each, `SM 4`, `Temp 4`, `Pow
 **File-lock gotcha (recurring)**: a running `NvmlTest.exe` / `NvidiaMonitor.exe` blocks publish with MSB3021/MSB3027 or, worse, leaves a stale dll behind. Always `Stop-Process -Name NvmlTest,NvidiaMonitor` before publish and check the printed `Build:` stamp matches the new build time.
 
 **Release for T41**: already done — `cli/20261119_0940`. This task's own merge needs a fresh `--merge <pre> <post>` run.
+
+**FINAL STATE (done)**: PR #18 merged as `04c8c90`; `main` = `04c8c90` + this final log commit. Release published: `cli/20261119_0949` (gui skipped; changelog line "refactor(cli): narrow the Id column from 3 to 2 characters (c7c151d)"). The stale `cli/20261119_0940` release + tag were deleted. AI branch fast-forwarded onto the final log commit and re-pushed. Nothing left to do for T42.
 
 ---
 
