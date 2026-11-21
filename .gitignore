@@ -22,3 +22,4 @@ desktop.ini
 
 # Release identity placeholder (real content written by release.ps1 at publish time, not committed)
 src/NvidiaMonitor/releaseinfo.txt
+src/NvmlTest/releaseinfo.txt
