@@ -4,12 +4,19 @@
 //   NvmlTest --print
 //   NvmlTest --print [--watch [<seconds>]]
 //   NvmlTest --probe
+//   NvmlTest --update
 // --print prints an nvidia-smi-style table once and exits 0 on success, or 1
 // when NVML / a GPU is unavailable (reason on stdout). With --watch it keeps
 // clearing and re-printing every <seconds> (default 1 s when the value is
 // omitted), like `watch nvidia-smi`; Ctrl-C stops cleanly (exit 0).
 // --probe dumps the raw per-process-utilization API return codes (see
 // NvmlProbe) and exits.
+// --update checks GitHub Releases for a newer published build of this tool, then
+// downloads + installs it over the current directory (a background helper does
+// the swap once this process exits; no relaunch). Exit 0 = updated or already
+// up to date, 3 = update failed, 1 = NVML unavailable while printing.
+// Release builds also print a blue "new version available" line under the table
+// when a newer cli/ release exists (dev builds never check).
 // Missing / bad args exit 2.
 using System.Globalization;
 using HectorBravo.Nvidia.Core;
@@ -18,6 +25,7 @@ using HectorBravo.Nvidia.Test;
 // ── arg parsing (flags are case-insensitive) ─────────────────────
 var print = false;
 var probe = false;
+var update = false;
 double? interval = null;
 var unknown = new List<string>();
 
@@ -31,6 +39,10 @@ for (var i = 0; i < args.Length; i++)
     else if (a.Equals("--probe", StringComparison.OrdinalIgnoreCase))
     {
         probe = true;
+    }
+    else if (a.Equals("--update", StringComparison.OrdinalIgnoreCase))
+    {
+        update = true;
     }
     else if (a.Equals("--watch", StringComparison.OrdinalIgnoreCase))
     {
@@ -61,10 +73,64 @@ for (var i = 0; i < args.Length; i++)
 }
 
 // No recognized mode, or anything we don't understand → usage on stderr.
-if (!print && !probe || unknown.Count > 0)
+if (!print && !probe && !update || unknown.Count > 0)
 {
-    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]] | NvmlTest --probe  (no seconds value → 1 s)");
+    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]] | NvmlTest --probe | NvmlTest --update  (no seconds value → 1 s)");
     return 2;
+}
+
+// Blue console text, restored afterwards — used only for the update notice.
+static void WriteBlueLine(string message)
+{
+    var previous = Console.ForegroundColor;
+    try
+    {
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine(message);
+    }
+    catch (Exception)
+    {
+        Console.WriteLine(message); // no console buffer (redirected output): plain text is fine
+    }
+    finally
+    {
+        try { Console.ForegroundColor = previous; } catch (Exception) { }
+    }
+}
+
+// ── update service (shared by --update and the blue notice) ───────
+var updater = new UpdateService();
+
+// --update: self-update and exit — no table, no NVML unless already printing.
+if (update && !print && !probe)
+{
+    Console.WriteLine($"Build: {UpdateService.BuildStamp:yyyy-MM-dd HH:mm}");
+    var progress = new Progress<string>(Console.WriteLine);
+    try
+    {
+        var info = await updater.CheckAsync();
+        if (info is null)
+        {
+            // Either we are the newest published build, or the check could not run /
+            // this is a dev build with no release identity. Say which one we know.
+            Console.WriteLine(UpdateService.ReleaseZipName.Length == 0
+                ? "No update: this build has no release identity (dev build)."
+                : "Already up to date.");
+            return 0;
+        }
+
+        Console.WriteLine($"New version available: {info.Tag} ({info.ZipName})");
+        await updater.DownloadAndApplyAsync(info, progress);
+        Console.WriteLine("Update staged — the files are replaced once this process exits.");
+        Console.WriteLine("Run NvmlTest.exe again when it finishes to use the new version.");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"update failed: {ex.Message}");
+        Console.Error.WriteLine("Nothing was replaced; the current build is untouched.");
+        return 3;
+    }
 }
 
 // --probe: raw NVML diagnostic, independent of the table printer.
@@ -91,9 +157,17 @@ if (!svc.IsAvailable)
 // One-shot: print the table once and exit.
 if (interval is null)
 {
+    // Kick off the update check in parallel with the NVML refresh; it never blocks
+    // longer than its own HTTP timeout, and any failure means "no notice".
+    var checkTask = updater.CheckAsync();
+
     var snap = await svc.RefreshAsync();
     var (ramUsed, ramTotal) = SystemMemory.Read(); // machine-wide, not per-GPU
     Console.WriteLine(SmiFormatter.Format(snap, ramUsed, ramTotal));
+
+    var info = await CheckOrDefaultAsync(checkTask);
+    if (info is not null) PrintNotice(info);
+
     await svc.ShutdownAsync();
     return 0;
 }
@@ -106,10 +180,27 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
+// Update notice state: checked at startup and re-checked every 10 min while the
+// feed runs, so a long-lived --watch sees a release published after it started.
+UpdateService.UpdateInfo? updateInfo = null;
+var nextCheckAt = DateTime.MinValue;
+Task<UpdateService.UpdateInfo?>? checkTask2 = updater.CheckAsync();
+
 try
 {
     while (!cts.IsCancellationRequested)
     {
+        if (checkTask2 is { IsCompleted: true })
+        {
+            updateInfo = await CheckOrDefaultAsync(checkTask2);
+            checkTask2 = null;
+        }
+        else if (checkTask2 is null && DateTime.UtcNow >= nextCheckAt)
+        {
+            checkTask2 = updater.CheckAsync();
+            nextCheckAt = DateTime.UtcNow.AddMinutes(10);
+        }
+
         try
         {
             Console.Clear(); // wipe so the re-render feels "live", like `watch`
@@ -131,6 +222,8 @@ try
             Console.Error.WriteLine($"warn: refresh failed — {ex.Message}; retrying next interval");
         }
 
+        if (updateInfo is not null) PrintNotice(updateInfo);
+
         try
         {
             await Task.Delay(TimeSpan.FromSeconds(interval.Value), cts.Token);
@@ -147,3 +240,22 @@ finally
 }
 
 return 0;
+
+// The update notice must never take the table down with it: swallow anything
+// the check threw (offline, rate limit, bad payload) as "no notice".
+static async Task<UpdateService.UpdateInfo?> CheckOrDefaultAsync(Task<UpdateService.UpdateInfo?> task)
+{
+    try
+    {
+        return await task;
+    }
+    catch (Exception)
+    {
+        return null;
+    }
+}
+
+// One blue line under the table — display only, `--update` does the install.
+static void PrintNotice(UpdateService.UpdateInfo info) =>
+    WriteBlueLine($"New version available: {info.Tag} ({info.ZipName}) — run: NvmlTest --update");
+

@@ -218,6 +218,12 @@ $releaseStamp = Get-Date
 $guiZipName = "NvidiaMonitor-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
 [System.IO.File]::WriteAllText("$PSScriptRoot\src\NvidiaMonitor\releaseinfo.txt", $guiZipName)
 
+# Same rule for the CLI (T43): NvmlTest embeds its own release zip name and its
+# updater only looks at cli/<...> releases, so the two streams never offer each
+# other's builds.
+$cliZipName = "NvmlTest-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
+[System.IO.File]::WriteAllText("$PSScriptRoot\src\NvmlTest\releaseinfo.txt", $cliZipName)
+
 Write-Host '[1/3] Building nvidia_app.sln (Release)…'
 dotnet build nvidia_app.sln -c Release --nologo
 if ($LASTEXITCODE -ne 0) { Write-Host 'BUILD FAILED' -ForegroundColor Red; exit 1 }
