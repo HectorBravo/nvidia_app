@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-19 09:38:00
-git_head: 5a50afca96fd296074b35fdb475ccf0370c64949
+last_indexed: 2026-11-21 13:55:00
+git_head: dfe465c
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -94,7 +94,14 @@ git-ignored `bin/` (publish output).
   icon, `<Resource>`; both the NVIDIA eye+wordmark logo ≤256×256, T30).
 - **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
-  value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic),
+  value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic; `--update`
+  self-update — check + download + in-place swap, exit 3 on failure),
+  `UpdateService` (CLI port of the GUI updater scoped to the `cli/` stream: GitHub
+  Releases check keyed on the embedded `releaseinfo.txt` zip name vs the newest
+  `cli/` release's asset name; token via `GITHUB_TOKEN`/`GH_TOKEN` else `gh auth
+  token`; download → verify (flat-zip path-traversal guard + must contain
+  `NvmlTest.exe`) → hidden PowerShell swap helper that waits for exit, backs up to
+  `%TEMP%`, extracts over the app dir; no relaunch — T43),
   `SystemMemory` (`GlobalMemoryStatusEx` P/Invoke → `(used, total)` physical RAM,
   `(0,0)` on failure; CLI-local copy of the GUI reader so only the `cli` release
   stream is affected — T38),
@@ -122,6 +129,10 @@ git-ignored `bin/` (publish output).
   until Ctrl-C (**N defaults to 1** when the value is omitted; an explicit
   non-numeric value exits 2). Exits 0 on success, 1 when NVML/GPU unavailable
   (reason on stdout). `--probe` = one-shot NVML diagnostic (versions + both SM-utilization APIs).
+  `--update` = self-update from the newest published `cli/` GitHub release (exit 0 updated /
+  already current, 3 failed). Release builds additionally print a **blue** "New version
+  available: cli/<tag> …" line under the table when a newer `cli/` release exists (checked at
+  startup and every 10 min while `--watch` runs; dev builds and failed checks stay silent).
 
 ## 5. Build / Run / Test
 ```powershell
@@ -365,6 +376,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-21 — **T43: CLI auto-update** (new `src/NvmlTest/UpdateService.cs`, `Program.cs`, `NvmlTest.csproj`, `release.ps1`, `.gitignore`; **cli closure only**): the console tool got the dashboard's self-update, scoped to its own release stream. `release.ps1` now also writes `src/NvmlTest/releaseinfo.txt` (the cli zip name) which is embedded as resource `releaseinfo.txt`; the ONLY rule is newest `cli/` release asset name ≠ embedded name (dev builds: no identity → silent). New flags: **`--update`** (check → download with % progress → verify zip [flat, no path traversal, must contain `NvmlTest.exe`] → hidden PS swap helper: wait for exit, backup to `%TEMP%\NvmlTest-backup-<tag>`, extract over app dir; NO relaunch; exit 3 + untouched files on failure) and the **blue notice** line under the `--print`/`--watch` table (`Console.ForegroundColor = ConsoleColor.Blue`, restored in `finally`; check runs in parallel with the NVML refresh at startup and every 10 min in watch; any check exception ⇒ no notice). Token: env vars else `gh auth token`, cached per process. Verified live: fake old identity → blue line + full download/swap cycle (files replaced, backup created); real identity → "Already up to date."; dev build → silent.
 - 2026-11-19 — **T42: narrower `Id` column** (`src/NvmlTest/SmiFormatter.cs`, one line; **cli closure only**): `WIdx` 3 → **2** — enough for the `Id` header and single-digit ids, so the table lost one more column (~85 → ~84). Published as `cli/20261119_0940` (T41) plus this change. Recurring gotcha confirmed again: a live `NvmlTest.exe` holds `bin\NvmlTest\*.dll`, so publish either fails with MSB3021/MSB3027 or leaves a **stale** dll behind — always `Stop-Process -Name NvmlTest,NvidiaMonitor` first and check the printed `Build:` stamp.
 - 2026-11-19 — **T41: drop the PSt column** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the perf-state column (`PSt`, `P0`…`P8`) was removed from the CLI table — width constant `WPSt` plus its four emissions (both header lines, dash row, data cell). Column count 13 → 12, table ~90 → ~85 columns. `GpuSnapshot.PerfStateLabel` in Contracts is untouched (the GUI overview grid and the `NvidiaMonitor --print` summary still show the P-state). Verified live with 3 GPUs (`--print` + `--watch`).
 - 2026-11-19 — **T40: CLI header labels + narrower columns** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the two utilization headers shortened `Utilization` → **`GPU use` / `Mem use`**, then split across both header lines (**`GPU`/`use`**, **`Mem`/`use`**) so `WUtil`/`WMemUtil` 11 → 7 → **6 → 4**; the memory-clock column relabelled to wrap as **`Mem`/`Clock`** (was `Clock` alone); **`PCIe` moved from header line 1 to line 2** — every other label sits on line 2 with blank padding above it, and line 2 pads the last column so the two lines line up; `WPcie` 14 → **13** (exact fit for `4.0x16/32GB/s`) and `WPower` 10 → **8**. Table ~112 → ~90 columns. Verified live with 3 GPUs (`--print` + `--watch`).

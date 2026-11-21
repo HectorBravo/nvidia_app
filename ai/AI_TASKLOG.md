@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/4 | 0m | none |
+| 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 3/4 | 7m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
@@ -90,8 +90,8 @@
 - **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 21-11-2026 13:33:42
-- **Last Updated**: 21-11-2026 13:33:42
-- **Time Spent**: 0m
+- **Last Updated**: 21-11-2026 13:40:46
+- **Time Spent**: 7m
 - **Branch**: [`feat/ai-cli-auto-update`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-auto-update)
 - **Commit(s)**: pending
 - **Blockers**: none
@@ -111,9 +111,9 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Add CLI-local `UpdateService.cs` (cli/ stream, NvmlTest-only) + embedded release identity.
-- [ ] Subtask 2 — Wire blue notice into `--print` and `--watch`; add `--update` flag.
-- [ ] Subtask 3 — Build, run live verification (`--print`, `--update` dry behaviour).
+- [x] Subtask 1 — Add CLI-local `UpdateService.cs` (cli/ stream, NvmlTest-only) + embedded release identity.
+- [x] Subtask 2 — Wire blue notice into `--print` and `--watch`; add `--update` flag.
+- [x] Subtask 3 — Build, run live verification (`--print`, `--update` dry behaviour).
 - [ ] Subtask 4 — Docs (README + PROJECT_DESCRIPTION) and task log; commit + push branch.
 
 ### Full Context Notes for AI Agents
@@ -144,6 +144,14 @@
 - `--update`: check → download+verify → install swap helper → exit so the helper replaces files and does NOT relaunch (CLI has no window to bring back).
 
 **State**: branch `feat/ai-cli-auto-update` created from `main` @ `cf739ac`. No code written yet.
+
+**Implemented (verified live, 21-11-2026)**:
+- New `src/NvmlTest/UpdateService.cs` — CLI port scoped to `cli/`: filters `tag_name.StartsWith("cli/")`, picks the asset whose name starts with `"NvmlTest-"` (not `assets[0]` blindly), 15 s HTTP timeout, same token chain. `CheckAsync` returns null early when `ReleaseZipName` is empty (dev builds never check). `DownloadAndApplyAsync` = GUI flow minus the single-instance lockfile dance and **without relaunch**.
+- `Program.cs`: `--update` handled BEFORE NVML init (`update && !print && !probe`); exit codes 0 ok / 3 failed / 2 usage. Notice: `WriteBlueLine` helper (blue + restore in finally; falls back to plain text when output is redirected). One-shot path starts `CheckAsync()` in parallel with `RefreshAsync()`. Watch loop keeps `updateInfo`/`checkTask2`/`nextCheckAt` (10 min re-check), prints the notice line after each table. Local functions `CheckOrDefaultAsync` + `PrintNotice` at EOF (top-level statements allow them).
+- Identity plumbing: `NvmlTest.csproj` `<EmbeddedResource LogicalName="releaseinfo.txt" Condition="Exists(...)">`; `release.ps1` writes `src/NvmlTest/releaseinfo.txt` next to the gui one; `.gitignore` extended.
+- Live proof (scratch dir `bin/_verify`, deleted after): embedded `NvmlTest-20250101_0000.zip` → blue line under table + full `--update` cycle (download %, verify, swap: dll/exe replaced by the 09:49 release build, backup `%TEMP%\NvmlTest-backup-NvmlTest-20261119_0949`, temp zip left behind — same as GUI); embedded real name → `Already up to date.`; no resource (dev) → silent + `--update` says dev build.
+- Gotcha hit again: PowerShell cwd drifts into `bin/NvmlTest` between run_commands calls — always prefix `Set-Location -LiteralPath 'D:\Repos\nvidia_app'` and use absolute paths.
+
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>

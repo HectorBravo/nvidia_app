@@ -67,6 +67,18 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   and `Ctrl-C` stops it cleanly (exit `0`). An explicit non-numeric value exits `2`.
 - `--probe` — a one-shot NVML diagnostic: NVML version plus both per-process SM-utilization
   APIs (legacy and batched) with their raw return codes. Useful when a metric looks wrong.
+- `--update` — **self-update**: checks GitHub Releases for the newest published `cli/` build;
+  when it differs from this binary's embedded release identity, downloads the release zip,
+  verifies it and swaps the files in place (a hidden helper does the swap once the process
+  exits — nothing is replaced unless the download verified, and a backup of the old files is
+  kept in `%TEMP%`). Exit `0` = updated or already up to date, `3` = failed (current build
+  untouched). Checks are authenticated like the dashboard's (`GITHUB_TOKEN`/`GH_TOKEN`, else
+  `gh auth token`).
+- **Update notice**: release builds also check GitHub once at startup (and every 10 min in a
+  live `--watch` feed) and print one **blue** line under the table —
+  `New version available: cli/<tag> (NvmlTest-<stamp>.zip) — run: NvmlTest --update`.
+  Dev builds (never packaged by `release.ps1`) have no release identity and stay silent; a
+  failed check (offline, rate limit) is silently ignored — it never disturbs the table.
 - Both print a `Build: yyyy-MM-dd HH:mm` stamp first, so a binary can be matched to a release by
   eye.
 - `NvidiaMonitor --print` runs the same read through the WPF entry point (no window is opened),
