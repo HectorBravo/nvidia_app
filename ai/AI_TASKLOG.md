@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 3/4 | 7m | none |
+| 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
@@ -32,7 +32,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 22 completed task(s) - [View completed tasks](#completed-tasks)
+> 23 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -87,13 +87,13 @@
 
 ## Task T43: CLI auto-update — blue "new version available" notice + `--update` command
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 21-11-2026 13:33:42
-- **Last Updated**: 21-11-2026 13:40:46
-- **Time Spent**: 7m
+- **Last Updated**: 21-11-2026 13:42:24
+- **Time Spent**: 9m
 - **Branch**: [`feat/ai-cli-auto-update`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-auto-update)
-- **Commit(s)**: pending
+- **Commit(s)**: [92f957b](https://github.com/HectorBravo/nvidia_app/commit/92f957b0861d21a3c04e01cf9752a128a1997698) (code), [493864a](https://github.com/HectorBravo/nvidia_app/commit/493864a7575e6e7f3a269a8248b2510a0b0ac2cd) (merge, PR #19)
 - **Blockers**: none
 - **Findings & Notes**:
   - GUI already has a full auto-update path (`src/NvidiaMonitor/UpdateService.cs`); the CLI has none.
@@ -114,7 +114,7 @@
 - [x] Subtask 1 — Add CLI-local `UpdateService.cs` (cli/ stream, NvmlTest-only) + embedded release identity.
 - [x] Subtask 2 — Wire blue notice into `--print` and `--watch`; add `--update` flag.
 - [x] Subtask 3 — Build, run live verification (`--print`, `--update` dry behaviour).
-- [ ] Subtask 4 — Docs (README + PROJECT_DESCRIPTION) and task log; commit + push branch.
+- [x] Subtask 4 — Docs (README + PROJECT_DESCRIPTION) and task log; commit + push branch.
 
 ### Full Context Notes for AI Agents
 
@@ -2841,6 +2841,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
 | 18-11-2026 18:57:11 | [T39: Compress the CLI table (two-line headers, no space before %, integer power / SysRAM, Id column, single-space separators)](#task-t39-compress-the-cli-table-two-line-headers-no-space-before--integer-power--sysram-id-column-single-space-separators) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 5/5 | 8m |
