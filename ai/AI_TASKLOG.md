@@ -90,8 +90,8 @@
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 21-11-2026 13:33:42
-- **Last Updated**: 21-11-2026 13:42:24
-- **Time Spent**: 9m
+- **Last Updated**: 21-11-2026 13:44:38
+- **Time Spent**: 11m
 - **Branch**: [`feat/ai-cli-auto-update`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-auto-update)
 - **Commit(s)**: [92f957b](https://github.com/HectorBravo/nvidia_app/commit/92f957b0861d21a3c04e01cf9752a128a1997698) (code), [493864a](https://github.com/HectorBravo/nvidia_app/commit/493864a7575e6e7f3a269a8248b2510a0b0ac2cd) (merge, PR #19)
 - **Blockers**: none
@@ -151,6 +151,8 @@
 - Identity plumbing: `NvmlTest.csproj` `<EmbeddedResource LogicalName="releaseinfo.txt" Condition="Exists(...)">`; `release.ps1` writes `src/NvmlTest/releaseinfo.txt` next to the gui one; `.gitignore` extended.
 - Live proof (scratch dir `bin/_verify`, deleted after): embedded `NvmlTest-20250101_0000.zip` → blue line under table + full `--update` cycle (download %, verify, swap: dll/exe replaced by the 09:49 release build, backup `%TEMP%\NvmlTest-backup-NvmlTest-20261119_0949`, temp zip left behind — same as GUI); embedded real name → `Already up to date.`; no resource (dev) → silent + `--update` says dev build.
 - Gotcha hit again: PowerShell cwd drifts into `bin/NvmlTest` between run_commands calls — always prefix `Set-Location -LiteralPath 'D:\Repos\nvidia_app'` and use absolute paths.
+
+**Published**: `release.ps1 --merge cf739ac 9e09aa6` → `[skip] gui` (no gui-closure changes) + **`cli/20261121_1344`** (https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261121_1344, asset `NvmlTest-20261121_1344.zip`). The published binary embeds `releaseinfo.txt` = its own zip name → first self-consistent cli release; `--update` on it says "Already up to date." (verified live). Older published binaries (`cli/20261119_0949` and earlier) have NO embedded identity, so they stay silent until the user updates once manually — from then on the mechanism carries itself forward.
 
 
 - **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
