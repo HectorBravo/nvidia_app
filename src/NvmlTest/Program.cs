@@ -163,12 +163,13 @@ if (interval is null)
 
     var snap = await svc.RefreshAsync();
     var (ramUsed, ramTotal) = SystemMemory.Read(); // machine-wide, not per-GPU
-    Console.WriteLine(SmiFormatter.Format(snap, ramUsed, ramTotal));
+    Console.WriteLine(SmiFormatter.Format(snap, ramUsed, ramTotal, UpdateService.CurrentReleaseTag));
 
     var info = await CheckOrDefaultAsync(checkTask);
     if (info is not null) PrintNotice(info);
 
     await svc.ShutdownAsync();
+
     return 0;
 }
 
@@ -215,7 +216,7 @@ try
         {
             var snap = await svc.RefreshAsync();
             var (ramUsed, ramTotal) = SystemMemory.Read(); // re-read every tick so the live feed tracks the OS
-            Console.WriteLine(SmiFormatter.Format(snap, ramUsed, ramTotal));
+            Console.WriteLine(SmiFormatter.Format(snap, ramUsed, ramTotal, UpdateService.CurrentReleaseTag));
         }
         catch (Exception ex) // NVML hiccup: warn on stderr, keep going; next tick retries
         {
