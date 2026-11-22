@@ -181,8 +181,9 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
-// Update notice state: checked at startup and re-checked every 10 min while the
-// feed runs, so a long-lived --watch sees a release published after it started.
+// Update notice state: checked at startup and re-checked every hour while the
+// feed runs (same schedule as the GUI's DispatcherTimer), so a long-lived
+// --watch sees a release published after it started.
 UpdateService.UpdateInfo? updateInfo = null;
 var nextCheckAt = DateTime.MinValue;
 Task<UpdateService.UpdateInfo?>? checkTask2 = updater.CheckAsync();
@@ -199,7 +200,7 @@ try
         else if (checkTask2 is null && DateTime.UtcNow >= nextCheckAt)
         {
             checkTask2 = updater.CheckAsync();
-            nextCheckAt = DateTime.UtcNow.AddMinutes(10);
+            nextCheckAt = DateTime.UtcNow.AddHours(1); // same cadence as the GUI's hourly timer
         }
 
         try
