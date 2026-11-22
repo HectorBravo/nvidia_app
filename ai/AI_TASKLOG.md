@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 4/5 | 8m | none |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
@@ -82,6 +83,71 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
+- **Created**: 22-11-2026 23:12:54
+- **Last Updated**: 22-11-2026 23:20:39
+- **Time Spent**: 8m
+- **Branch**: [`chore/ai-cli-release-consolidation`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-cli-release-consolidation)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - cli releases today: `20261111_0407` (base, no changelog), `20261118_1842`, `20261118_1902`, `20261119_0949`, `20261121_1344` (current). Each intermediate carries only its own one-line changelog.
+  - The 8 code commits touching the cli closure since `8571db1` (tag `cli/20261111_0407`) are exactly what the intermediates cover; consolidating = one "What's changed" list on the newest release.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (22-11-2026 23:20) Fake release tag format? → "Fake tag cli/29991231_2359 — far-future date, can never be shadowed by real builds; obvious test artifact you delete after verifying"
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — Patch `cli/20261121_1344` body with the consolidated changelog (8 commits since `cli/20261111_0407`).
+- [x] Subtask 2 — Delete intermediate releases + tags: `cli/20261118_1842`, `cli/20261118_1902`, `cli/20261119_0949`.
+- [x] Subtask 3 — Create fake release `cli/29991231_2359` (asset = current zip, marked TEST ONLY).
+- [x] Subtask 4 — Verify live: `--print` shows blue notice pointing at the fake; `--update` swaps it in; restore real build afterwards.
+- [ ] Subtask 5 — Docs + task log; push branch, PR, merge, final log, ff-back branch.
+
+### Full Context Notes for AI Agents
+
+**Requirement**: (1) cli releases must follow the gui rule — every release body lists what changed since the previous one; consolidate everything between `cli/20261111_0407` and the current release into the newest one and delete the intermediates. (2) Create a FAKE newer cli release so the user can verify blue-notice detection: tag `cli/29991231_2359` (user-confirmed far-future).
+
+**Code commits to consolidate** (`git log 8571db1..HEAD -- src/NvmlTest src/NvmlCore src/HectorBravo.Nvidia.Contracts`, newest first):
+```
+92f957b feat(cli): [ai] auto-update via --update flag and blue new-version notice
+c7c151d refactor(cli): [ai] narrow the Id column from 3 to 2 characters
+93d1bbe refactor(cli): [ai] drop the PSt (perf state) column from the table
+7545c18 refactor(cli): [ai] trim util columns to 4 and wrap the memory clock header as Mem/Clock
+53883b9 refactor(cli): [ai] split the GPU/Mem use headers over the two header lines
+9858913 refactor(cli): [ai] shorten util headers to GPU use/Mem use, PCIe on line 2, trim Power+PCIe widths
+4f274ce refactor(cli): [ai] compact the table (2-line headers, tight units, integer W/GB, Id column)
+8da2be6 feat(cli): [ai] add SysRAM column (used % + used/total GB) to the NvmlTest table
+```
+(release.ps1 strips `: [ai] ` → `- feat(cli): auto-update… (92f957b)`; docs(ai) commits excluded.)
+
+**release.ps1 modes**: `--changelog <base> [<head>] [gui|cli]` patches the NEWEST cli release's body in place (keeps its footer). Perfect for Subtask 1: `--changelog 8571db1 HEAD cli`.
+**Delete**: `gh release delete <tag> --yes` then `git push origin --delete <tag>` + `git tag -d <tag>` (tags live remote too; verify with `git ls-remote --tags origin`).
+**Fake release**: `gh release create cli/29991231_2359 bin/NvmlTest/NvmlTest-…zip` — asset MUST be named `NvmlTest-<anything>.zip` (UpdateService picks the asset whose name starts with `NvmlTest-`; zip must contain `NvmlTest.exe`). Use a copy of the current published zip renamed `NvmlTest-29991231_2359.zip`. Body: big "⚠ TEST FAKE" warning + what's changed footer.
+**UpdateService rule reminder**: newest cli release (max `published_at`) asset name ≠ embedded `releaseinfo.txt` → notice/install. Current binary embeds `NvmlTest-20261121_1344.zip`. After the fake exists, `--print` must show the blue line and `--update` will install the FAKE zip (same content, different stamp) — then restore: re-publish from `bin/NvmlTest` is NOT needed; instead copy the pre-test backup of exe/dll back OR re-run `dotnet publish` to `bin/NvmlTest`. Keep `%TEMP%` backup note.
+
+**State**: branch created from `main` @ `8327698`. Nothing done yet.
+
+**Executed (22-11-2026, all verified)**:
+- **Consolidation**: `cli/20261121_1344` body now lists ALL 8 code commits since `cli/20261111_0407` (the `release.ps1 --changelog` mode only found 1 — its `git log --name-only` walk skips merge commits, so the body was written manually with the full list). Intermediates `cli/20261118_1842`, `cli/20261118_1902`, `cli/20261119_0949` deleted (release + remote tag via `gh release delete --yes`; local tags via `git tag -d`). Remaining cli releases: base `20261111_0407` + consolidated `20261121_1344`.
+- **Fake release**: created `cli/29991231_2359` with asset `NvmlTest-29991231_2359.zip` = current binaries + embedded identity `NvmlTest-29991231_2359.zip` (publish picks up `src/NvmlTest/releaseinfo.txt` — had to delete obj/ once: stale incremental cache kept the old resource). Body marked ⚠ TEST FAKE with delete instructions.
+- **Live verification**: real binary `--print` + `--watch` showed `New version available: cli/29991231_2359 (NvmlTest-29991231_2359.zip) — run: NvmlTest --update`; `--update` downloaded, verified and swapped it in; the updated binary then reported `Already up to date.` — full loop works end to end.
+- **Cleanup**: fake release + remote/local tags deleted; `bin/NvmlTest` restored from `bin/pre-fake-backup` (real build, stamp 2026-11-21 13:44) and confirmed `Already up to date.` Restore gotchas hit twice: a pending swap helper re-overwrote the restore while the fake release still existed (fix: delete the fake FIRST, then restore), and my own `[Assembly]::LoadFrom` probe locked the dll mid-copy.
+- Machine hiccup: transient PowerShell OOM (`Sys.OutOfMemoryException`, `gh` Go runtime `cannot allocate memory`) — recovered after ~30 s, no action needed.
 
 ---
 
