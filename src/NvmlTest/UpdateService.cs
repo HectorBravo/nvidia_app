@@ -111,6 +111,23 @@ public sealed class UpdateService
     }
 
     /// <summary>
+    /// Identity of THIS build as a release TAG (e.g. "cli/20261121_1344"): the embedded
+    /// zip name without its extension. Empty for dev builds — callers show "dev build".
+    /// (The tag's date part is exactly what release.ps1 stamps into the binaries.)
+    /// </summary>
+    public static string CurrentReleaseTag
+    {
+        get
+        {
+            var zip = ReleaseZipName;
+            if (zip.Length == 0) return string.Empty;
+            var stamp = Path.GetFileNameWithoutExtension(zip); // "NvmlTest-<stamp>" → "<stamp>" part kept whole below
+            var dash = stamp.IndexOf('-');
+            return dash >= 0 ? "cli/" + stamp[(dash + 1)..] : "cli/" + stamp;
+        }
+    }
+
+    /// <summary>
     /// The ONLY update rule: the newest published cli release ships a zip whose name
     /// differs from the zip this build was shipped in (embedded resource) → an update is
     /// available. No timestamps, no tag-format parsing.

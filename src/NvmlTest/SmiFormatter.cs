@@ -33,17 +33,22 @@ public static class SmiFormatter
     /// <summary>
     /// Renders a <see cref="SystemSnapshot"/> plus the machine's physical-RAM
     /// reading as an nvidia-smi-style, monospaced, column-aligned text table for
-    /// headless / CLI consumption.
+    /// headless / CLI consumption. <paramref name="buildTag"/> is this binary's
+    /// release identity (e.g. "cli/20261121_1344"); empty = dev build.
     /// </summary>
-    public static string Format(SystemSnapshot s, long ramUsedBytes, long ramTotalBytes)
+    public static string Format(SystemSnapshot s, long ramUsedBytes, long ramTotalBytes, string buildTag)
     {
         var sb = new StringBuilder();
 
-        // Header line: system-level version info (nvidia-smi style banner).
+        // Header lines: system-level version info (nvidia-smi style banner), this
+        // binary's release identity (mirrors the GUI header's "[Latest release: …]")
+        // and the labelled snapshot time.
         sb.Append("Driver: ").Append(NonEmpty(s.DriverVersion));
         sb.Append("  CUDA: ").Append(NonEmpty(s.CudaDriverVersion));
         sb.Append("  NVML: ").Append(NonEmpty(s.NvmlVersion));
-        sb.Append(' ').Append(s.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.AppendLine();
+        sb.Append("Build: ").AppendLine(string.IsNullOrWhiteSpace(buildTag) ? "dev build" : buildTag);
+        sb.Append("Current time: ").Append(s.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
         sb.AppendLine();
         sb.AppendLine();
 

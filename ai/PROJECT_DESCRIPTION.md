@@ -1,6 +1,6 @@
 ﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-21 13:55:00
-git_head: dfe465c
+last_indexed: 2026-11-22 23:36:00
+git_head: 572abc8
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -376,6 +376,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+- 2026-11-22 — **T45: CLI release-build banner line** (`src/NvmlTest/SmiFormatter.cs`, `UpdateService.cs`, `Program.cs`; **cli closure only**): the table banner now spans three lines — `Driver/CUDA/NVML` (timestamp removed from it), **`Build: cli/<tag>`** right under it (new `UpdateService.CurrentReleaseTag`: embedded `releaseinfo.txt` zip name → tag; `dev build` when absent — mirrors the GUI header's `[Latest release: …]`), and **`Current time: yyyy-MM-dd HH:mm:ss`** (the labelled snapshot timestamp). Verified live (`--print` + `--watch`, dev vs packaged identity).
 - 2026-11-21 — **T43: CLI auto-update** (new `src/NvmlTest/UpdateService.cs`, `Program.cs`, `NvmlTest.csproj`, `release.ps1`, `.gitignore`; **cli closure only**): the console tool got the dashboard's self-update, scoped to its own release stream. `release.ps1` now also writes `src/NvmlTest/releaseinfo.txt` (the cli zip name) which is embedded as resource `releaseinfo.txt`; the ONLY rule is newest `cli/` release asset name ≠ embedded name (dev builds: no identity → silent). New flags: **`--update`** (check → download with % progress → verify zip [flat, no path traversal, must contain `NvmlTest.exe`] → hidden PS swap helper: wait for exit, backup to `%TEMP%\NvmlTest-backup-<tag>`, extract over app dir; NO relaunch; exit 3 + untouched files on failure) and the **blue notice** line under the `--print`/`--watch` table (`Console.ForegroundColor = ConsoleColor.Blue`, restored in `finally`; check runs in parallel with the NVML refresh at startup and every 10 min in watch; any check exception ⇒ no notice). Token: env vars else `gh auth token`, cached per process. Verified live: fake old identity → blue line + full download/swap cycle (files replaced, backup created); real identity → "Already up to date."; dev build → silent.
 - 2026-11-19 — **T42: narrower `Id` column** (`src/NvmlTest/SmiFormatter.cs`, one line; **cli closure only**): `WIdx` 3 → **2** — enough for the `Id` header and single-digit ids, so the table lost one more column (~85 → ~84). Published as `cli/20261119_0940` (T41) plus this change. Recurring gotcha confirmed again: a live `NvmlTest.exe` holds `bin\NvmlTest\*.dll`, so publish either fails with MSB3021/MSB3027 or leaves a **stale** dll behind — always `Stop-Process -Name NvmlTest,NvidiaMonitor` first and check the printed `Build:` stamp.
 - 2026-11-19 — **T41: drop the PSt column** (`src/NvmlTest/SmiFormatter.cs` only; **cli closure only**): the perf-state column (`PSt`, `P0`…`P8`) was removed from the CLI table — width constant `WPSt` plus its four emissions (both header lines, dash row, data cell). Column count 13 → 12, table ~90 → ~85 columns. `GpuSnapshot.PerfStateLabel` in Contracts is untouched (the GUI overview grid and the `NvidiaMonitor --print` summary still show the P-state). Verified live with 3 GPUs (`--print` + `--watch`).

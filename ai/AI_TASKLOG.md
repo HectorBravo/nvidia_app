@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
@@ -83,6 +84,64 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
+- **Created**: 22-11-2026 23:31:33
+- **Last Updated**: 22-11-2026 23:31:33
+- **Time Spent**: 0m
+- **Branch**: [`feat/ai-cli-release-build-line`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-release-build-line)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - GUI already shows `[Latest release: <tag>]` in its header (MainWindow.cs ~L127); the CLI only prints `Build: <local compile stamp>` at the top.
+  - The trailing date on the Driver banner is `SystemSnapshot.Timestamp` (snapshot taken time) — needs an explicit `Current time:` label.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — UpdateService: expose the current release tag (`CurrentReleaseTag`, from embedded `releaseinfo.txt`).
+- [ ] Subtask 2 — SmiFormatter banner: add `Build:` line under Driver line; label the snapshot timestamp `Current time:`.
+- [ ] Subtask 3 — Program.cs: pass the build identity into Format (both one-shot and watch).
+- [ ] Subtask 4 — Build + live verify (`--print`, `--watch`).
+- [ ] Subtask 5 — Docs; task log before push; push branch, PR, merge.
+- [ ] Subtask 6 — Publish new cli release consolidating T44+T45 changes (`release.ps1 --merge <pre-T44> HEAD`); final log + ff-back.
+
+### Full Context Notes for AI Agents
+
+**Requirement (user)**: show the current release build right under the Driver line in the CLI, in the style `Build: xxxxx` (the GUI shows `[Latest release: cli/…]`). The other date/time printed (end of the Driver banner) must be labelled `Current time:`. Then consolidate this together with the last release's changes into a NEW release (i.e. one release covering T45 + everything since `cli/20261121_1344`, which already carries the consolidated history note).
+
+**Current banner** (`SmiFormatter.Format` L42-48):
+```
+Driver: <ver>  CUDA: <ver>  NVML: <ver> <snapshot Timestamp local yyyy-MM-dd HH:mm:ss>
+```
+Target:
+```
+Driver: <ver>  CUDA: <ver>  NVML: <ver>
+Build: cli/<stamp>            ← from UpdateService.CurrentReleaseTag (embedded releaseinfo.txt minus .zip); "dev build" when empty
+Current time: yyyy-MM-dd HH:mm:ss   ← snapshot timestamp, labelled
+```
+
+**Plumbing**: `UpdateService.ReleaseZipName` already exists (static, embedded resource). Add `public static string CurrentReleaseTag => Path.GetFileNameWithoutExtension(ReleaseZipName)` (empty → caller prints `dev build`). `SmiFormatter.Format(snap, ramUsed, ramTotal)` signature gains a `string buildTag` param (or overload to keep compat — only Program.cs calls it, so extend directly).
+**Program.cs call sites**: one-shot (~L164) and watch loop (~L217) both call Format → pass `UpdateService.CurrentReleaseTag`. The top-of-file `Build:` line (L146, compile stamp) stays — user asked for the release build under Driver, not to remove the stamp; keep it simple: leave L146 as is.
+**Watch note**: banner re-renders every tick via Format → `Current time:` updates live; Build tag constant per process (fine).
+
+**Release step (T44 consolidation + T45)**: after merge, run `release.ps1 --merge <commit-before-T44-merge> HEAD` — range must include the T44 code commits… NOTE: T44 had NO code commits (log only), so the closure diff from `8327698` would find only T45's. The user wants the NEW release notes to also mention the previous release's changes → after publishing, extend its body manually with the consolidated list (same 8 lines as cli/20261121_1344) + delete `cli/20261121_1344`? NO — user said "consolidate this together with the last release changes into a new release": publish T45 release, then patch its body to include BOTH its own change AND the previous consolidated list (copy from cli/20261121_1344), and delete `cli/20261121_1344` so there is exactly one consolidated release after the base. Keep `cli/20261111_0407`.
+
+**State**: branch created from `main` @ `851a694`. Nothing done yet.
 
 ---
 
