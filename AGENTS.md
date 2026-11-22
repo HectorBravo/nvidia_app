@@ -36,13 +36,13 @@ be listed here and read before code changes.)_
 
 > [!IMPORTANT]
 > Both apps print their own **compile date** (LastWriteTime of the executing
-> assembly): `NvidiaMonitor` in its header (`MainWindow.cs`), `NvmlTest` on
+> assembly): `NvidiaMonitor` in its header (`MainWindow.cs`), `NvidiaMonitor CLI` (`NvidiaMonitorCli.exe`) on
 > stdout (`Program.cs`). Every merge into `main` MUST be followed by a
 > **GitHub Release per changed app**, named after that compile date:
 >
 > - `gui/<yyyyMMdd_HHmm>` → NvidiaMonitor (only if its dependency closure
 >   changed in the merge)
-> - `cli/<yyyyMMdd_HHmm>` → NvmlTest (same rule)
+> - `cli/<yyyyMMdd_HHmm>` → NvidiaMonitor CLI (`NvidiaMonitorCli`) (same rule)
 >
 > Closure diff = shared libs (`src/NvmlCore`, `src/HectorBravo.Nvidia.Contracts`)
 > bump BOTH apps; app-local changes bump only that app.
