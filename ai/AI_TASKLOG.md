@@ -4,8 +4,8 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/3 | 0m | none |
-| 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
+| 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
+| 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
@@ -35,7 +35,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 24 completed task(s) - [View completed tasks](#completed-tasks)
+> 26 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -90,13 +90,13 @@
 
 ## Task T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 22-11-2026 23:35:37
-- **Last Updated**: 22-11-2026 23:35:37
-- **Time Spent**: 0m
+- **Last Updated**: 22-11-2026 23:39:34
+- **Time Spent**: 4m
 - **Branch**: [`fix/ai-cli-hourly-update-check`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-hourly-update-check)
-- **Commit(s)**: pending
+- **Commit(s)**: [d1e0a5f](https://github.com/HectorBravo/nvidia_app/commit/d1e0a5f), [6c30801](https://github.com/HectorBravo/nvidia_app/commit/6c3080127cc2e0ba457827307c8e77066f485794) (merge, PR #22)
 - **Blockers**: none
 - **Findings & Notes**:
   - GUI schedule (`MainWindow.cs` L235): `DispatcherTimer { Interval = TimeSpan.FromHours(1) }`, started after the startup check → "at startup + every 1 h".
@@ -114,9 +114,9 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — Program.cs: watch re-check interval 10 min → 1 h + comment.
-- [ ] Subtask 2 — Docs refresh (README/PROJECT_DESCRIPTION mention "every 10 min").
-- [ ] Subtask 3 — Build, push branch, PR, merge into main.
+- [x] Subtask 1 — Program.cs: watch re-check interval 10 min → 1 h + comment.
+- [x] Subtask 2 — Docs refresh (README/PROJECT_DESCRIPTION mention "every 10 min").
+- [x] Subtask 3 — Build, push branch, PR, merge into main.
 
 ### Full Context Notes for AI Agents
 
@@ -125,17 +125,19 @@
 **Docs to touch**: README "Update notice" bullet ("every 10 min in a live `--watch` feed"); `ai/PROJECT_DESCRIPTION.md` §3 NvmlTest entry + §4 CLI entry ("every 10 min while `--watch` runs").
 **Context**: branch created from `main` @ `2c92676` (T45 merged, PR #21). T45's release publish is still pending — it will be released together with this fix in one consolidated cli release afterwards.
 
+**Executed + published**: merged via PR #22 ([6c30801](https://github.com/HectorBravo/nvidia_app/commit/6c3080127cc2e0ba457827307c8e77066f485794)). `release.ps1 --merge 851a694 6c30801` → **`cli/20261122_2338`** (gui skipped) — its auto-changelog already carried BOTH T45 (`feat(cli): show release build tag…`) and T46 (`fix(cli): re-check for updates hourly…`); the body was then extended with the consolidated history since `cli/20261111_0407` (the 8 earlier commits) and the superseded `cli/20261121_1344` deleted (release + tags). Remaining cli releases: base `20261111_0407` → consolidated Latest `20261122_2338`. Live check of the published binary: banner shows `Build: cli/20261122_2338` + `Current time:`; `--update` → "Already up to date."
+
 ---
 
 ## Task T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span>
 - **Created**: 22-11-2026 23:31:33
-- **Last Updated**: 22-11-2026 23:31:33
-- **Time Spent**: 0m
+- **Last Updated**: 22-11-2026 23:39:34
+- **Time Spent**: 7m
 - **Branch**: [`feat/ai-cli-release-build-line`](https://github.com/HectorBravo/nvidia_app/tree/feat/ai-cli-release-build-line)
-- **Commit(s)**: pending
+- **Commit(s)**: [c4eae6b](https://github.com/HectorBravo/nvidia_app/commit/c4eae6b), [2c92676](https://github.com/HectorBravo/nvidia_app/commit/2c9267662f141bc121eaff7eb4c2dd365cf02eab) (merge, PR #21)
 - **Blockers**: none
 - **Findings & Notes**:
   - GUI already shows `[Latest release: <tag>]` in its header (MainWindow.cs ~L127); the CLI only prints `Build: <local compile stamp>` at the top.
@@ -153,12 +155,12 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — UpdateService: expose the current release tag (`CurrentReleaseTag`, from embedded `releaseinfo.txt`).
-- [ ] Subtask 2 — SmiFormatter banner: add `Build:` line under Driver line; label the snapshot timestamp `Current time:`.
-- [ ] Subtask 3 — Program.cs: pass the build identity into Format (both one-shot and watch).
-- [ ] Subtask 4 — Build + live verify (`--print`, `--watch`).
-- [ ] Subtask 5 — Docs; task log before push; push branch, PR, merge.
-- [ ] Subtask 6 — Publish new cli release consolidating T44+T45 changes (`release.ps1 --merge <pre-T44> HEAD`); final log + ff-back.
+- [x] Subtask 1 — UpdateService: expose the current release tag (`CurrentReleaseTag`, from embedded `releaseinfo.txt`).
+- [x] Subtask 2 — SmiFormatter banner: add `Build:` line under Driver line; label the snapshot timestamp `Current time:`.
+- [x] Subtask 3 — Program.cs: pass the build identity into Format (both one-shot and watch).
+- [x] Subtask 4 — Build + live verify (`--print`, `--watch`).
+- [x] Subtask 5 — Docs; task log before push; push branch, PR, merge.
+- [x] Subtask 6 — Publish new cli release consolidating T44+T45 changes (`release.ps1 --merge <pre-T44> HEAD`); final log + ff-back.
 
 ### Full Context Notes for AI Agents
 
@@ -3008,6 +3010,8 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m |
+| 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
