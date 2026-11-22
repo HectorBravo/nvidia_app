@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/3 | 0m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 0/6 | 0m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
@@ -84,6 +85,45 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 22-11-2026 23:35:37
+- **Last Updated**: 22-11-2026 23:35:37
+- **Time Spent**: 0m
+- **Branch**: [`fix/ai-cli-hourly-update-check`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-hourly-update-check)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - GUI schedule (`MainWindow.cs` L235): `DispatcherTimer { Interval = TimeSpan.FromHours(1) }`, started after the startup check → "at startup + every 1 h".
+  - CLI (`Program.cs` watch loop) re-checks every **10 min** — must become **1 h**.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — Program.cs: watch re-check interval 10 min → 1 h + comment.
+- [ ] Subtask 2 — Docs refresh (README/PROJECT_DESCRIPTION mention "every 10 min").
+- [ ] Subtask 3 — Build, push branch, PR, merge into main.
+
+### Full Context Notes for AI Agents
+
+**Requirement**: CLI update check must use the same schedule as the GUI: once at startup, then every **1 hour** (GUI: `DispatcherTimer`, `TimeSpan.FromHours(1)`, started right after the startup check in `MainWindow.cs` L235-237).
+**Change point**: `Program.cs` watch loop — `nextCheckAt = DateTime.UtcNow.AddMinutes(10)` → `AddHours(1)` (and the comment above it saying "every 10 min"). Startup check already matches. One-shot `--print` checks once — unchanged.
+**Docs to touch**: README "Update notice" bullet ("every 10 min in a live `--watch` feed"); `ai/PROJECT_DESCRIPTION.md` §3 NvmlTest entry + §4 CLI entry ("every 10 min while `--watch` runs").
+**Context**: branch created from `main` @ `2c92676` (T45 merged, PR #21). T45's release publish is still pending — it will be released together with this fix in one consolidated cli release afterwards.
 
 ---
 
