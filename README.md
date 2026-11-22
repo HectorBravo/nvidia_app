@@ -80,7 +80,9 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   Dev builds (never packaged by `release.ps1`) have no release identity and stay silent; a
   failed check (offline, rate limit) is silently ignored — it never disturbs the table.
 - Both print a `Build: yyyy-MM-dd HH:mm` stamp first, so a binary can be matched to a release by
-  eye.
+  eye. The table banner then shows the release identity on its own line — **`Build: cli/<tag>`**
+  (or `dev build`) right under the `Driver:` line — and the snapshot time is labelled
+  **`Current time: yyyy-MM-dd HH:mm:ss`**.
 - `NvidiaMonitor --print` runs the same read through the WPF entry point (no window is opened),
   but instead of the full table it prints a **compact one-line summary per GPU** (a
   `[NvidiaMonitor] driver=… cuda=… nvml=… gpus=N` header line, then one line per GPU:
