@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 4/5 | 8m | none |
+| 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m | none |
 | 19-11-2026 09:40:22 | [T42: Narrow the Id column and publish the T41 PSt removal](#task-t42-narrow-the-id-column-and-publish-the-t41-pst-removal) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 12m | none |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m | none |
@@ -33,7 +33,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 23 completed task(s) - [View completed tasks](#completed-tasks)
+> 24 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -88,13 +88,13 @@
 
 ## Task T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span>
 - **Created**: 22-11-2026 23:12:54
-- **Last Updated**: 22-11-2026 23:20:39
-- **Time Spent**: 8m
+- **Last Updated**: 22-11-2026 23:22:09
+- **Time Spent**: 9m
 - **Branch**: [`chore/ai-cli-release-consolidation`](https://github.com/HectorBravo/nvidia_app/tree/chore/ai-cli-release-consolidation)
-- **Commit(s)**: pending
+- **Commit(s)**: [626fdef](https://github.com/HectorBravo/nvidia_app/commit/626fdef), [f4a198b](https://github.com/HectorBravo/nvidia_app/commit/f4a198bd38df48f34540b3e3b5e27a3f0587a6d4) (log), [1fbb174](https://github.com/HectorBravo/nvidia_app/commit/1fbb174c5284745ad7873a3b10a29f1539dc8484) (merge, PR #20)
 - **Blockers**: none
 - **Findings & Notes**:
   - cli releases today: `20261111_0407` (base, no changelog), `20261118_1842`, `20261118_1902`, `20261119_0949`, `20261121_1344` (current). Each intermediate carries only its own one-line changelog.
@@ -116,7 +116,7 @@
 - [x] Subtask 2 — Delete intermediate releases + tags: `cli/20261118_1842`, `cli/20261118_1902`, `cli/20261119_0949`.
 - [x] Subtask 3 — Create fake release `cli/29991231_2359` (asset = current zip, marked TEST ONLY).
 - [x] Subtask 4 — Verify live: `--print` shows blue notice pointing at the fake; `--update` swaps it in; restore real build afterwards.
-- [ ] Subtask 5 — Docs + task log; push branch, PR, merge, final log, ff-back branch.
+- [x] Subtask 5 — Docs + task log; push branch, PR, merge, final log, ff-back branch.
 
 ### Full Context Notes for AI Agents
 
@@ -2909,6 +2909,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m |
 | 21-11-2026 13:33:42 | [T43: CLI auto-update — blue "new version available" notice + `--update` command](#task-t43-cli-auto-update--blue-new-version-available-notice---update-command) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 4/4 | 9m |
 | 19-11-2026 09:36:17 | [T41: Drop the PSt column from the CLI table](#task-t41-drop-the-pst-column-from-the-cli-table) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
 | 19-11-2026 09:27:02 | [T40: CLI table header tweaks — `GPU use` / `Mem use` labels, PCIe label on the second line, narrower Power/PCIe columns](#task-t40-cli-table-header-tweaks--gpu-use--mem-use-labels-pcie-label-on-the-second-line) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 4/4 | 5m |
