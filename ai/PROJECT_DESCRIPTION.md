@@ -132,7 +132,8 @@ git-ignored `bin/` (publish output).
   `--update` = self-update from the newest published `cli/` GitHub release (exit 0 updated /
   already current, 3 failed). Release builds additionally print a **blue** "New version
   available: cli/<tag> …" line under the table when a newer `cli/` release exists (checked at
-  startup and every 10 min while `--watch` runs; dev builds and failed checks stay silent).
+  startup and every hour while `--watch` runs — same schedule as the GUI; dev builds and failed
+  checks stay silent).
 
 ## 5. Build / Run / Test
 ```powershell
