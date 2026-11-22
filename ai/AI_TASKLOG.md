@@ -4,7 +4,6 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 22-11-2026 23:45:37 | [T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release](#task-t47-rename-the-cli-app-nvmltest--nvidiamonitor-cli-outputbinariesdocs-consolidated-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/7 | 0m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
@@ -36,7 +35,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 26 completed task(s) - [View completed tasks](#completed-tasks)
+> 27 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -91,13 +90,13 @@
 
 ## Task T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
 - **Created**: 22-11-2026 23:45:37
-- **Last Updated**: 22-11-2026 23:45:37
-- **Time Spent**: 0m
+- **Last Updated**: 22-11-2026 23:54:00
+- **Time Spent**: 9m
 - **Branch**: [`refactor/ai-rename-cli-nvidiamonitor-cli`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-rename-cli-nvidiamonitor-cli)
-- **Commit(s)**: pending
+- **Commit(s)**: [49f1ca8](https://github.com/HectorBravo/nvidia_app/commit/49f1ca8) (code), [1a28a33](https://github.com/HectorBravo/nvidia_app/commit/1a28a33c8e409cef30b841575606d31a0cd86ce8) (merge PR #23)
 - **Blockers**: none
 - **Findings & Notes**:
   - Display name "NvidiaMonitor CLI" (space). Directory/file names cannot contain a space → chosen mapping below. User warned that on-disk directories change — be careful.
@@ -114,13 +113,13 @@
 
 ### Subtasks / Plan
 
-- [ ] Subtask 1 — `git mv src/NvmlTest → src/NvidiaMonitor.Cli` + rename csproj; fix sln entry.
-- [ ] Subtask 2 — AssemblyName/identity: csproj `<AssemblyName>NvidiaMonitorCli</AssemblyName>` (no space in file names); UpdateService ZipPrefix/exe-name/temp paths → `NvidiaMonitorCli`; Program.cs strings (`--update` hint, watch header, usage).
-- [ ] Subtask 3 — release.ps1: app name `NvidiaMonitorCli`, project path, zip prefix, releaseinfo path. build_executables.bat + .gitignore paths.
-- [ ] Subtask 4 — Docs: README, AGENTS.md, PROJECT_DESCRIPTION (incl. the rename mapping). Historical task-log mentions stay untouched (history).
-- [ ] Subtask 5 — Clean stale `bin/NvmlTest`, build solution, live verify (`--print`/`--update`) from new `bin/NvidiaMonitorCli`.
-- [ ] Subtask 6 — Push branch, PR, merge; final log + ff-back.
-- [ ] Subtask 7 — Publish consolidated cli release (`release.ps1 --merge <pre-T47> HEAD`), extend body with history since base `cli/20261111_0407`, delete superseded `cli/20261122_2338`.
+- [x] Subtask 1 — `git mv src/NvmlTest → src/NvidiaMonitor.Cli` + rename csproj; fix sln entry.
+- [x] Subtask 2 — AssemblyName/identity: csproj `<AssemblyName>NvidiaMonitorCli</AssemblyName>` (no space in file names); UpdateService ZipPrefix/exe-name/temp paths → `NvidiaMonitorCli`; Program.cs strings (`--update` hint, watch header, usage).
+- [x] Subtask 3 — release.ps1: app name `NvidiaMonitorCli`, project path, zip prefix, releaseinfo path. build_executables.bat + .gitignore paths.
+- [x] Subtask 4 — Docs: README, AGENTS.md, PROJECT_DESCRIPTION (incl. the rename mapping). Historical task-log mentions stay untouched (history).
+- [x] Subtask 5 — Clean stale `bin/NvmlTest`, build solution, live verify (`--print`/`--update`) from new `bin/NvidiaMonitorCli`.
+- [x] Subtask 6 — Push branch, PR #23 merged (`1a28a33`); final log + ff-back (this commit).
+- [x] Subtask 7 — Published consolidated release **[`cli/20261122_2354`](https://github.com/HectorBravo/nvidia_app/releases/tag/cli/20261122_2354)** (`NvidiaMonitorCli-20261122_2354.zip`, notes rewritten as v1 of the renamed line); deleted `cli/20261122_2338` AND base `cli/20261111_0407` (user: treat this as first version). Only that one cli release remains.
 
 ### Full Context Notes for AI Agents
 
@@ -3067,6 +3066,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 22-11-2026 23:45:37 | [T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release](#task-t47-rename-the-cli-app-nvmltest--nvidiamonitor-cli-outputbinariesdocs-consolidated-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 7/7 | 14m |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m |
