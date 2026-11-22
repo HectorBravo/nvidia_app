@@ -6,8 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>HectorBravo.Nvidia.Test</RootNamespace>
+    <!-- Display name is "NvidiaMonitor CLI"; file/assembly names avoid the space. -->
+    <AssemblyName>NvidiaMonitorCli</AssemblyName>
     <!-- Release identity: release.ps1 writes releaseinfo.txt (this app's release ZIP
-         NAME, e.g. "NvmlTest-20261119_0949.zip") next to this project before publish;
+         NAME, e.g. "NvidiaMonitorCli-20261122_2338.zip") next to this project before publish;
          it is embedded below and read at runtime by UpdateService.ReleaseZipName — the
          update check compares it with the newest published cli/ release's asset name.
          Dev builds: no file → empty → never notifies (same rule as the GUI). -->

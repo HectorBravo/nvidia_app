@@ -1,6 +1,6 @@
-﻿<!-- PROJECT_INDEXER:BEGIN
-last_indexed: 2026-11-22 23:36:00
-git_head: 572abc8
+<!-- PROJECT_INDEXER:BEGIN
+last_indexed: 2026-11-23 00:20:00
+git_head: 611b879
 PROJECT_INDEXER:END -->
 
 # nvidia_app — AI Project Map
@@ -32,7 +32,7 @@ NVIDIA Management Library (`nvml.dll`) via P/Invoke — it never shells out to
   light-blue **"New version available"** link right of the build stamp — clicking it
   downloads the release zip and swaps the files via a temp PowerShell helper that
   restarts the app (T29).
-- **`NvmlTest`** — a headless console CLI that prints a one-shot `nvidia-smi`-style
+- **`NvidiaMonitor CLI` (`NvidiaMonitorCli`)** — a headless console CLI that prints a one-shot `nvidia-smi`-style
   table, a live `--watch` feed (the interval defaults to 1 s when omitted), or a
   one-shot `--probe` diagnostic (NVML version, both SM-utilization NVML APIs, and the
   batch API's version-constant sweep).
@@ -70,7 +70,9 @@ git-ignored `bin/` (publish output).
 | `src/HectorBravo.Nvidia.Contracts` | net8.0 | lib | `HectorBravo.Nvidia.Contracts` | — (leaf; TWE=true) |
 | `src/NvmlCore` | net8.0 | lib | `HectorBravo.Nvidia.Core` | → Contracts (TWE=true) |
 | `src/NvidiaMonitor` | net8.0-windows, UseWPF | WinExe | `HectorBravo.Nvidia.Monitor` | → NvmlCore, Contracts |
-| `src/NvmlTest` | net8.0 | Exe | `HectorBravo.Nvidia.Test` | → NvmlCore, Contracts |
+| `src/NvidiaMonitor.Cli` | net8.0 | Exe | `HectorBravo.Nvidia.Test` | → NvmlCore, Contracts |
+> Renamed 2026-11-23 (T47) from `src/NvmlTest` (`NvmlTest.exe`) to **NvidiaMonitor CLI**:
+> folder `src/NvidiaMonitor.Cli`, assembly/exe/zip prefix `NvidiaMonitorCli` (file names avoid the space).
 
 ### Source files
 - **Contracts** (`HectorBravo.Nvidia.Contracts`): `IGpuMonitorService`, `GpuSnapshot`,
@@ -92,7 +94,7 @@ git-ignored `bin/` (publish output).
   "slide" scrollbar styles applied via `ApplyScrollStyles`), `GlobalUsings`; assets
   `app.ico` (exe/taskbar icon, `<ApplicationIcon>`) + `nvidia-icon.png` (WPF window
   icon, `<Resource>`; both the NVIDIA eye+wordmark logo ≤256×256, T30).
-- **NvmlTest** (`HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
+- **NvidiaMonitor CLI** (`NvidiaMonitorCli`, ns `HectorBravo.Nvidia.Test`): `Program` (entry; `--print` one-shot
   table, `--watch [<seconds>]` live feed — the interval defaults to 1 s when the
   value is omitted; `--probe` one-shot NVML/SM-utilization diagnostic; `--update`
   self-update — check + download + in-place swap, exit 3 on failure),
@@ -100,7 +102,7 @@ git-ignored `bin/` (publish output).
   Releases check keyed on the embedded `releaseinfo.txt` zip name vs the newest
   `cli/` release's asset name; token via `GITHUB_TOKEN`/`GH_TOKEN` else `gh auth
   token`; download → verify (flat-zip path-traversal guard + must contain
-  `NvmlTest.exe`) → hidden PowerShell swap helper that waits for exit, backs up to
+  `NvidiaMonitorCli.exe`) → hidden PowerShell swap helper that waits for exit, backs up to
   `%TEMP%`, extracts over the app dir; no relaunch — T43),
   `SystemMemory` (`GlobalMemoryStatusEx` P/Invoke → `(used, total)` physical RAM,
   `(0,0)` on failure; CLI-local copy of the GUI reader so only the `cli` release
@@ -124,7 +126,7 @@ git-ignored `bin/` (publish output).
   window never grows when the chart timelines outgrow the view);
   `--print` = headless single refresh printing a one-line summary per
   GPU (includes `sm=` — SM utilization; never opens a window), exit 0 on success / 1 when NVML unavailable.
-- **CLI:** `NvmlTest` → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
+- **CLI:** `NvidiaMonitor CLI` (`NvidiaMonitorCli`) → `Program.Main`. `--print` = one-shot nvidia-smi-style table;
   `--print --watch [<seconds>]` = live feed that re-prints the table every N seconds
   until Ctrl-C (**N defaults to 1** when the value is omitted; an explicit
   non-numeric value exits 2). Exits 0 on success, 1 when NVML/GPU unavailable
@@ -142,7 +144,7 @@ dotnet build nvidia_app.sln -c Release
 
 # Publish runnable executables into the git-ignored repo-local bin/ (framework-dependent;
 # build_executables.bat = the build above + these two publishes in one double-click)
-dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # → bin\NvmlTest\NvmlTest.exe
+dotnet publish src/NvidiaMonitor.Cli      -c Release -o bin/NvidiaMonitorCli      # → bin\NvidiaMonitorCli\NvidiaMonitorCli.exe
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # → bin\NvidiaMonitor\NvidiaMonitor.exe
 
 # After every merge into main: per-app compile-date GitHub Releases (mandatory, see AGENTS.md)
@@ -152,14 +154,14 @@ dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # → bin\Nvidi
 
 # Run
 .\bin\NvidiaMonitor\NvidiaMonitor.exe             # WPF dashboard (~1 Hz)
-.\bin\NvmlTest\NvmlTest.exe --print               # headless nvidia-smi-style table
+.\bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print               # headless nvidia-smi-style table
 .\bin\NvidiaMonitor\NvidiaMonitor.exe --print     # headless via the WPF entry point
 # …or from source without publishing:
 dotnet run --project src/NvidiaMonitor -c Release            # dashboard
 dotnet run --project src/NvidiaMonitor -c Release -- --print # headless
-dotnet run --project src/NvmlTest      -c Release -- --print # CLI
+dotnet run --project src/NvidiaMonitor.Cli      -c Release -- --print # CLI
 ```
-**Test:** there is **no automated test project** (`dotnet test` finds none). `NvmlTest`
+**Test:** there is **no automated test project** (`dotnet test` finds none). `NvidiaMonitor CLI` (`NvidiaMonitorCli`)
 *is* the manual integration check — it verifies NVML end-to-end without a window
 (driver / CUDA / NVML versions + per-GPU metrics).
 
@@ -168,7 +170,7 @@ dotnet run --project src/NvmlTest      -c Release -- --print # CLI
 nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVSMI or System32)
   └─ NvmlCore: NvmlLoader → NvmlDelegates/Types/Error → NvmlCoreService : IGpuMonitorService
        │   RefreshAsync() → GpuSnapshot ; status-change events ; AppLog activity
-       ├─ NvmlTest (CLI):  Program → SmiFormatter → stdout table
+       ├─ NvidiaMonitorCli (CLI):  Program → SmiFormatter → stdout table
        └─ NvidiaMonitor (WPF): GpuServiceFactory → NvmlCoreService
             └─ GpuPollingService (~1 Hz background) → GpuHistory (per-GPU ring buffer, cap 720)
                  └─ MainWindow (Dispatcher-marshalled)
@@ -179,7 +181,7 @@ nvml.dll (OS, P/Invoke — from %CommonProgramFiles(x86)%\NVIDIA Corporation\NVS
 ```
 Key boundary: **`Contracts` is the only surface both front-ends depend on**
 (`IGpuMonitorService` + the snapshot/sample/history types). `NvmlCore` is the only
-implementation of that contract. `NvidiaMonitor` and `NvmlTest` never touch
+implementation of that contract. `NvidiaMonitor` and `NvidiaMonitor CLI` (`NvidiaMonitorCli`) never touch
 `nvml.dll` directly — they consume the contract.
 
 ## 7. Key Contracts & Types
@@ -220,7 +222,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - WPF uses the native `System.Windows.Controls` / `System.Windows.Shapes` stack only.
 - To **build**: .NET 8 SDK. To **run** the published `bin/` exes: .NET 8 runtime
   (the **.NET 8 Desktop** runtime for the WPF `NvidiaMonitor`; base runtime for
-  `NvmlTest`).
+  `NvidiaMonitor CLI` (`NvidiaMonitorCli`)).
 
 ## 10. Conventions & Gotchas
 - **Auto-update (T29, `UpdateService.cs`):** lists
@@ -377,6 +379,13 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   updating the README to move the charts into "Features".
 
 ## 11. Change Log
+
+- 2026-11-23 — **T47: CLI renamed NvmlTest → NvidiaMonitor CLI**: project folder `src/NvmlTest` →
+  `src/NvidiaMonitor.Cli`, csproj `NvidiaMonitorCli.csproj`, assembly/exe/zip prefix `NvidiaMonitorCli`
+  (file names cannot contain a space; display name is "NvidiaMonitor CLI"). UpdateService identity
+  constants (`ZipPrefix`, exe check, temp paths) and all docs/build scripts follow. Release stream
+  restarts: new zips are `NvidiaMonitorCli-<stamp>.zip`; the first release of the new line is the
+  consolidated cli release (base `cli/20261111_0407` deleted).
 - 2026-11-22 — **T45: CLI release-build banner line** (`src/NvmlTest/SmiFormatter.cs`, `UpdateService.cs`, `Program.cs`; **cli closure only**): the table banner now spans three lines — `Driver/CUDA/NVML` (timestamp removed from it), **`Build: cli/<tag>`** right under it (new `UpdateService.CurrentReleaseTag`: embedded `releaseinfo.txt` zip name → tag; `dev build` when absent — mirrors the GUI header's `[Latest release: …]`), and **`Current time: yyyy-MM-dd HH:mm:ss`** (the labelled snapshot timestamp). Verified live (`--print` + `--watch`, dev vs packaged identity).
 - 2026-11-21 — **T43: CLI auto-update** (new `src/NvmlTest/UpdateService.cs`, `Program.cs`, `NvmlTest.csproj`, `release.ps1`, `.gitignore`; **cli closure only**): the console tool got the dashboard's self-update, scoped to its own release stream. `release.ps1` now also writes `src/NvmlTest/releaseinfo.txt` (the cli zip name) which is embedded as resource `releaseinfo.txt`; the ONLY rule is newest `cli/` release asset name ≠ embedded name (dev builds: no identity → silent). New flags: **`--update`** (check → download with % progress → verify zip [flat, no path traversal, must contain `NvmlTest.exe`] → hidden PS swap helper: wait for exit, backup to `%TEMP%\NvmlTest-backup-<tag>`, extract over app dir; NO relaunch; exit 3 + untouched files on failure) and the **blue notice** line under the `--print`/`--watch` table (`Console.ForegroundColor = ConsoleColor.Blue`, restored in `finally`; check runs in parallel with the NVML refresh at startup and every 10 min in watch; any check exception ⇒ no notice). Token: env vars else `gh auth token`, cached per process. Verified live: fake old identity → blue line + full download/swap cycle (files replaced, backup created); real identity → "Already up to date."; dev build → silent.
 - 2026-11-19 — **T42: narrower `Id` column** (`src/NvmlTest/SmiFormatter.cs`, one line; **cli closure only**): `WIdx` 3 → **2** — enough for the `Id` header and single-digit ids, so the table lost one more column (~85 → ~84). Published as `cli/20261119_0940` (T41) plus this change. Recurring gotcha confirmed again: a live `NvmlTest.exe` holds `bin\NvmlTest\*.dll`, so publish either fails with MSB3021/MSB3027 or leaves a **stale** dll behind — always `Stop-Process -Name NvmlTest,NvidiaMonitor` first and check the printed `Build:` stamp.
@@ -460,7 +469,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
 - 2026-10-20 — **T16: SM utilization (clamped at 100) + memory-clock chart + chart reorder** (`GpuSnapshot`/`GpuMetricSample`/`NvmlCoreService`/`MainWindow`/`App`/`NvmlProbe`/`SmiFormatter`): per-GPU **SM utilization** = `min(100, Σ per-process smUtil)` read from the two NVML process-utilization APIs — the legacy two-phase `nvmlDeviceGetProcessUtilization` is **primary** (the old batch-first order died on `rc=25` before ever reaching it); the batched `nvmlDeviceGetProcessesUtilizationInfo` (version `24 | (1 << 24)`) is the fallback; the read loop counts the driver-**written** records. The dashboard now drives **9 charts**: GPU-util, mem-util, mem-used, temp, **SM-util** (new; `ChartSpec.Percent` 0–100 axis), power, **PCIe** (moved down), GPU-clock, **mem-clock** (new); the headless `--print` line prints `sm=`. NvmlTest gained `NvmlProbe.cs` (`--probe`) and an `SM` column. `NvmlTypes.ProcessesUtilizationVersion` corrected 16777264 → 16777240. Verified: SM 73 % under load, 0–4 % idle.
 - 2026-10-24 — **Build .bat (T17)**: new root script `build_executables.bat` — one-click
   `dotnet build` of the whole solution (Release) followed by `dotnet publish` of
-  `NvmlTest` and `NvidiaMonitor` into the git-ignored `bin\`; by design it aborts with an
+  `NvidiaMonitor CLI` (`NvidiaMonitorCli`) and `NvidiaMonitor` into the git-ignored `bin\`; by design it aborts with an
   explanatory message while `NvidiaMonitor.exe` is running (the live app locks its DLLs).
   Pure ASCII + CRLF. The README's manual build/publish commands remain the source of truth.
 - 2026-10-19 — **Index re-point (T16 pre-flight)**: `git_head` `72c7a1d` → `99ae2d0` and
@@ -522,7 +531,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   gained the green "slide" scrollbar styles (aqua `#18FFCC` → emerald `#048D5F`
   gradient thumb on a slim dark rounded track, hover/drag states), applied
   idempotently to every `ScrollBar` on each `ContentRendered`
-  (`Theme.ApplyScrollStyles`). (3) `NvmlTest`: the `--watch` seconds value is now
+  (`Theme.ApplyScrollStyles`). (3) `NvidiaMonitor CLI` (`NvidiaMonitorCli`): the `--watch` seconds value is now
   **optional** — bare `--watch` defaults to a **1 s** feed, an explicit non-numeric
   value still exits 2, and the feed no longer crashes when stdout is redirected
   (guarded `Console.Clear`). The WPF build is still verified headlessly via
@@ -583,7 +592,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   cell (`GpuSnapshot.PcieLabel`) and the charted "PCIe Bandwidth (GB/s)" value
   (`GpuSnapshot.PcieBandwidthGbps`). `WPcie` widened 9→18 and a new
   `SmiFormatter.Pcie(GpuSnapshot)` helper was added; "N/A" when NVML reports no
-  link. Single-file change (`src/NvmlTest/SmiFormatter.cs`).
+  link. Single-file change (`src/NvidiaMonitor.Cli/SmiFormatter.cs`).
 - 2026-08-10 — Dashboard restructure: `MainWindow` now builds only the **Overview**
   and **Charts** tabs (the **Processes** and **Log** tabs were removed) and opens on
   the **Charts** tab by default (`TabControl.SelectedIndex = 1`). Tab headers use the
@@ -595,7 +604,7 @@ No config files / no `appsettings`. Runtime behavior is driven by:
   `ChartController.cs`, Contracts and NvmlCore are unchanged.
 - 2026-08-10 — PCIe bandwidth: new `GpuSnapshot.Pcie*` fields (current/max gen+width,
   read from 4 NVML link calls in `NvmlCoreService`; `PciePerLaneGbps` gen1–5), a compact
-  "PCIe" column in the WPF overview grid and the `NvmlTest` table (both use
+  "PCIe" column in the WPF overview grid and the `NvidiaMonitor CLI` (`NvidiaMonitorCli`) table (both use
   `GpuSnapshot.PcieLabel`), and a 7th chart card "PCIe Bandwidth (GB/s)" with a
   **logarithmic Y-axis** (`MetricChart.SetLogScale`/`ValueToY`; gridlines at powers of
   two; ceiling = fastest card's max possible bandwidth). Chart fix: short histories

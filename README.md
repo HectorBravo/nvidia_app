@@ -10,7 +10,7 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
 
 - **`NvidiaMonitor`** — a **WPF** live dashboard (Overview grid + synchronized Charts, `~1 Hz`
   polling) with built-in **self-update** from GitHub Releases.
-- **`NvmlTest`** — a headless console CLI that prints an `nvidia-smi`-style table once
+- **`NvidiaMonitor CLI` (`NvidiaMonitorCli.exe`)** — a headless console CLI that prints an `nvidia-smi`-style table once
   (`--print`) or as a live feed (`--watch`).
 
 ## Features
@@ -54,7 +54,7 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
 - **Single-instance guard**: a second concurrent dashboard launch prints a refusal and exits
   (headless `--print` is unaffected).
 
-### Headless CLI (`NvmlTest`)
+### Headless CLI — **NvidiaMonitor CLI**
 - `--print` — one **compact** `nvidia-smi`-style table, then exit. Columns: `Id`, `Name`,
   **GPU use**, **Mem use**, `SM`, `Temp`, `Power`, `Memory`, **Mem Clock**, `Fan`,
   **`SysRAM`** and **`PCIe`**. Values are packed tight — no space before `%` (`52%`), whole watts
@@ -76,7 +76,7 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   `gh auth token`).
 - **Update notice**: release builds also check GitHub once at startup (and every hour in a
   live `--watch` feed, same schedule as the dashboard) and print one **blue** line under the table —
-  `New version available: cli/<tag> (NvmlTest-<stamp>.zip) — run: NvmlTest --update`.
+  `New version available: cli/<tag> (NvidiaMonitorCli-<stamp>.zip) — run: NvidiaMonitorCli --update`.
   Dev builds (never packaged by `release.ps1`) have no release identity and stay silent; a
   failed check (offline, rate limit) is silently ignored — it never disturbs the table.
 - Both print a `Build: yyyy-MM-dd HH:mm` stamp first, so a binary can be matched to a release by
@@ -112,7 +112,7 @@ prints the reason instead of crashing.
 | `src/HectorBravo.Nvidia.Contracts` | Shared data + service contracts (the only surface both sides depend on) |
 | `src/NvmlCore` | NVML P/Invoke engine + polling service (implements the contracts) |
 | `src/NvidiaMonitor` | WPF application (the dashboard) |
-| `src/NvmlTest` | Headless console CLI used to verify NVML without a window |
+| `src/NvidiaMonitor.Cli` | Headless console CLI used to verify NVML without a window |
 
 `src/NvmlCore/ref/nvml.h` is the official NVML header kept as the authoritative reference for
 signatures, structs and enums.
@@ -131,7 +131,7 @@ The ready-to-run binaries live in the repo-local, **git-ignored** `bin/` folder 
 with `dotnet publish` (framework-dependent — they need the .NET 8 *runtime*, not a full SDK):
 
 ```powershell
-dotnet publish src/NvmlTest      -c Release -o bin/NvmlTest      # -> bin\NvmlTest\NvmlTest.exe
+dotnet publish src/NvidiaMonitor.Cli      -c Release -o bin/NvidiaMonitorCli      # -> bin\NvidiaMonitorCli\NvidiaMonitorCli.exe
 dotnet publish src/NvidiaMonitor -c Release -o bin/NvidiaMonitor # -> bin\NvidiaMonitor\NvidiaMonitor.exe
 ```
 
@@ -145,7 +145,7 @@ merge into `main`, run:
 ```
 
 It publishes each app and creates a GitHub Release named `gui/<yyyyMMdd_HHmm>`
-(NvidiaMonitor) / `cli/<yyyyMMdd_HHmm>` (NvmlTest), attaching a zip of that
+(NvidiaMonitor) / `cli/<yyyyMMdd_HHmm>` (NvidiaMonitor CLI), attaching a zip of that
 app's published output (exe + DLLs + runtime manifests, no `.pdb`). Only apps
 whose code actually changed in the merge get a new release; unchanged apps are
 skipped. The script is idempotent — an existing tag is skipped. Close a running
@@ -172,16 +172,16 @@ Run the published executables directly — no `dotnet run` needed (build them fi
 .\bin\NvidiaMonitor\NvidiaMonitor.exe
 
 # Headless one-shot nvidia-smi-style table (no window)
-.\bin\NvmlTest\NvmlTest.exe --print
+.\bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print
 
 # Live feed — re-prints the table every 1 s until Ctrl-C (bare --watch = 1 s)
-.\bin\NvmlTest\NvmlTest.exe --watch
+.\bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --watch
 
 # Live feed at another interval (seconds; fractional values are accepted)
-.\bin\NvmlTest\NvmlTest.exe --watch 5
+.\bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --watch 5
 
 # One-shot NVML / SM-utilization diagnostic
-.\bin\NvmlTest\NvmlTest.exe --probe
+.\bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --probe
 
 # Same, through the WPF entry point (no window) — one-line summary per GPU
 .\bin\NvidiaMonitor\NvidiaMonitor.exe --print
@@ -198,8 +198,8 @@ Run the published executables directly — no `dotnet run` needed (build them fi
 ```powershell
 dotnet run --project src/NvidiaMonitor -c Release                    # WPF dashboard
 dotnet run --project src/NvidiaMonitor -c Release -- --print         # headless (WPF entry point)
-dotnet run --project src/NvmlTest      -c Release -- --print         # headless (CLI, one shot)
-dotnet run --project src/NvmlTest      -c Release -- --watch 5       # headless (CLI, live feed)
+dotnet run --project src/NvidiaMonitor.Cli      -c Release -- --print         # headless (CLI, one shot)
+dotnet run --project src/NvidiaMonitor.Cli      -c Release -- --watch 5       # headless (CLI, live feed)
 ```
 
 </details>
@@ -209,7 +209,7 @@ dotnet run --project src/NvmlTest      -c Release -- --watch 5       # headless 
   (typically under `%CommonProgramFiles(x86)%\NVIDIA Corporation\NVSMI\`).
 - To **run** the published `bin/` executables: the .NET 8 runtime — the .NET 8 **Desktop**
   runtime for the WPF `NvidiaMonitor`, or just the base .NET 8 runtime for the console
-  `NvmlTest`.
+  `NvidiaMonitor CLI` (`NvidiaMonitorCli.exe`).
 - To **build / publish** from source: the .NET 8 SDK.
 
 ## Notes

@@ -5,7 +5,7 @@ rem build_executables.bat - one-click build for nvidia_app
 rem
 rem   1) Compiles the whole solution (nvidia_app.sln, Release).
 rem   2) Publishes the runnable executables into the git-ignored bin\ folder:
-rem        bin\NvmlTest\NvmlTest.exe             (headless console CLI)
+rem        bin\NvidiaMonitorCli\NvidiaMonitorCli.exe             (headless console CLI)
 rem        bin\NvidiaMonitor\NvidiaMonitor.exe   (WPF dashboard)
 rem
 rem   The published executables are framework-dependent: the machine that runs
@@ -36,11 +36,11 @@ if not errorlevel 1 (
 )
 
 echo.
-echo [2/3] Publishing NvmlTest      -> bin\NvmlTest ...
-dotnet publish src\NvmlTest -c Release -o bin\NvmlTest --nologo
+echo [2/3] Publishing NvidiaMonitorCli      -> bin\NvidiaMonitorCli ...
+dotnet publish src\NvidiaMonitor.Cli -c Release -o bin\NvidiaMonitorCli --nologo
 if errorlevel 1 (
     echo.
-    echo PUBLISH NvmlTest FAILED - see output above.
+    echo PUBLISH NvidiaMonitorCli FAILED - see output above.
     exit /b 1
 )
 
@@ -55,6 +55,6 @@ if errorlevel 1 (
 
 echo.
 echo Done. Runnable executables:
-echo   bin\NvmlTest\NvmlTest.exe
+echo   bin\NvidiaMonitorCli\NvidiaMonitorCli.exe
 echo   bin\NvidiaMonitor\NvidiaMonitor.exe
 endlocal

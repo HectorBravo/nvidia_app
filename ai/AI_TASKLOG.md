@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 22-11-2026 23:45:37 | [T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release](#task-t47-rename-the-cli-app-nvmltest--nvidiamonitor-cli-outputbinariesdocs-consolidated-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 0/7 | 0m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
@@ -85,6 +86,62 @@
 - `MainWindow.cs` ctor: `Icon = new IconStream(...)` — simplest reliable route in code-only WPF: `var si = Application.GetResourceStream(new Uri("pack://application:,,,/nvidia-icon.png")); Icon = new IconBitmapDecoder(si.Stream, ...).Frames[0]` or `BitmapFrame.Create`.
 - The source PNG is 3840×2160 (landscape) with the eye+wordmark centered on a background — for an icon, crop the center square around the eye mark. If cropping by eye proves ugly, fall back to full-frame square pad + resize.
 - Do NOT commit the 3840×2160 original; only the ≤256 assets (repo hygiene; `*.png` is Git LFS via `.gitattributes`, but keep sizes small anyway).
+
+---
+
+## Task T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span>
+- **Created**: 22-11-2026 23:45:37
+- **Last Updated**: 22-11-2026 23:45:37
+- **Time Spent**: 0m
+- **Branch**: [`refactor/ai-rename-cli-nvidiamonitor-cli`](https://github.com/HectorBravo/nvidia_app/tree/refactor/ai-rename-cli-nvidiamonitor-cli)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Display name "NvidiaMonitor CLI" (space). Directory/file names cannot contain a space → chosen mapping below. User warned that on-disk directories change — be careful.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- None yet.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — `git mv src/NvmlTest → src/NvidiaMonitor.Cli` + rename csproj; fix sln entry.
+- [ ] Subtask 2 — AssemblyName/identity: csproj `<AssemblyName>NvidiaMonitorCli</AssemblyName>` (no space in file names); UpdateService ZipPrefix/exe-name/temp paths → `NvidiaMonitorCli`; Program.cs strings (`--update` hint, watch header, usage).
+- [ ] Subtask 3 — release.ps1: app name `NvidiaMonitorCli`, project path, zip prefix, releaseinfo path. build_executables.bat + .gitignore paths.
+- [ ] Subtask 4 — Docs: README, AGENTS.md, PROJECT_DESCRIPTION (incl. the rename mapping). Historical task-log mentions stay untouched (history).
+- [ ] Subtask 5 — Clean stale `bin/NvmlTest`, build solution, live verify (`--print`/`--update`) from new `bin/NvidiaMonitorCli`.
+- [ ] Subtask 6 — Push branch, PR, merge; final log + ff-back.
+- [ ] Subtask 7 — Publish consolidated cli release (`release.ps1 --merge <pre-T47> HEAD`), extend body with history since base `cli/20261111_0407`, delete superseded `cli/20261122_2338`.
+
+### Full Context Notes for AI Agents
+
+**Requirement**: app display name → **NvidiaMonitor CLI**; all docs; new consolidated release. On-disk dirs change — caution.
+
+**Chosen mapping (no spaces in paths/file names)**:
+- folder `src/NvmlTest` → `src/NvidiaMonitor.Cli`; project file `NvidiaMonitor.csproj`… CAREFUL: name it `NvidiaMonitorCli.csproj` (folder shows the grouping; file avoids space).
+- Assembly/exe/dll/zip prefix: **`NvidiaMonitorCli`** (`NvidiaMonitorCli.exe`, zip `NvidiaMonitorCli-<stamp>.zip`).
+- Display strings inside output/usage/docs: **"NvidiaMonitor CLI"** (with space).
+- UpdateService: `ZipPrefix = "NvidiaMonitorCli-"`, exe check `NvidiaMonitorCli.exe`, temp names `NvidiaMonitorCli-update…`, UserAgent `NvidiaMonitorCli-updater`. NOTE the identity change means old `NvmlTest-*` zips no longer match — intended (fresh stream start; previous release still installs fine until this build replaces it).
+- release.ps1 `$apps.cli.name = 'NvidiaMonitorCli'`, `project = 'src/NvidiaMonitor.Cli'`, closure path, `$cliZipName = "NvidiaMonitorCli-"…`, releaseinfo path `src\NvidiaMonitor.Cli\releaseinfo.txt`.
+- .gitignore: `src/NvmlTest/releaseinfo.txt` → `src/NvidiaMonitor.Cli/releaseinfo.txt`.
+- build_executables.bat: publish path + echo lines.
+- nvidia_app.sln: project entry path + name.
+- Program.cs strings: header comment, usage line, `Run NvidiaMonitorCli.exe again…`, watch header `NvidiaMonitor CLI --watch …`, blue notice `run: NvidiaMonitorCli --update` (executable-style in hints).
+- GUI untouched (its UpdateService hardcodes its own names; streams independent).
+
+**Files referencing NvmlTest** (git grep): .gitignore, AGENTS.md, README.md, ai/*(log+desc), build_executables.bat, nvidia_app.sln, release.ps1, src/NvmlTest/{NvmlProbe.cs,NvmlTest.csproj,Program.cs,UpdateService.cs}.
+**bin/**: `bin/NvmlTest` is stale after rename — delete it (git-ignored). Watch for running processes locking DLLs (`Stop-Process -Name NvmlTest,NvidiaMonitorCli`).
+
+**State**: branch from `main` @ `24d3fdf`. Nothing done yet.
 
 ---
 
