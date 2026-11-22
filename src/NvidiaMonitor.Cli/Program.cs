@@ -1,10 +1,10 @@
-// NvmlTest — headless NVML CLI verifier.
+// NvidiaMonitor CLI — headless NVML monitor (NvidiaMonitorCli.exe).
 //
 // Usage:
-//   NvmlTest --print
-//   NvmlTest --print [--watch [<seconds>]]
-//   NvmlTest --probe
-//   NvmlTest --update
+//   NvidiaMonitorCli --print
+//   NvidiaMonitorCli --print [--watch [<seconds>]]
+//   NvidiaMonitorCli --probe
+//   NvidiaMonitorCli --update
 // --print prints an nvidia-smi-style table once and exits 0 on success, or 1
 // when NVML / a GPU is unavailable (reason on stdout). With --watch it keeps
 // clearing and re-printing every <seconds> (default 1 s when the value is
@@ -75,7 +75,7 @@ for (var i = 0; i < args.Length; i++)
 // No recognized mode, or anything we don't understand → usage on stderr.
 if (!print && !probe && !update || unknown.Count > 0)
 {
-    Console.Error.WriteLine("Usage: NvmlTest --print [--watch [<seconds>]] | NvmlTest --probe | NvmlTest --update  (no seconds value → 1 s)");
+    Console.Error.WriteLine("Usage: NvidiaMonitorCli --print [--watch [<seconds>]] | NvidiaMonitorCli --probe | NvidiaMonitorCli --update  (no seconds value → 1 s)");
     return 2;
 }
 
@@ -122,7 +122,7 @@ if (update && !print && !probe)
         Console.WriteLine($"New version available: {info.Tag} ({info.ZipName})");
         await updater.DownloadAndApplyAsync(info, progress);
         Console.WriteLine("Update staged — the files are replaced once this process exits.");
-        Console.WriteLine("Run NvmlTest.exe again when it finishes to use the new version.");
+        Console.WriteLine("Run NvidiaMonitorCli.exe again when it finishes to use the new version.");
         return 0;
     }
     catch (Exception ex)
@@ -212,7 +212,7 @@ try
             // Cosmetic only: skip the wipe when stdout has no console buffer
             // (e.g. the output is redirected to a file) and carry on.
         }
-        Console.WriteLine($"NvmlTest --watch (every {interval.Value.ToString("0.##", CultureInfo.InvariantCulture)}s) — Ctrl-C to stop");
+        Console.WriteLine($"NvidiaMonitor CLI --watch (every {interval.Value.ToString("0.##", CultureInfo.InvariantCulture)}s) — Ctrl-C to stop");
         try
         {
             var snap = await svc.RefreshAsync();
@@ -259,5 +259,5 @@ static async Task<UpdateService.UpdateInfo?> CheckOrDefaultAsync(Task<UpdateServ
 
 // One blue line under the table — display only, `--update` does the install.
 static void PrintNotice(UpdateService.UpdateInfo info) =>
-    WriteBlueLine($"New version available: {info.Tag} ({info.ZipName}) — run: NvmlTest --update");
+    WriteBlueLine($"New version available: {info.Tag} ({info.ZipName}) — run: NvidiaMonitorCli --update");
 

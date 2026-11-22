@@ -2,7 +2,7 @@
 // nvml.dll (bypasses the NvmlCoreService contract layer so the real NVML
 // return codes are visible):
 //
-//   NvmlTest --probe
+//   NvidiaMonitorCli --probe
 //
 // For every GPU it prints:
 //   * the legacy nvmlDeviceGetProcessUtilization NULL-probe (rc, count) and a

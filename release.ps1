@@ -1,7 +1,7 @@
-﻿# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # release.ps1 - per-app GitHub releases for nvidia_app, keyed by compile date
 #
-#   Both apps (NvidiaMonitor GUI + NvmlTest CLI) print their own compile date
+#   Both apps (NvidiaMonitor GUI + NvidiaMonitor CLI) print their own compile date
 #   (LastWriteTime of the executing assembly). This script mirrors that into
 #   GitHub Releases: one release per app per compilation, named
 #       gui/<yyyyMMdd_HHmm>   and   cli/<yyyyMMdd_HHmm>
@@ -102,9 +102,9 @@ $apps = [ordered]@{
         notes      = 'WPF dashboard. Framework-dependent: needs the .NET 8 Desktop runtime to run.'
     }
     cli = [ordered]@{
-        name       = 'NvmlTest'
-        project    = 'src/NvmlTest'
-        closure    = @('src/NvmlTest', 'src/NvmlCore', 'src/HectorBravo.Nvidia.Contracts')
+        name       = 'NvidiaMonitorCli'
+        project    = 'src/NvidiaMonitor.Cli'
+        closure    = @('src/NvidiaMonitor.Cli', 'src/NvmlCore', 'src/HectorBravo.Nvidia.Contracts')
         notes      = 'Headless console CLI. Framework-dependent: needs the .NET 8 base runtime to run.'
     }
 }
@@ -218,11 +218,11 @@ $releaseStamp = Get-Date
 $guiZipName = "NvidiaMonitor-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
 [System.IO.File]::WriteAllText("$PSScriptRoot\src\NvidiaMonitor\releaseinfo.txt", $guiZipName)
 
-# Same rule for the CLI (T43): NvmlTest embeds its own release zip name and its
+# Same rule for the CLI (T43): NvidiaMonitorCli embeds its own release zip name and its
 # updater only looks at cli/<...> releases, so the two streams never offer each
 # other's builds.
-$cliZipName = "NvmlTest-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
-[System.IO.File]::WriteAllText("$PSScriptRoot\src\NvmlTest\releaseinfo.txt", $cliZipName)
+$cliZipName = "NvidiaMonitorCli-" + $releaseStamp.ToString('yyyyMMdd_HHmm') + ".zip"
+[System.IO.File]::WriteAllText("$PSScriptRoot\src\NvidiaMonitor.Cli\releaseinfo.txt", $cliZipName)
 
 Write-Host '[1/3] Building nvidia_app.sln (Release)…'
 dotnet build nvidia_app.sln -c Release --nologo

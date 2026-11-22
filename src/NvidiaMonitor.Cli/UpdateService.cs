@@ -7,7 +7,7 @@ namespace HectorBravo.Nvidia.Test;
 
 /// <summary>
 /// CLI port of the dashboard's auto-update (NvidiaMonitor/UpdateService.cs), scoped to
-/// this app's release stream. Checks GitHub Releases for a newer published NvmlTest
+/// this app's release stream. Checks GitHub Releases for a newer published NvidiaMonitorCli
 /// build and, on `--update`, downloads + applies it without user interaction.
 ///
 /// Release tags are produced by release.ps1 as "cli/&lt;yyyyMMdd_HHmm&gt;" — the compile
@@ -30,7 +30,7 @@ public sealed class UpdateService
 
     /// <summary>Only releases from this app's stream, and only zips that are ours.</summary>
     private const string TagPrefix = "cli/";
-    private const string ZipPrefix = "NvmlTest-";
+    private const string ZipPrefix = "NvidiaMonitorCli-";
 
     private static readonly HttpClient Http = CreateHttp();
 
@@ -40,7 +40,7 @@ public sealed class UpdateService
     {
         var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         // GitHub API requires a User-Agent header; keep the request cheap and API-shaped.
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("NvmlTest-updater");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("NvidiaMonitorCli-updater");
         http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
         // Anonymous API calls are capped at 60/hour per IP — easy to exhaust with a live
@@ -91,7 +91,7 @@ public sealed class UpdateService
     /// <summary>
     /// Identity of THIS build: the name of the release zip it was shipped in, read from
     /// the embedded resource "releaseinfo.txt" (written by release.ps1 at publish time —
-    /// e.g. "NvmlTest-20261119_0949.zip"). Empty for dev builds never packaged into a
+    /// e.g. "NvidiaMonitorCli-20261119_0949.zip"). Empty for dev builds never packaged into a
     /// release zip; such builds never notify.
     /// </summary>
     public static string ReleaseZipName
@@ -121,7 +121,7 @@ public sealed class UpdateService
         {
             var zip = ReleaseZipName;
             if (zip.Length == 0) return string.Empty;
-            var stamp = Path.GetFileNameWithoutExtension(zip); // "NvmlTest-<stamp>" → "<stamp>" part kept whole below
+            var stamp = Path.GetFileNameWithoutExtension(zip); // "NvidiaMonitorCli-<stamp>" → "<stamp>" part kept whole below
             var dash = stamp.IndexOf('-');
             return dash >= 0 ? "cli/" + stamp[(dash + 1)..] : "cli/" + stamp;
         }
@@ -206,7 +206,7 @@ public sealed class UpdateService
                     break;
                 }
             }
-            if (!foundAsset) return null; // our stream has no NvmlTest zip → not installable
+            if (!foundAsset) return null; // our stream has no NvidiaMonitorCli zip → not installable
 
             if (!asset.TryGetProperty("browser_download_url", out var dlEl)
                 || dlEl.ValueKind != JsonValueKind.String
@@ -250,8 +250,8 @@ public sealed class UpdateService
     {
         var tag = Path.GetFileNameWithoutExtension(info.ZipName);
         var temp = Path.GetTempPath();
-        var zipPath = Path.Combine(temp, $"NvmlTest-update-{tag}.zip");
-        var scriptPath = Path.Combine(temp, "NvmlTest-update.ps1");
+        var zipPath = Path.Combine(temp, $"NvidiaMonitorCli-update-{tag}.zip");
+        var scriptPath = Path.Combine(temp, "NvidiaMonitorCli-update.ps1");
 
         // ── download ───────────────────────────────────────────────
         progress?.Report("Downloading update…");
@@ -289,21 +289,21 @@ public sealed class UpdateService
                 {
                     throw new InvalidDataException($"Unsafe entry in update zip: {name}");
                 }
-                if (name.Equals("NvmlTest.exe", StringComparison.OrdinalIgnoreCase))
+                if (name.Equals("NvidiaMonitorCli.exe", StringComparison.OrdinalIgnoreCase))
                 {
                     hasExe = true;
                 }
             }
             if (!hasExe)
             {
-                throw new InvalidDataException("Update zip does not contain NvmlTest.exe.");
+                throw new InvalidDataException("Update zip does not contain NvidiaMonitorCli.exe.");
             }
         }
 
         // ── install the swap helper and launch it ──────────────────
         progress?.Report("Applying update…");
         var appDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-        var backupDir = Path.Combine(temp, $"NvmlTest-backup-{tag}");
+        var backupDir = Path.Combine(temp, $"NvidiaMonitorCli-backup-{tag}");
         var pid = Environment.ProcessId;
 
         // Waits for this process to die (releasing the file locks), backs up the current

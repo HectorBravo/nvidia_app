@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HectorBravo.Nvidia.Contract
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NvmlCore", "src\NvmlCore\NvmlCore.csproj", "{11111111-0000-4000-8000-000000000002}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NvmlTest", "src\NvmlTest\NvmlTest.csproj", "{11111111-0000-4000-8000-000000000003}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NvidiaMonitorCli", "src\NvidiaMonitor.Cli\NvidiaMonitorCli.csproj", "{11111111-0000-4000-8000-000000000003}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NvidiaMonitor", "src\NvidiaMonitor\NvidiaMonitor.csproj", "{11111111-0000-4000-8000-000000000004}"
 EndProject
