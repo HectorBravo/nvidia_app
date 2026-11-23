@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 4m | none |
+| 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 6m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
@@ -36,7 +36,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 27 completed task(s) - [View completed tasks](#completed-tasks)
+> 28 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -147,13 +147,13 @@
 
 ## Task T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 23-11-2026 12:51:05
-- **Last Updated**: 23-11-2026 12:55:00
-- **Time Spent**: 4m
-- **Branch**: [`fix/ai-cli-memclk-column-width`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-column-width)
-- **Commit(s)**: pending
+- **Last Updated**: 23-11-2026 12:54:49
+- **Time Spent**: 6m
+- **Branch**: [`fix/ai-cli-memclk-column-width`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-column-width) (merged via PR #24, then deleted locally + remotely per user request)
+- **Commit(s)**: [9bc9711](https://github.com/HectorBravo/nvidia_app/commit/9bc9711) (code), [c7c8fb3](https://github.com/HectorBravo/nvidia_app/commit/c7c8fb3a6aa0b8679f9ab5daa51a912623520559) (merge PR #24)
 - **Blockers**: none
 - **Findings & Notes**:
   - "the clock" in the console app = the **Mem Clock** column (`WMemClk`) of the `--print` / `--watch` table in `src/NvidiaMonitor.Cli/SmiFormatter.cs`; it is the only clock the CLI prints (GPU clock is GUI-only).
@@ -175,9 +175,9 @@
 
 - [x] Subtask 1 — `SmiFormatter.cs`: `WMemClk` 7 → 9 (`10000MHz` + one space of padding).
 - [x] Subtask 2 — `MemClkVal` keeps the `MHz` suffix but formats with `CultureInfo.InvariantCulture`; comments updated.
-- [ ] Subtask 3 — Docs: README CLI section (clock width/value), `ai/PROJECT_DESCRIPTION.md` change history.
+- [x] Subtask 3 — Docs: README CLI section (clock width/value), `ai/PROJECT_DESCRIPTION.md` change history.
 - [x] Subtask 4 — Build solution, publish to `bin\`, live verify with `--print` (real GPU shows `10501MHz` intact).
-- [ ] Subtask 5 — Commit + push branch, merge to `main`, delete the AI branch, publish the `cli/` release.
+- [x] Subtask 5 — Commit + push branch, merge to `main` (PR #24 → `c7c8fb3`), delete the AI branch, publish the `cli/` release.
 
 ### Full Context Notes for AI Agents
 
@@ -195,11 +195,11 @@
 
 **Not touched**: the GUI (`MainWindow.cs` GPU Clock / Memory Clock cards), Contracts, NvmlCore. Closure = CLI app only → per AGENTS.md a `cli/<yyyyMMdd_HHmm>` release is due after merge: `.\release.ps1 --merge <pre-merge> <post-merge>` (it builds + publishes both apps, zips without `.pdb`, creates the tag idempotently, and prepends a changelog from conventional commits). Close any running `NvidiaMonitorCli.exe` first — it locks its own DLLs (`Stop-Process -Name NvidiaMonitorCli`).
 
-**User instruction for this task's finish**: merge to `main`, delete the AI branch afterwards, and publish the release. Because the user merges + the branch is deleted, the "fast-forward the AI branch onto the final log commit" step of the git rules is not applicable (report it as such); the final log commit lands on `main`.
+**User instruction for this task's finish**: merge to `main`, delete the AI branch afterwards, and publish the release. Done as: PR #24 merged with a merge commit (`c7c8fb3`), branch deleted locally + remotely (so the "fast-forward the AI branch onto the final log commit" step of the git rules is **not applicable** — the final log commit lands on `main`).
 
 **Build/verify commands**: `dotnet build nvidia_app.sln -c Release` → `dotnet publish src\NvidiaMonitor.Cli -c Release -o bin\NvidiaMonitorCli` → `bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print`.
 
-**State**: branch created from `main` @ `eec35de`; code change + live verification done; docs update, commits, merge and release pending.
+**State**: **DONE**. Merged to `main` (`c7c8fb3`), branch deleted, final log commit + `cli/` release published (see the release tag recorded in the release-notes step).
 - **Commit(s)**: pending
 - **Blockers**: none
 - **Findings & Notes**:
@@ -3166,6 +3166,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 6m |
 | 22-11-2026 23:45:37 | [T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release](#task-t47-rename-the-cli-app-nvmltest--nvidiamonitor-cli-outputbinariesdocs-consolidated-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 7/7 | 14m |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m |
