@@ -24,7 +24,7 @@ public static class SmiFormatter
     private const int WTemp    = 4;   // "Temp"       | "100°C"
     private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
     private const int WMemory  = 13;  // "Memory"     | "23784/24576MB"
-    private const int WMemClk  = 7;   // "Mem" /      | "9501MHz" ("Clock")
+    private const int WMemClk  = 9;   // "Mem" /      | "10000MHz" ("Clock") — one space of padding, so clocks above 10000 MHz fit
     private const int WFan     = 4;   // "Fan"        | "100%"
     private const int WSysRam  = 13;  // "SysRAM"     | "100 % 83/128GB" → "100% 83/128GB"
     private const int WPcie    = 13;  // "PCIe"       | "4.0x16/32GB/s"
@@ -148,8 +148,9 @@ public static class SmiFormatter
     /// <summary>Temperature: "30°C" or N/A for negative sentinel.</summary>
     private static string TempVal(int v) => v < 0 ? "N/A" : $"{v}\u00B0C";
 
-    /// <summary>Memory clock: "9501MHz" or N/A for negative sentinel.</summary>
-    private static string MemClkVal(int v) => v < 0 ? "N/A" : $"{v}MHz";
+    /// <summary>Memory clock: "9501MHz" — no thousands separator (invariant culture), so a
+    /// clock above 10000 MHz renders as "10000MHz". N/A for negative sentinel.</summary>
+    private static string MemClkVal(int v) => v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture) + "MHz";
 
     /// <summary>Power: "usage / cap W" in whole watts; a negative usage sentinel renders N/A.</summary>
     private static string Power(int usageMw, int capMw) =>

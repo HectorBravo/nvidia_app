@@ -59,7 +59,8 @@ to the NVIDIA Management Library (`nvml.dll`) through P/Invoke — it does **not
   **GPU use**, **Mem use**, `SM`, `Temp`, `Power`, `Memory`, **Mem Clock**, `Fan`,
   **`SysRAM`** and **`PCIe`**. Values are packed tight — no space before `%` (`52%`), whole watts
   (`293/420W`), whole GiB (`23612/24576MB`, SysRAM `82% 104/128GB`, repeated on every GPU row since
-  RAM is system-wide), clocks as `9501MHz`, PCIe as `4.0x16/32GB/s`. The header spans **two lines**:
+  RAM is system-wide), clocks as `9501MHz` / `10501MHz` (the column is wide enough for a clock above
+  10000 MHz), PCIe as `4.0x16/32GB/s`. The header spans **two lines**:
   the wrapped labels (`GPU` / `use`, `Mem` / `use`, `Mem` / `Clock`) put their first word on the
   first line and every other label sits on the second line alone.
 - `--watch [<seconds>]` — the same table as a **live feed**, re-rendered every `<seconds>` like
