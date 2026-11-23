@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/5 | 4m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
 | 22-11-2026 23:12:54 | [T44: Consolidate cli releases since 20261111_0407 + far-future fake release for update-detection testing](#task-t44-consolidate-cli-releases-since-20261111_0407--far-future-fake-release-for-update-detection-testing) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#57606a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">chore</span> | 5/5 | 9m | none |
@@ -141,6 +142,105 @@
 **bin/**: `bin/NvmlTest` is stale after rename — delete it (git-ignored). Watch for running processes locking DLLs (`Stop-Process -Name NvmlTest,NvidiaMonitorCli`).
 
 **State**: branch from `main` @ `24d3fdf`. Nothing done yet.
+
+---
+
+## Task T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 23-11-2026 12:51:05
+- **Last Updated**: 23-11-2026 12:55:00
+- **Time Spent**: 4m
+- **Branch**: [`fix/ai-cli-memclk-column-width`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-column-width)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - "the clock" in the console app = the **Mem Clock** column (`WMemClk`) of the `--print` / `--watch` table in `src/NvidiaMonitor.Cli/SmiFormatter.cs`; it is the only clock the CLI prints (GPU clock is GUI-only).
+  - The machine has a GPU reporting a **10501 MHz** memory clock, which at the old width 7 was rendered **left-truncated to `0501MHz`** — that is the bug. Fix: widen the column to **9** (the longest expected value `10000MHz`, plus one space of padding).
+  - Also made the number formatting explicit (`CultureInfo.InvariantCulture`) so a locale never injects a thousands separator into a 5-digit clock.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (23-11-2026 12:50:00) "make the width of the clock one space wide" + "more than 10000 mhz" → first read as *narrow*; user corrected ↓.
+- (23-11-2026 12:54:00) "you're making it shorter, not wider. it should be able to accommodate '10000mhz'" → **widen** the column so an `10000MHz` value fits (with one space of padding).
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — `SmiFormatter.cs`: `WMemClk` 7 → 9 (`10000MHz` + one space of padding).
+- [x] Subtask 2 — `MemClkVal` keeps the `MHz` suffix but formats with `CultureInfo.InvariantCulture`; comments updated.
+- [ ] Subtask 3 — Docs: README CLI section (clock width/value), `ai/PROJECT_DESCRIPTION.md` change history.
+- [x] Subtask 4 — Build solution, publish to `bin\`, live verify with `--print` (real GPU shows `10501MHz` intact).
+- [ ] Subtask 5 — Commit + push branch, merge to `main`, delete the AI branch, publish the `cli/` release.
+
+### Full Context Notes for AI Agents
+
+**Requirement**: in the console app (`NvidiaMonitorCli`) the clock column must be wide enough to accommodate a memory clock above 10000 MHz (user's GPU reports `10501MHz`). Initial misread: "one space wide" was taken as *narrow*; the user meant **one space of padding beyond the widest value** → widen, not shrink.
+
+**Bug mechanism**: every column is rendered through `PadL(value, width)`; `string.PadLeft` does **not** truncate, but the fixed-width separator layout means an over-long value shifts everything right — and the observed output was truncated (`0501MHz`) because the header/dash row kept the narrower 7-char field while the data overflowed. Either way, a width below the longest possible value breaks the alignment of that column and its neighbours.
+
+**Where**: `src/NvidiaMonitor.Cli/SmiFormatter.cs` — static formatter used by both `--print` and `--watch` (`Program.cs` → `SmiFormatter.Format(...)`). Column widths are `private const int` at lines 19–31; the clock column is `WMemClk`. Header line 1 emits `PadL("Mem", WMemClk)`, header line 2 `PadL("Clock", WMemClk)`, separator row `Dash(WMemClk)`, data rows `PadL(MemClkVal(g.MemoryClockMhz), WMemClk)` — all four follow the single constant, so one edit covers the whole column.
+
+**The change (done)**:
+- line 27: `private const int WMemClk = 9;   // "Mem" / | "10000MHz" ("Clock") — one space of padding, so clocks above 10000 MHz fit`
+- `MemClkVal`: `v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture) + "MHz"` (same output as the old interpolation for normal values; explicit invariant culture).
+
+**Verified live** (`bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print`, 3 GPUs): row 2 prints `10501MHz` complete and every column stays aligned; table grew from 107 → 109 columns.
+
+**Not touched**: the GUI (`MainWindow.cs` GPU Clock / Memory Clock cards), Contracts, NvmlCore. Closure = CLI app only → per AGENTS.md a `cli/<yyyyMMdd_HHmm>` release is due after merge: `.\release.ps1 --merge <pre-merge> <post-merge>` (it builds + publishes both apps, zips without `.pdb`, creates the tag idempotently, and prepends a changelog from conventional commits). Close any running `NvidiaMonitorCli.exe` first — it locks its own DLLs (`Stop-Process -Name NvidiaMonitorCli`).
+
+**User instruction for this task's finish**: merge to `main`, delete the AI branch afterwards, and publish the release. Because the user merges + the branch is deleted, the "fast-forward the AI branch onto the final log commit" step of the git rules is not applicable (report it as such); the final log commit lands on `main`.
+
+**Build/verify commands**: `dotnet build nvidia_app.sln -c Release` → `dotnet publish src\NvidiaMonitor.Cli -c Release -o bin\NvidiaMonitorCli` → `bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print`.
+
+**State**: branch created from `main` @ `eec35de`; code change + live verification done; docs update, commits, merge and release pending.
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - "the clock" in the console app = the **Mem Clock** column (`WMemClk`) of the `--print` / `--watch` table in `src/NvidiaMonitor.Cli/SmiFormatter.cs`; it is the only clock the CLI prints (GPU clock is GUI-only).
+  - Requested width "one space wide" cannot be literal: the two-line header puts `Mem` (3) on line 1 and `Clock` (5) on line 2, so a hard minimum of **5** exists. Chosen interpretation: pack the column as tight as possible → **width 5**, i.e. one space of padding for the current real value (`8001MHz`, 7 chars at width 5 → `8001M` — truncated!). Actual decision recorded below in Full Context Notes: keep the unit suffix off and print digits only, so width 5 holds any clock up to 99999 MHz.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (23-11-2026 12:50:00) "make the width of the clock one space wide" + follow-up "more than 10000 mhz" → column is narrowed and must not truncate / wrap even for memory clocks above 10000 MHz.
+
+### Subtasks / Plan
+
+- [ ] Subtask 1 — `SmiFormatter.cs`: `WMemClk` 7 → 5; drop the `MHz` suffix from the value (`MemClkVal` → digits only) so any clock up to 99999 MHz fits without truncation.
+- [ ] Subtask 2 — Update the column-width comment block + the helper doc comment.
+- [ ] Subtask 3 — Docs: README CLI section (clock rendering + width), `ai/PROJECT_DESCRIPTION.md` change history.
+- [ ] Subtask 4 — Build solution, publish to `bin\`, live verify with `--print` (real GPU values).
+- [ ] Subtask 5 — Commit + push branch; report to user for merge.
+
+### Full Context Notes for AI Agents
+
+**Requirement**: in the console app (`NvidiaMonitorCli`), the clock column is too wide; user wants it one space wide and it must still render clocks above 10000 MHz.
+
+**Where**: `src/NvidiaMonitor.Cli/SmiFormatter.cs` — static formatter used by both `--print` and `--watch` (`Program.cs` calls `SmiFormatter.Format(...)`). Column widths are `private const int` at lines 19–31; the clock column is `WMemClk = 7`. Header line 1 emits `PadL("Mem", WMemClk)`, header line 2 emits `PadL("Clock", WMemClk)`, separator row emits `Dash(WMemClk)`, data rows emit `PadL(MemClkVal(g.MemoryClockMhz), WMemClk)`.
+
+**Constraint discovered**: a literal width of 1 is impossible — the header word `Clock` is 5 characters and the table must stay rectangular/aligned, so **5 is the hard floor**. With the current value format `{v}MHz`, a real GDDR6X clock (`8001MHz` = 7 chars) already needs width 7; at width 5 it would be truncated to `8001M`. Therefore the only way to satisfy "narrow" **and** ">10000 MHz" is to drop the unit from the cell and print plain digits: width 5 then holds any value up to 99999 MHz (`99999`), and `N/A` (3 chars) still fits. The header already labels the column `Mem Clock`, so the unit is unambiguous (MHz).
+
+**Chosen change (minimal, one file + docs)**:
+- `WMemClk = 5` with an updated comment (`"Clock" / "9501" | any clock up to 99999 MHz`).
+- `MemClkVal(int v) => v < 0 ? "N/A" : v.ToString(CultureInfo.InvariantCulture);` — no `MHz` suffix, invariant culture so no thousands separator (same reason as `Mb`/`Gb`).
+
+**Not touched**: the GUI (`MainWindow.cs` GPU Clock / Memory Clock cards), Contracts, NvmlCore. Closure = CLI app only → per AGENTS.md only a `cli/<yyyyMMdd_HHmm>` release is due after merge (run `.\release.ps1 --merge <pre> <post>`).
+
+**Build/verify**: `build_executables.bat` (or `dotnet build nvidia_app.sln -c Release` + `dotnet publish src\NvidiaMonitor.Cli -c Release -o bin\NvidiaMonitorCli`), then `bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print`.
+
+**State**: branch `feat/ai-cli-memclk-two-chars` from `main` @ `eec35de`. Nothing changed in code yet.
 
 ---
 
