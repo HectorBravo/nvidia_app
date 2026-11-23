@@ -4,7 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
-| 23-11-2026 13:05:27 | [T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)](#task-t49-cli--mem-clock-column-was-one-char-too-wide-drop-the-extra-padding-space) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/4 | 0m | none |
+| 23-11-2026 13:05:27 | [T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)](#task-t49-cli--mem-clock-column-was-one-char-too-wide-drop-the-extra-padding-space) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 3m | none |
 | 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 6m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
@@ -37,7 +37,7 @@
 | 16-10-2026 16:28:52 | [T12: Calculated window size (not maximized) + green "slide" scrollbars](#task-t12-calculated-window-size-not-maximized-green-slide-scrollbars) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 1h 2m | none |
 | 16-10-2026 13:04:01 | [T11: Chart readouts: pct of memory/power, CUDA device + GPU name, 100 °C cap, white legend, full-height start](#task-t11-chart-readouts-pct-of-memorypower-cuda-device-gpu-name-100-c-cap-white-legend-fullheight-start) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 7/7 | 2h 20m | none |
 
-> 28 completed task(s) - [View completed tasks](#completed-tasks)
+> 29 completed task(s) - [View completed tasks](#completed-tasks)
 
 ---
 ---
@@ -148,13 +148,13 @@
 
 ## Task T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)
 
-- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Status**: <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span>
 - **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
 - **Created**: 23-11-2026 13:05:27
-- **Last Updated**: 23-11-2026 13:06:00
-- **Time Spent**: 1m
-- **Branch**: [`fix/ai-cli-memclk-one-space-padding`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-one-space-padding)
-- **Commit(s)**: pending
+- **Last Updated**: 23-11-2026 13:07:05
+- **Time Spent**: 3m
+- **Branch**: [`fix/ai-cli-memclk-one-space-padding`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-one-space-padding) (merged via PR #25, then deleted locally + remotely per user request)
+- **Commit(s)**: [959e15c](https://github.com/HectorBravo/nvidia_app/commit/959e15c) (code), [349a500](https://github.com/HectorBravo/nvidia_app/commit/349a500c8c5854a6822dadf19f9451219639c20a) (merge PR #25)
 - **Blockers**: none
 - **Findings & Notes**:
   - Follow-up to [T48](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz): width **9** left the usual 7-char value (`405MHz`) with **two** spaces before the next column. User: "you added two spaces instead of 1".
@@ -174,8 +174,8 @@
 
 - [x] Subtask 1 — `SmiFormatter.cs`: `WMemClk` 9 → 8 + comment.
 - [x] Subtask 2 — Build solution, publish to `bin\`, live verify (one space before `Fan`).
-- [ ] Subtask 3 — Docs: `ai/PROJECT_DESCRIPTION.md` width mention (`WMemClk 9` → `8`) + change-history entry.
-- [ ] Subtask 4 — Commit + push, merge to `main`, delete branch, final log commit, publish the `cli/` release (same flow as T48).
+- [x] Subtask 3 — Docs: `ai/PROJECT_DESCRIPTION.md` width mention (`WMemClk 9` → `8`) + change-history entry.
+- [x] Subtask 4 — Commit + push, merge to `main` (PR #25 → `349a500`), delete branch, final log commit, publish the `cli/` release (same flow as T48).
 
 ### Full Context Notes for AI Agents
 
@@ -189,7 +189,7 @@
 
 **Finish flow (user asked for it on T48, applies again)**: dedicated `docs(ai):` log commit before push → code commit → `git push -u origin fix/ai-cli-memclk-one-space-padding` → PR → merge to `main` → final log commit on `main` (`done`, real hashes, Completed Tasks row + count) → delete branch locally + remotely (fast-forward step N/A) → run the repo release script for the merge range (cli closure only). Close any running `NvidiaMonitorCli.exe` first — it locks its own DLLs.
 
-**State**: branch from `main` @ `680be8c`; code change + build + publish + live verification done; docs, commits, merge and release pending.
+**State**: **DONE**. Merged to `main` (`349a500`, PR #25), branch deleted locally + remotely, final log commit on `main` + `cli/` release published for the merge range.
 
 ---
 
@@ -3214,6 +3214,7 @@ src/
 
 | Created | Task | Type | Subtasks | Time Spent |
 |---------|------|------|----------|------------|
+| 23-11-2026 13:05:27 | [T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)](#task-t49-cli--mem-clock-column-was-one-char-too-wide-drop-the-extra-padding-space) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 4/4 | 3m |
 | 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 6m |
 | 22-11-2026 23:45:37 | [T47: Rename the CLI app NvmlTest → "NvidiaMonitor CLI" (output/binaries/docs), consolidated release](#task-t47-rename-the-cli-app-nvmltest--nvidiamonitor-cli-outputbinariesdocs-consolidated-release) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">refactor</span> | 7/7 | 14m |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m |
