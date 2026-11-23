@@ -24,7 +24,7 @@ public static class SmiFormatter
     private const int WTemp    = 4;   // "Temp"       | "100°C"
     private const int WPower   = 8;   // "Power"      | "1000/1000W" (int watts)
     private const int WMemory  = 13;  // "Memory"     | "23784/24576MB"
-    private const int WMemClk  = 9;   // "Mem" /      | "10000MHz" ("Clock") — one space of padding, so clocks above 10000 MHz fit
+    private const int WMemClk  = 8;   // "Mem" /      | "10000MHz" ("Clock") — exact fit for a clock above 10000 MHz, one space of padding for the usual 4-digit clocks
     private const int WFan     = 4;   // "Fan"        | "100%"
     private const int WSysRam  = 13;  // "SysRAM"     | "100 % 83/128GB" → "100% 83/128GB"
     private const int WPcie    = 13;  // "PCIe"       | "4.0x16/32GB/s"
