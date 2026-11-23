@@ -4,6 +4,7 @@
 
 | Created | Task | Status | Type | Subtasks | Time Spent | Blockers |
 |---------|------|--------|------|----------|------------|----------|
+| 23-11-2026 13:05:27 | [T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)](#task-t49-cli--mem-clock-column-was-one-char-too-wide-drop-the-extra-padding-space) | <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 0/4 | 0m | none |
 | 23-11-2026 12:51:05 | [T48: CLI — widen the Mem Clock column so a clock above 10000 MHz fits (`10501MHz`)](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 5/5 | 6m | none |
 | 22-11-2026 23:35:37 | [T46: Match the GUI update-check schedule in the CLI (startup + hourly, was 10 min)](#task-t46-match-the-gui-update-check-schedule-in-the-cli-startup--hourly-was-10-min) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span> | 3/3 | 4m | none |
 | 22-11-2026 23:31:33 | [T45: CLI — "Build:" line showing the current release under the Driver banner + label the snapshot time "Current time:"](#task-t45-cli--build-line-showing-the-current-release-under-the-driver-banner--label-the-snapshot-time-current-time) | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">done</span> | <span style="background-color:#22863a;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">feat</span> | 6/6 | 7m | none |
@@ -142,6 +143,53 @@
 **bin/**: `bin/NvmlTest` is stale after rename — delete it (git-ignored). Watch for running processes locking DLLs (`Stop-Process -Name NvmlTest,NvidiaMonitorCli`).
 
 **State**: branch from `main` @ `24d3fdf`. Nothing done yet.
+
+---
+
+## Task T49: CLI — Mem Clock column was one char too wide (drop the extra padding space)
+
+- **Status**: <span style="background-color:#0969da;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">in_progress</span>
+- **Type**: <span style="background-color:#9e6a03;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">fix</span>
+- **Created**: 23-11-2026 13:05:27
+- **Last Updated**: 23-11-2026 13:06:00
+- **Time Spent**: 1m
+- **Branch**: [`fix/ai-cli-memclk-one-space-padding`](https://github.com/HectorBravo/nvidia_app/tree/fix/ai-cli-memclk-one-space-padding)
+- **Commit(s)**: pending
+- **Blockers**: none
+- **Findings & Notes**:
+  - Follow-up to [T48](#task-t48-cli--widen-the-mem-clock-column-so-a-clock-above-10000-mhz-fits-10501mhz): width **9** left the usual 7-char value (`405MHz`) with **two** spaces before the next column. User: "you added two spaces instead of 1".
+  - `WMemClk` 9 → **8**: exact fit for the widest expected value (`10000MHz`, 8 chars) and exactly one space of padding for the usual ≤4-digit clocks.
+
+### User Confirmations
+
+**Pending (awaiting user response):**
+
+- None yet.
+
+**Confirmed (user provided):**
+
+- (23-11-2026 13:05:00) "you added two spaces instead of 1" → column must be one char narrower (`WMemClk` 8).
+
+### Subtasks / Plan
+
+- [x] Subtask 1 — `SmiFormatter.cs`: `WMemClk` 9 → 8 + comment.
+- [x] Subtask 2 — Build solution, publish to `bin\`, live verify (one space before `Fan`).
+- [ ] Subtask 3 — Docs: `ai/PROJECT_DESCRIPTION.md` width mention (`WMemClk 9` → `8`) + change-history entry.
+- [ ] Subtask 4 — Commit + push, merge to `main`, delete branch, final log commit, publish the `cli/` release (same flow as T48).
+
+### Full Context Notes for AI Agents
+
+**Requirement**: exactly one space of padding in the Mem Clock column, while still fitting `10000MHz`.
+
+**Arithmetic**: value width + 1 separator (`Sep = 1`). `10000MHz` = 8 chars → field **8** is the minimum that fits it; a usual `405MHz` (6) / `8001MHz` (7) then gets 2 / 1 visible spaces of slack inside the field, which is unavoidable given the 8-char maximum. Width 9 gave `405MHz` three slots of slack → two visible gaps, hence the complaint.
+
+**Change**: `src/NvidiaMonitor.Cli/SmiFormatter.cs` line 27 → `private const int WMemClk = 8;`. Nothing else (header lines, dash row and data cell all use this constant).
+
+**Verified live** (`bin\NvidiaMonitorCli\NvidiaMonitorCli.exe --print`, 3 GPUs): dash row around the column reads `------------- -------- ----` (8 dashes for Clock), rows print `405MHz` / `5001MHz` with a single space before `Fan`; table 109 → 108 columns.
+
+**Finish flow (user asked for it on T48, applies again)**: dedicated `docs(ai):` log commit before push → code commit → `git push -u origin fix/ai-cli-memclk-one-space-padding` → PR → merge to `main` → final log commit on `main` (`done`, real hashes, Completed Tasks row + count) → delete branch locally + remotely (fast-forward step N/A) → run the repo release script for the merge range (cli closure only). Close any running `NvidiaMonitorCli.exe` first — it locks its own DLLs.
+
+**State**: branch from `main` @ `680be8c`; code change + build + publish + live verification done; docs, commits, merge and release pending.
 
 ---
 
